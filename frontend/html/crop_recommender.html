@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crop Recommender</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/crop_recommender.css">
+</head>
+<body>
+
+<header>
+  <h1>Crop Recommender</h1>
+  <span id="state-header-sub">XGBoost · seasonal weather · Tripura</span>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <div id="status-dot" style="width:8px;height:8px;border-radius:50%;background:#c9922a;transition:background .4s"></div>
+    <span id="status-label" style="font-family:'DM Mono',monospace;font-size:11px;color:#888;letter-spacing:.05em">Checking backend…</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="section-label">Seasonal weather conditions</div>
+    <p style="font-size:11px;color:var(--text-faint);margin-bottom:14px;line-height:1.5">
+      Enter the expected weather for this growing season. Weights shown are derived from model feature importance.
+    </p>
+
+    <div class="field">
+      <label>Rainy days this season <span class="wt-badge">wt 18.9%</span></label>
+      <div class="slider-row">
+        <input type="range" id="rain-days" min="30" max="120" step="1" value="60">
+        <span class="slider-val" id="rain-daysv">60 days</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Evapotranspiration (ET₀) <span class="wt-badge">wt 11.9%</span></label>
+      <div class="slider-row">
+        <input type="range" id="et0" min="150" max="600" step="5" value="350">
+        <span class="slider-val" id="et0v">350 mm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mean temperature <span class="wt-badge">wt 9.8%</span></label>
+      <div class="slider-row">
+        <input type="range" id="temp" min="18" max="33" step="0.1" value="25">
+        <span class="slider-val" id="tempv">25.0 °C</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Total rainfall <span class="wt-badge">wt 8.2%</span></label>
+      <div class="slider-row">
+        <input type="range" id="rain-total" min="50" max="1400" step="10" value="600">
+        <span class="slider-val" id="rain-totalv">600 mm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Solar radiation <span class="wt-badge">wt 7.1%</span></label>
+      <div class="slider-row">
+        <input type="range" id="solar" min="3000" max="7000" step="50" value="5000">
+        <span class="slider-val" id="solarv">5000 MJ/m²</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Max wind speed <span class="wt-badge">wt 5.4%</span></label>
+      <div class="slider-row">
+        <input type="range" id="wind" min="5" max="20" step="0.1" value="11">
+        <span class="slider-val" id="windv">11.0 km/h</span>
+      </div>
+    </div>
+
+    <div class="section-label">Farm conditions</div>
+
+    <div class="field">
+      <label>Fertilizer <span class="wt-badge">wt 14.0%</span></label>
+      <div class="slider-row">
+        <input type="range" id="fert" min="24" max="219" step="1" value="70">
+        <span class="slider-val" id="fertv">70 kg/ha</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Field area</label>
+      <div class="slider-row">
+        <input type="range" id="area" min="1" max="5000" step="10" value="500">
+        <span class="slider-val" id="areav">500 ha</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Soil type</label>
+      <div class="chips" id="soil-chips">
+      </div>
+    </div>
+    <div class="field">
+      <label>Irrigation</label>
+      <div class="chips" id="irr-chips">
+      </div>
+    </div>
+    <div class="field">
+      <label>Season</label>
+      <div class="chips" id="season-chips">
+        <div class="chip active" data-val="Kharif">Kharif</div>
+        <div class="chip" data-val="Rabi">Rabi</div>
+        <div class="chip" data-val="Whole Year">Whole Year</div>
+        <div class="chip" data-val="Summer">Summer</div>
+        <div class="chip" data-val="Autumn">Autumn</div>
+        <div class="chip" data-val="Winter">Winter</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Pest / disease incidence</label>
+      <div class="chips" id="pest-chips">
+        <div class="chip active" data-val="Low">Low</div>
+        <div class="chip" data-val="Medium">Medium</div>
+        <div class="chip" data-val="High">High</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>District</label>
+      <select id="district"></select>
+    </div>
+
+    <button class="run-btn" onclick="runRecommender()">Get Recommendations</button>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main-panel">
+    <div class="empty-state" id="empty-state">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="22" stroke="#4a7c59" stroke-width="2"/>
+        <path d="M24 12 C18 18 14 26 20 32 C24 36 28 34 30 30 C32 26 28 20 24 12Z" fill="#4a7c59" opacity=".4"/>
+        <path d="M24 12 C30 18 34 26 28 32" stroke="#4a7c59" stroke-width="1.5" fill="none"/>
+        <line x1="24" y1="36" x2="24" y2="40" stroke="#4a7c59" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>Set your conditions and click <strong>Get Recommendations</strong></p>
+      <p style="font-size:12px;margin-top:4px">Backend must be running: <code style="font-family:'DM Mono',monospace;background:var(--border);padding:1px 6px;border-radius:3px">python backend.py</code></p>
+    </div>
+    <div id="results-container" style="display:none">
+      <div class="results-header">
+        <h2 id="results-title">Top crop matches</h2>
+        <span class="meta" id="results-meta"></span>
+      </div>
+      <div class="results-grid" id="results-grid"></div>
+      <div class="footnote">
+        <b>Suitability %</b> — Gaussian profile match between your inputs and each crop's historical growing conditions,
+        weighted by XGBoost feature importance (rain days 18.9%, fertilizer 14.0%, ET₀ 11.9%, temperature 9.8%, rainfall 8.2%, solar 7.1%, wind 5.4%) + season fit (30% of score).
+        Higher % = your conditions more closely match where this crop historically thrives.<br><br>
+        <b>Est. Yield</b> — XGBoost model prediction (lag features set to historical crop mean = baseline season).
+        <b>Anomaly</b> — predicted yield vs this crop's historical average. Positive = above normal.<br><br>
+        <span style="color:#c9922a">hist. avg</span> = crop had &lt;60 training rows, XGBoost not used for yield prediction.
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ── State-aware district population ──────────────────────────────────
+const _STATE = new URLSearchParams(location.search).get('state')
+            || localStorage.getItem('cropai_state') || 'tripura';
+const _DISTRICTS = {
+  tripura:  ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
+  meghalaya:['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills',
+             'North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills',
+             'South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
+  rajasthan:[
+    "Ajmer",
+    "Alwar",
+    "Banswara",
+    "Baran",
+    "Barmer",
+    "Bharatpur",
+    "Bhilwara",
+    "Bikaner",
+    "Bundi",
+    "Chittorgarh",
+    "Churu",
+    "Dausa",
+    "Dholpur",
+    "Dungarpur",
+    "Hanumangarh",
+    "Jaipur",
+    "Jaisalmer",
+    "Jalore",
+    "Jhalawar",
+    "Jhunjhunu",
+    "Jodhpur",
+    "Karauli",
+    "Kota",
+    "Nagaur",
+    "Pali",
+    "Pratapgarh",
+    "Rajsamand",
+    "Sawai Madhopur",
+    "Sikar",
+    "Sirohi",
+    "Sri Ganganagar",
+    "Tonk",
+    "Udaipur"
+  ]
+};
+
+const _stateName = _STATE.charAt(0).toUpperCase() + _STATE.slice(1);
+const _dists = _DISTRICTS[_STATE] || _DISTRICTS.tripura;
+const _SOILS = {
+  tripura: ['Alluvial', 'Red Laterite'],
+  meghalaya: ['Loamy', 'Lateritic', 'Clay'],
+  rajasthan: ['Desert', 'Black Cotton', 'Alluvial', 'Sandy']
+};
+
+const _IRRIGATION = {
+  tripura: ['Rainfed', 'Canal', 'Drip'],
+  meghalaya: ['Rainfed', 'Canal', 'Drip'],
+  rajasthan: ['Rainfed', 'Canal', 'Drip', 'Tube Well']
+};
+
+function buildChips(containerId, values) {
+  const container = document.getElementById(containerId);
+
+  container.innerHTML = values.map((v, i) => `
+    <div class="chip ${i === 0 ? 'active' : ''}" data-val="${v}">
+      ${v}
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.chip')
+        .forEach(c => c.classList.remove('active'));
+
+      chip.classList.add('active');
+    });
+  });
+}
+const _sel = document.getElementById('district');
+_dists.forEach(d => {
+  const o = document.createElement('option');
+  o.value = d; o.textContent = d;
+  _sel.appendChild(o);
+});
+buildChips(
+  'soil-chips',
+  _SOILS[_STATE] || _SOILS.tripura
+);
+
+buildChips(
+  'irr-chips',
+  _IRRIGATION[_STATE] || _IRRIGATION.tripura
+);
+
+const _sub = document.getElementById('state-header-sub');
+if (_sub) _sub.textContent = `XGBoost · seasonal weather · ${_stateName}`;
+</script>
+<script src="../js/crop_recommender.js"></script>
+</body>
+</html>

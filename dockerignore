@@ -1,0 +1,20 @@
+# Secrets - never bake into the image
+.env
+api_keys.txt
+
+# VCS / editor
+.git
+.gitignore
+.gitattributes
+.vscode
+
+# Python cruft
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Misc
+README.md
+scripts/

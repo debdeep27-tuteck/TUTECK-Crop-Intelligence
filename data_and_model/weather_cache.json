@@ -1,0 +1,4666 @@
+{
+  "Dhalai|2022 - 2023|Kharif": {
+    "weather_temp_mean": 27.55409836065574,
+    "weather_rain_total": 1117.1,
+    "weather_rain_days": 110,
+    "weather_et0_total": 479.95,
+    "weather_wind_mean": 11.64672131147541,
+    "weather_solarrad_total": 2262.98
+  },
+  "Dhalai|2022 - 2023|Rabi": {
+    "weather_temp_mean": 20.645255474452558,
+    "weather_rain_total": 78.4,
+    "weather_rain_days": 9,
+    "weather_et0_total": 412.9,
+    "weather_wind_mean": 9.18102189781022,
+    "weather_solarrad_total": 2112.6
+  },
+  "Dhalai|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.05327868852459,
+    "weather_rain_total": 693.8000000000001,
+    "weather_rain_days": 66,
+    "weather_et0_total": 445.23999999999995,
+    "weather_wind_mean": 9.828688524590165,
+    "weather_solarrad_total": 2148.67
+  },
+  "Dhalai|2022 - 2023|Summer": {
+    "weather_temp_mean": 26.03360655737705,
+    "weather_rain_total": 926.1,
+    "weather_rain_days": 85,
+    "weather_et0_total": 449.11,
+    "weather_wind_mean": 13.860655737704919,
+    "weather_solarrad_total": 2010.5
+  },
+  "Dhalai|2022 - 2023|Winter": {
+    "weather_temp_mean": 19.983333333333334,
+    "weather_rain_total": 10.4,
+    "weather_rain_days": 4,
+    "weather_et0_total": 354.14,
+    "weather_wind_mean": 8.950833333333332,
+    "weather_solarrad_total": 1828.34
+  },
+  "Dhalai|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 24.308493150684928,
+    "weather_rain_total": 1943.6999999999998,
+    "weather_rain_days": 191,
+    "weather_et0_total": 1269.25,
+    "weather_wind_mean": 11.112328767123287,
+    "weather_solarrad_total": 6066.71
+  },
+  "Gomati|2022 - 2023|Kharif": {
+    "weather_temp_mean": 27.592622950819674,
+    "weather_rain_total": 941.0,
+    "weather_rain_days": 105,
+    "weather_et0_total": 477.36999999999995,
+    "weather_wind_mean": 13.383606557377052,
+    "weather_solarrad_total": 2214.51
+  },
+  "Gomati|2022 - 2023|Rabi": {
+    "weather_temp_mean": 21.74306569343066,
+    "weather_rain_total": 85.69999999999999,
+    "weather_rain_days": 8,
+    "weather_et0_total": 462.2,
+    "weather_wind_mean": 10.195620437956206,
+    "weather_solarrad_total": 2190.84
+  },
+  "Gomati|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.404098360655734,
+    "weather_rain_total": 588.2,
+    "weather_rain_days": 67,
+    "weather_et0_total": 455.7799999999999,
+    "weather_wind_mean": 11.115573770491805,
+    "weather_solarrad_total": 2123.77
+  },
+  "Gomati|2022 - 2023|Summer": {
+    "weather_temp_mean": 27.003278688524592,
+    "weather_rain_total": 725.8,
+    "weather_rain_days": 76,
+    "weather_et0_total": 507.04,
+    "weather_wind_mean": 15.212295081967213,
+    "weather_solarrad_total": 2168.21
+  },
+  "Gomati|2022 - 2023|Winter": {
+    "weather_temp_mean": 21.148333333333333,
+    "weather_rain_total": 14.0,
+    "weather_rain_days": 3,
+    "weather_et0_total": 400.61,
+    "weather_wind_mean": 9.845833333333333,
+    "weather_solarrad_total": 1906.99
+  },
+  "Gomati|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 25.047671232876713,
+    "weather_rain_total": 1556.4,
+    "weather_rain_days": 175,
+    "weather_et0_total": 1375.6799999999998,
+    "weather_wind_mean": 12.412328767123288,
+    "weather_solarrad_total": 6259.27
+  },
+  "Khowai|2022 - 2023|Kharif": {
+    "weather_temp_mean": 27.871311475409836,
+    "weather_rain_total": 1026.9,
+    "weather_rain_days": 106,
+    "weather_et0_total": 472.59999999999997,
+    "weather_wind_mean": 13.307377049180328,
+    "weather_solarrad_total": 2177.09
+  },
+  "Khowai|2022 - 2023|Rabi": {
+    "weather_temp_mean": 21.01897810218978,
+    "weather_rain_total": 76.8,
+    "weather_rain_days": 5,
+    "weather_et0_total": 419.36,
+    "weather_wind_mean": 9.97080291970803,
+    "weather_solarrad_total": 2100.32
+  },
+  "Khowai|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.35327868852459,
+    "weather_rain_total": 708.9,
+    "weather_rain_days": 65,
+    "weather_et0_total": 443.11,
+    "weather_wind_mean": 11.015573770491804,
+    "weather_solarrad_total": 2096.3100000000004
+  },
+  "Khowai|2022 - 2023|Summer": {
+    "weather_temp_mean": 26.469672131147544,
+    "weather_rain_total": 817.1,
+    "weather_rain_days": 76,
+    "weather_et0_total": 469.08,
+    "weather_wind_mean": 15.269672131147537,
+    "weather_solarrad_total": 2059.4100000000003
+  },
+  "Khowai|2022 - 2023|Winter": {
+    "weather_temp_mean": 20.389166666666664,
+    "weather_rain_total": 4.5,
+    "weather_rain_days": 1,
+    "weather_et0_total": 360.59000000000003,
+    "weather_wind_mean": 9.639166666666666,
+    "weather_solarrad_total": 1821.25
+  },
+  "Khowai|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 24.681369863013696,
+    "weather_rain_total": 1804.6000000000001,
+    "weather_rain_days": 183,
+    "weather_et0_total": 1292.7,
+    "weather_wind_mean": 12.303835616438356,
+    "weather_solarrad_total": 6053.79
+  },
+  "North tripura|2022 - 2023|Kharif": {
+    "weather_temp_mean": 27.701639344262293,
+    "weather_rain_total": 1610.1000000000001,
+    "weather_rain_days": 111,
+    "weather_et0_total": 463.94,
+    "weather_wind_mean": 11.30327868852459,
+    "weather_solarrad_total": 2176.7999999999997
+  },
+  "North tripura|2022 - 2023|Rabi": {
+    "weather_temp_mean": 20.608029197080292,
+    "weather_rain_total": 84.2,
+    "weather_rain_days": 9,
+    "weather_et0_total": 404.52,
+    "weather_wind_mean": 9.597080291970803,
+    "weather_solarrad_total": 2051.12
+  },
+  "North tripura|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.238524590163937,
+    "weather_rain_total": 812.8,
+    "weather_rain_days": 71,
+    "weather_et0_total": 442.22999999999996,
+    "weather_wind_mean": 9.872131147540982,
+    "weather_solarrad_total": 2115.6
+  },
+  "North tripura|2022 - 2023|Winter": {
+    "weather_temp_mean": 19.920833333333334,
+    "weather_rain_total": 20.099999999999998,
+    "weather_rain_days": 4,
+    "weather_et0_total": 344.77,
+    "weather_wind_mean": 9.316666666666668,
+    "weather_solarrad_total": 1766.9699999999998
+  },
+  "North tripura|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 24.16739726027397,
+    "weather_rain_total": 2760.6,
+    "weather_rain_days": 198,
+    "weather_et0_total": 1211.83,
+    "weather_wind_mean": 11.09013698630137,
+    "weather_solarrad_total": 5803.179999999999
+  },
+  "Sepahijala|2022 - 2023|Kharif": {
+    "weather_temp_mean": 28.02868852459017,
+    "weather_rain_total": 860.2,
+    "weather_rain_days": 101,
+    "weather_et0_total": 487.15,
+    "weather_wind_mean": 15.19590163934426,
+    "weather_solarrad_total": 2223.64
+  },
+  "Sepahijala|2022 - 2023|Rabi": {
+    "weather_temp_mean": 21.337226277372263,
+    "weather_rain_total": 102.4,
+    "weather_rain_days": 6,
+    "weather_et0_total": 441.69000000000005,
+    "weather_wind_mean": 10.289781021897811,
+    "weather_solarrad_total": 2156.74
+  },
+  "Sepahijala|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.495081967213117,
+    "weather_rain_total": 607.9,
+    "weather_rain_days": 63,
+    "weather_et0_total": 454.69,
+    "weather_wind_mean": 12.247540983606555,
+    "weather_solarrad_total": 2123.7099999999996
+  },
+  "Sepahijala|2022 - 2023|Summer": {
+    "weather_temp_mean": 27.311475409836063,
+    "weather_rain_total": 792.5999999999999,
+    "weather_rain_days": 74,
+    "weather_et0_total": 516.81,
+    "weather_wind_mean": 16.59262295081967,
+    "weather_solarrad_total": 2200.67
+  },
+  "Sepahijala|2022 - 2023|Winter": {
+    "weather_temp_mean": 20.7125,
+    "weather_rain_total": 10.700000000000001,
+    "weather_rain_days": 2,
+    "weather_et0_total": 381.61,
+    "weather_wind_mean": 9.8375,
+    "weather_solarrad_total": 1876.62
+  },
+  "Sepahijala|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 25.10575342465754,
+    "weather_rain_total": 1565.8000000000002,
+    "weather_rain_days": 169,
+    "weather_et0_total": 1372.84,
+    "weather_wind_mean": 13.455890410958903,
+    "weather_solarrad_total": 6269.469999999999
+  },
+  "South tripura|2022 - 2023|Kharif": {
+    "weather_temp_mean": 27.338524590163928,
+    "weather_rain_total": 924.0,
+    "weather_rain_days": 110,
+    "weather_et0_total": 474.53,
+    "weather_wind_mean": 13.272131147540984,
+    "weather_solarrad_total": 2232.6099999999997
+  },
+  "South tripura|2022 - 2023|Rabi": {
+    "weather_temp_mean": 22.02846715328467,
+    "weather_rain_total": 81.8,
+    "weather_rain_days": 9,
+    "weather_et0_total": 473.34000000000003,
+    "weather_wind_mean": 10.877372262773722,
+    "weather_solarrad_total": 2200.8399999999997
+  },
+  "South tripura|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.358196721311472,
+    "weather_rain_total": 619.9,
+    "weather_rain_days": 72,
+    "weather_et0_total": 456.14,
+    "weather_wind_mean": 11.378688524590162,
+    "weather_solarrad_total": 2130.73
+  },
+  "South tripura|2022 - 2023|Summer": {
+    "weather_temp_mean": 26.8672131147541,
+    "weather_rain_total": 741.1999999999998,
+    "weather_rain_days": 78,
+    "weather_et0_total": 506.69999999999993,
+    "weather_wind_mean": 14.944262295081968,
+    "weather_solarrad_total": 2179.6999999999994
+  },
+  "South tripura|2022 - 2023|Winter": {
+    "weather_temp_mean": 21.45583333333333,
+    "weather_rain_total": 14.799999999999999,
+    "weather_rain_days": 4,
+    "weather_et0_total": 411.77,
+    "weather_wind_mean": 10.547500000000001,
+    "weather_solarrad_total": 1917.07
+  },
+  "South tripura|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 25.03917808219178,
+    "weather_rain_total": 1569.1,
+    "weather_rain_days": 186,
+    "weather_et0_total": 1383.57,
+    "weather_wind_mean": 12.557808219178083,
+    "weather_solarrad_total": 6299.7699999999995
+  },
+  "Unakoti|2022 - 2023|Kharif": {
+    "weather_temp_mean": 27.669672131147543,
+    "weather_rain_total": 1315.3999999999999,
+    "weather_rain_days": 109,
+    "weather_et0_total": 480.74999999999994,
+    "weather_wind_mean": 12.03934426229508,
+    "weather_solarrad_total": 2252.0399999999995
+  },
+  "Unakoti|2022 - 2023|Rabi": {
+    "weather_temp_mean": 21.134306569343067,
+    "weather_rain_total": 94.9,
+    "weather_rain_days": 6,
+    "weather_et0_total": 416.75,
+    "weather_wind_mean": 8.939416058394158,
+    "weather_solarrad_total": 2083.85
+  },
+  "Unakoti|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.306557377049177,
+    "weather_rain_total": 782.8000000000002,
+    "weather_rain_days": 67,
+    "weather_et0_total": 449.53,
+    "weather_wind_mean": 10.122950819672132,
+    "weather_solarrad_total": 2144.76
+  },
+  "Unakoti|2022 - 2023|Summer": {
+    "weather_temp_mean": 25.940983606557374,
+    "weather_rain_total": 1097.5,
+    "weather_rain_days": 82,
+    "weather_et0_total": 431.05999999999995,
+    "weather_wind_mean": 13.56967213114754,
+    "weather_solarrad_total": 1923.5299999999997
+  },
+  "Unakoti|2022 - 2023|Winter": {
+    "weather_temp_mean": 20.485,
+    "weather_rain_total": 28.300000000000004,
+    "weather_rain_days": 1,
+    "weather_et0_total": 356.48,
+    "weather_wind_mean": 8.596666666666668,
+    "weather_solarrad_total": 1799.67
+  },
+  "Unakoti|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 24.472876712328762,
+    "weather_rain_total": 2314.7,
+    "weather_rain_days": 191,
+    "weather_et0_total": 1255.5700000000002,
+    "weather_wind_mean": 11.075616438356164,
+    "weather_solarrad_total": 5952.97
+  },
+  "West tripura|2022 - 2023|Kharif": {
+    "weather_temp_mean": 28.274590163934427,
+    "weather_rain_total": 922.8000000000001,
+    "weather_rain_days": 106,
+    "weather_et0_total": 483.50000000000006,
+    "weather_wind_mean": 14.908196721311475,
+    "weather_solarrad_total": 2176.7800000000007
+  },
+  "West tripura|2022 - 2023|Rabi": {
+    "weather_temp_mean": 20.99197080291971,
+    "weather_rain_total": 98.3,
+    "weather_rain_days": 5,
+    "weather_et0_total": 420.83000000000004,
+    "weather_wind_mean": 10.205839416058392,
+    "weather_solarrad_total": 2116.6800000000003
+  },
+  "West tripura|2022 - 2023|Autumn": {
+    "weather_temp_mean": 26.51311475409836,
+    "weather_rain_total": 672.1999999999999,
+    "weather_rain_days": 70,
+    "weather_et0_total": 447.65999999999997,
+    "weather_wind_mean": 12.229508196721312,
+    "weather_solarrad_total": 2095.0499999999997
+  },
+  "West tripura|2022 - 2023|Summer": {
+    "weather_temp_mean": 27.35819672131148,
+    "weather_rain_total": 805.3,
+    "weather_rain_days": 74,
+    "weather_et0_total": 511.87,
+    "weather_wind_mean": 16.64016393442623,
+    "weather_solarrad_total": 2146.2099999999996
+  },
+  "West tripura|2022 - 2023|Winter": {
+    "weather_temp_mean": 20.34,
+    "weather_rain_total": 15.9,
+    "weather_rain_days": 1,
+    "weather_et0_total": 360.98,
+    "weather_wind_mean": 9.748333333333335,
+    "weather_solarrad_total": 1834.54
+  },
+  "West tripura|2022 - 2023|Whole Year": {
+    "weather_temp_mean": 25.09808219178082,
+    "weather_rain_total": 1692.1999999999998,
+    "weather_rain_days": 181,
+    "weather_et0_total": 1348.27,
+    "weather_wind_mean": 13.374246575342466,
+    "weather_solarrad_total": 6148.719999999999
+  },
+  "Dhalai|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.382786885245903,
+    "weather_rain_total": 938.5,
+    "weather_rain_days": 105,
+    "weather_et0_total": 413.62,
+    "weather_wind_mean": 12.63032786885246,
+    "weather_solarrad_total": 1955.28
+  },
+  "Dhalai|2021 - 2022|Rabi": {
+    "weather_temp_mean": 19.99124087591241,
+    "weather_rain_total": 347.1,
+    "weather_rain_days": 22,
+    "weather_et0_total": 381.49,
+    "weather_wind_mean": 9.162043795620438,
+    "weather_solarrad_total": 1986.4099999999999
+  },
+  "Dhalai|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.02295081967213,
+    "weather_rain_total": 522.6999999999999,
+    "weather_rain_days": 65,
+    "weather_et0_total": 406.46000000000004,
+    "weather_wind_mean": 9.942622950819674,
+    "weather_solarrad_total": 1967.71
+  },
+  "Dhalai|2021 - 2022|Summer": {
+    "weather_temp_mean": 26.581147540983608,
+    "weather_rain_total": 661.4,
+    "weather_rain_days": 64,
+    "weather_et0_total": 503.51000000000005,
+    "weather_wind_mean": 12.244262295081969,
+    "weather_solarrad_total": 2265.5000000000005
+  },
+  "Dhalai|2021 - 2022|Winter": {
+    "weather_temp_mean": 19.1275,
+    "weather_rain_total": 244.1,
+    "weather_rain_days": 15,
+    "weather_et0_total": 324.17999999999995,
+    "weather_wind_mean": 9.125833333333333,
+    "weather_solarrad_total": 1709.27
+  },
+  "Dhalai|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 24.47698630136986,
+    "weather_rain_total": 1633.5,
+    "weather_rain_days": 162,
+    "weather_et0_total": 1263.29,
+    "weather_wind_mean": 10.746575342465754,
+    "weather_solarrad_total": 6058.71
+  },
+  "Gomati|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.05983606557377,
+    "weather_rain_total": 1318.1000000000001,
+    "weather_rain_days": 117,
+    "weather_et0_total": 390.15,
+    "weather_wind_mean": 13.475409836065571,
+    "weather_solarrad_total": 1872.82
+  },
+  "Gomati|2021 - 2022|Rabi": {
+    "weather_temp_mean": 20.977372262773724,
+    "weather_rain_total": 213.5,
+    "weather_rain_days": 22,
+    "weather_et0_total": 422.8299999999999,
+    "weather_wind_mean": 10.297080291970802,
+    "weather_solarrad_total": 2046.25
+  },
+  "Gomati|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.120491803278686,
+    "weather_rain_total": 673.8,
+    "weather_rain_days": 79,
+    "weather_et0_total": 412.93,
+    "weather_wind_mean": 10.490983606557378,
+    "weather_solarrad_total": 1974.44
+  },
+  "Gomati|2021 - 2022|Summer": {
+    "weather_temp_mean": 27.642622950819668,
+    "weather_rain_total": 607.1,
+    "weather_rain_days": 54,
+    "weather_et0_total": 535.21,
+    "weather_wind_mean": 13.587704918032786,
+    "weather_solarrad_total": 2252.1499999999996
+  },
+  "Gomati|2021 - 2022|Winter": {
+    "weather_temp_mean": 20.2325,
+    "weather_rain_total": 107.60000000000002,
+    "weather_rain_days": 14,
+    "weather_et0_total": 365.76,
+    "weather_wind_mean": 10.328333333333335,
+    "weather_solarrad_total": 1774.6299999999999
+  },
+  "Gomati|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 25.120821917808215,
+    "weather_rain_total": 1737.3999999999999,
+    "weather_rain_days": 170,
+    "weather_et0_total": 1319.4099999999999,
+    "weather_wind_mean": 11.813972602739726,
+    "weather_solarrad_total": 6042.27
+  },
+  "Khowai|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.548360655737707,
+    "weather_rain_total": 1005.6999999999998,
+    "weather_rain_days": 108,
+    "weather_et0_total": 400.66,
+    "weather_wind_mean": 13.863934426229507,
+    "weather_solarrad_total": 1855.3400000000001
+  },
+  "Khowai|2021 - 2022|Rabi": {
+    "weather_temp_mean": 20.34160583941606,
+    "weather_rain_total": 347.59999999999997,
+    "weather_rain_days": 27,
+    "weather_et0_total": 386.98,
+    "weather_wind_mean": 9.932116788321169,
+    "weather_solarrad_total": 1971.9099999999999
+  },
+  "Khowai|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.271311475409835,
+    "weather_rain_total": 618.8,
+    "weather_rain_days": 70,
+    "weather_et0_total": 403.51,
+    "weather_wind_mean": 10.662295081967212,
+    "weather_solarrad_total": 1918.2700000000002
+  },
+  "Khowai|2021 - 2022|Summer": {
+    "weather_temp_mean": 27.256557377049177,
+    "weather_rain_total": 648.2,
+    "weather_rain_days": 60,
+    "weather_et0_total": 516.06,
+    "weather_wind_mean": 13.525409836065576,
+    "weather_solarrad_total": 2223.77
+  },
+  "Khowai|2021 - 2022|Winter": {
+    "weather_temp_mean": 19.504166666666666,
+    "weather_rain_total": 243.89999999999998,
+    "weather_rain_days": 19,
+    "weather_et0_total": 329.97,
+    "weather_wind_mean": 9.876666666666669,
+    "weather_solarrad_total": 1701.2400000000002
+  },
+  "Khowai|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 24.94876712328767,
+    "weather_rain_total": 1697.7,
+    "weather_rain_days": 164,
+    "weather_et0_total": 1277.5,
+    "weather_wind_mean": 11.744383561643838,
+    "weather_solarrad_total": 5929.530000000001
+  },
+  "North tripura|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.654918032786885,
+    "weather_rain_total": 1139.9,
+    "weather_rain_days": 108,
+    "weather_et0_total": 408.09999999999997,
+    "weather_wind_mean": 11.954098360655736,
+    "weather_solarrad_total": 1911.65
+  },
+  "North tripura|2021 - 2022|Rabi": {
+    "weather_temp_mean": 19.827007299270075,
+    "weather_rain_total": 309.9,
+    "weather_rain_days": 28,
+    "weather_et0_total": 371.88,
+    "weather_wind_mean": 9.81824817518248,
+    "weather_solarrad_total": 1937.1399999999999
+  },
+  "North tripura|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.20245901639344,
+    "weather_rain_total": 576.3,
+    "weather_rain_days": 67,
+    "weather_et0_total": 408.38000000000005,
+    "weather_wind_mean": 10.267213114754098,
+    "weather_solarrad_total": 1958.3600000000001
+  },
+  "North tripura|2021 - 2022|Summer": {
+    "weather_temp_mean": 26.57295081967213,
+    "weather_rain_total": 831.1,
+    "weather_rain_days": 67,
+    "weather_et0_total": 495.07,
+    "weather_wind_mean": 12.201639344262297,
+    "weather_solarrad_total": 2241.039999999999
+  },
+  "North tripura|2021 - 2022|Winter": {
+    "weather_temp_mean": 18.92,
+    "weather_rain_total": 227.0,
+    "weather_rain_days": 21,
+    "weather_et0_total": 313.9,
+    "weather_wind_mean": 9.6775,
+    "weather_solarrad_total": 1661.3999999999999
+  },
+  "North tripura|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 24.5427397260274,
+    "weather_rain_total": 1869.9,
+    "weather_rain_days": 168,
+    "weather_et0_total": 1251.17,
+    "weather_wind_mean": 10.832876712328767,
+    "weather_solarrad_total": 5993.68
+  },
+  "Sepahijala|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.516393442622952,
+    "weather_rain_total": 1210.0,
+    "weather_rain_days": 111,
+    "weather_et0_total": 394.44,
+    "weather_wind_mean": 15.058196721311477,
+    "weather_solarrad_total": 1858.8100000000002
+  },
+  "Sepahijala|2021 - 2022|Rabi": {
+    "weather_temp_mean": 20.58248175182482,
+    "weather_rain_total": 280.90000000000003,
+    "weather_rain_days": 21,
+    "weather_et0_total": 405.83000000000004,
+    "weather_wind_mean": 10.58029197080292,
+    "weather_solarrad_total": 2019.77
+  },
+  "Sepahijala|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.270491803278688,
+    "weather_rain_total": 705.5999999999999,
+    "weather_rain_days": 74,
+    "weather_et0_total": 408.31,
+    "weather_wind_mean": 11.608196721311474,
+    "weather_solarrad_total": 1951.49
+  },
+  "Sepahijala|2021 - 2022|Summer": {
+    "weather_temp_mean": 27.881967213114752,
+    "weather_rain_total": 568.2,
+    "weather_rain_days": 52,
+    "weather_et0_total": 534.0699999999999,
+    "weather_wind_mean": 14.459016393442623,
+    "weather_solarrad_total": 2247.8900000000003
+  },
+  "Sepahijala|2021 - 2022|Winter": {
+    "weather_temp_mean": 19.77,
+    "weather_rain_total": 164.39999999999998,
+    "weather_rain_days": 12,
+    "weather_et0_total": 348.23999999999995,
+    "weather_wind_mean": 10.465000000000002,
+    "weather_solarrad_total": 1747.3600000000001
+  },
+  "Sepahijala|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 25.213424657534247,
+    "weather_rain_total": 1722.6000000000001,
+    "weather_rain_days": 159,
+    "weather_et0_total": 1308.5300000000002,
+    "weather_wind_mean": 12.651780821917809,
+    "weather_solarrad_total": 5999.030000000001
+  },
+  "South tripura|2021 - 2022|Kharif": {
+    "weather_temp_mean": 26.83032786885246,
+    "weather_rain_total": 1556.1999999999998,
+    "weather_rain_days": 117,
+    "weather_et0_total": 379.62,
+    "weather_wind_mean": 13.271311475409835,
+    "weather_solarrad_total": 1843.5499999999997
+  },
+  "South tripura|2021 - 2022|Rabi": {
+    "weather_temp_mean": 21.18759124087591,
+    "weather_rain_total": 253.39999999999998,
+    "weather_rain_days": 22,
+    "weather_et0_total": 432.01,
+    "weather_wind_mean": 10.83941605839416,
+    "weather_solarrad_total": 2069.0299999999997
+  },
+  "South tripura|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.078688524590167,
+    "weather_rain_total": 789.5,
+    "weather_rain_days": 79,
+    "weather_et0_total": 411.05,
+    "weather_wind_mean": 10.714754098360658,
+    "weather_solarrad_total": 1966.77
+  },
+  "South tripura|2021 - 2022|Summer": {
+    "weather_temp_mean": 27.692622950819676,
+    "weather_rain_total": 668.4,
+    "weather_rain_days": 51,
+    "weather_et0_total": 541.33,
+    "weather_wind_mean": 13.76311475409836,
+    "weather_solarrad_total": 2244.92
+  },
+  "South tripura|2021 - 2022|Winter": {
+    "weather_temp_mean": 20.471666666666668,
+    "weather_rain_total": 136.3,
+    "weather_rain_days": 14,
+    "weather_et0_total": 374.36,
+    "weather_wind_mean": 10.838333333333333,
+    "weather_solarrad_total": 1795.12
+  },
+  "South tripura|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 25.189863013698627,
+    "weather_rain_total": 2019.4999999999998,
+    "weather_rain_days": 167,
+    "weather_et0_total": 1330.31,
+    "weather_wind_mean": 12.086575342465755,
+    "weather_solarrad_total": 6027.639999999999
+  },
+  "Unakoti|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.563934426229505,
+    "weather_rain_total": 1041.3999999999999,
+    "weather_rain_days": 107,
+    "weather_et0_total": 419.64000000000004,
+    "weather_wind_mean": 12.372950819672132,
+    "weather_solarrad_total": 1963.84
+  },
+  "Unakoti|2021 - 2022|Rabi": {
+    "weather_temp_mean": 20.348905109489053,
+    "weather_rain_total": 316.79999999999995,
+    "weather_rain_days": 23,
+    "weather_et0_total": 382.62,
+    "weather_wind_mean": 9.050364963503648,
+    "weather_solarrad_total": 1964.13
+  },
+  "Unakoti|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.269672131147537,
+    "weather_rain_total": 590.3,
+    "weather_rain_days": 68,
+    "weather_et0_total": 411.84,
+    "weather_wind_mean": 9.918852459016392,
+    "weather_solarrad_total": 1973.0700000000002
+  },
+  "Unakoti|2021 - 2022|Summer": {
+    "weather_temp_mean": 26.950819672131146,
+    "weather_rain_total": 717.1999999999999,
+    "weather_rain_days": 65,
+    "weather_et0_total": 515.2,
+    "weather_wind_mean": 12.565573770491806,
+    "weather_solarrad_total": 2275.4899999999993
+  },
+  "Unakoti|2021 - 2022|Winter": {
+    "weather_temp_mean": 19.498333333333335,
+    "weather_rain_total": 221.7,
+    "weather_rain_days": 17,
+    "weather_et0_total": 324.21999999999997,
+    "weather_wind_mean": 8.924166666666668,
+    "weather_solarrad_total": 1686.2600000000002
+  },
+  "Unakoti|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 24.843287671232876,
+    "weather_rain_total": 1763.6999999999998,
+    "weather_rain_days": 166,
+    "weather_et0_total": 1287.3899999999999,
+    "weather_wind_mean": 10.717534246575342,
+    "weather_solarrad_total": 6071.869999999999
+  },
+  "West tripura|2021 - 2022|Kharif": {
+    "weather_temp_mean": 27.854098360655744,
+    "weather_rain_total": 1100.6000000000001,
+    "weather_rain_days": 114,
+    "weather_et0_total": 400.18,
+    "weather_wind_mean": 15.171311475409835,
+    "weather_solarrad_total": 1829.9299999999998
+  },
+  "West tripura|2021 - 2022|Rabi": {
+    "weather_temp_mean": 20.452554744525546,
+    "weather_rain_total": 380.99999999999994,
+    "weather_rain_days": 25,
+    "weather_et0_total": 392.78,
+    "weather_wind_mean": 10.258394160583942,
+    "weather_solarrad_total": 1980.3400000000001
+  },
+  "West tripura|2021 - 2022|Autumn": {
+    "weather_temp_mean": 26.459016393442628,
+    "weather_rain_total": 709.3,
+    "weather_rain_days": 77,
+    "weather_et0_total": 406.33,
+    "weather_wind_mean": 11.426229508196721,
+    "weather_solarrad_total": 1922.71
+  },
+  "West tripura|2021 - 2022|Summer": {
+    "weather_temp_mean": 27.80163934426229,
+    "weather_rain_total": 559.9,
+    "weather_rain_days": 56,
+    "weather_et0_total": 522.5099999999999,
+    "weather_wind_mean": 14.192622950819674,
+    "weather_solarrad_total": 2210.7
+  },
+  "West tripura|2021 - 2022|Winter": {
+    "weather_temp_mean": 19.613333333333337,
+    "weather_rain_total": 243.3,
+    "weather_rain_days": 17,
+    "weather_et0_total": 335.15999999999997,
+    "weather_wind_mean": 10.128333333333334,
+    "weather_solarrad_total": 1709.04
+  },
+  "West tripura|2021 - 2022|Whole Year": {
+    "weather_temp_mean": 25.242191780821916,
+    "weather_rain_total": 1713.6000000000001,
+    "weather_rain_days": 165,
+    "weather_et0_total": 1287.5800000000002,
+    "weather_wind_mean": 12.401917808219178,
+    "weather_solarrad_total": 5900.92
+  },
+  "Dhalai|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.49508196721311,
+    "weather_rain_total": 894.4,
+    "weather_rain_days": 107,
+    "weather_et0_total": 412.94999999999993,
+    "weather_wind_mean": 13.140163934426232,
+    "weather_solarrad_total": 1952.46
+  },
+  "Dhalai|2020 - 2021|Rabi": {
+    "weather_temp_mean": 20.099999999999998,
+    "weather_rain_total": 218.7,
+    "weather_rain_days": 15,
+    "weather_et0_total": 392.59999999999997,
+    "weather_wind_mean": 8.802919708029197,
+    "weather_solarrad_total": 2075.55
+  },
+  "Dhalai|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.21393442622951,
+    "weather_rain_total": 672.0999999999999,
+    "weather_rain_days": 74,
+    "weather_et0_total": 398.3400000000001,
+    "weather_wind_mean": 10.004098360655737,
+    "weather_solarrad_total": 1928.7199999999998
+  },
+  "Dhalai|2020 - 2021|Summer": {
+    "weather_temp_mean": 25.723770491803275,
+    "weather_rain_total": 771.4,
+    "weather_rain_days": 66,
+    "weather_et0_total": 470.15,
+    "weather_wind_mean": 12.531967213114752,
+    "weather_solarrad_total": 2136.0
+  },
+  "Dhalai|2020 - 2021|Winter": {
+    "weather_temp_mean": 19.195833333333333,
+    "weather_rain_total": 25.9,
+    "weather_rain_days": 6,
+    "weather_et0_total": 343.77,
+    "weather_wind_mean": 8.764166666666664,
+    "weather_solarrad_total": 1841.29
+  },
+  "Dhalai|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.033060109289615,
+    "weather_rain_total": 1651.0,
+    "weather_rain_days": 171,
+    "weather_et0_total": 1207.3399999999997,
+    "weather_wind_mean": 10.919398907103826,
+    "weather_solarrad_total": 5847.86
+  },
+  "Gomati|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.291803278688523,
+    "weather_rain_total": 1218.3999999999999,
+    "weather_rain_days": 114,
+    "weather_et0_total": 402.26,
+    "weather_wind_mean": 14.563934426229508,
+    "weather_solarrad_total": 1933.11
+  },
+  "Gomati|2020 - 2021|Rabi": {
+    "weather_temp_mean": 21.054744525547445,
+    "weather_rain_total": 242.3,
+    "weather_rain_days": 17,
+    "weather_et0_total": 425.7,
+    "weather_wind_mean": 9.832116788321168,
+    "weather_solarrad_total": 2111.8
+  },
+  "Gomati|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.286065573770493,
+    "weather_rain_total": 793.5999999999999,
+    "weather_rain_days": 79,
+    "weather_et0_total": 401.52,
+    "weather_wind_mean": 11.674590163934427,
+    "weather_solarrad_total": 1934.5099999999998
+  },
+  "Gomati|2020 - 2021|Summer": {
+    "weather_temp_mean": 26.60901639344262,
+    "weather_rain_total": 732.0999999999999,
+    "weather_rain_days": 61,
+    "weather_et0_total": 492.8499999999999,
+    "weather_wind_mean": 13.209836065573771,
+    "weather_solarrad_total": 2156.82
+  },
+  "Gomati|2020 - 2021|Winter": {
+    "weather_temp_mean": 20.2525,
+    "weather_rain_total": 68.8,
+    "weather_rain_days": 7,
+    "weather_et0_total": 375.44,
+    "weather_wind_mean": 9.67,
+    "weather_solarrad_total": 1874.43
+  },
+  "Gomati|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.60765027322405,
+    "weather_rain_total": 1873.5,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1255.8399999999997,
+    "weather_wind_mean": 11.98360655737705,
+    "weather_solarrad_total": 5908.83
+  },
+  "Khowai|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.71803278688525,
+    "weather_rain_total": 951.7,
+    "weather_rain_days": 110,
+    "weather_et0_total": 411.2999999999999,
+    "weather_wind_mean": 14.787704918032786,
+    "weather_solarrad_total": 1910.79
+  },
+  "Khowai|2020 - 2021|Rabi": {
+    "weather_temp_mean": 20.686131386861312,
+    "weather_rain_total": 195.0,
+    "weather_rain_days": 13,
+    "weather_et0_total": 401.07,
+    "weather_wind_mean": 9.597080291970805,
+    "weather_solarrad_total": 2050.15
+  },
+  "Khowai|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.468852459016396,
+    "weather_rain_total": 661.0,
+    "weather_rain_days": 75,
+    "weather_et0_total": 398.34999999999997,
+    "weather_wind_mean": 11.289344262295081,
+    "weather_solarrad_total": 1887.2699999999998
+  },
+  "Khowai|2020 - 2021|Summer": {
+    "weather_temp_mean": 26.2483606557377,
+    "weather_rain_total": 772.5,
+    "weather_rain_days": 68,
+    "weather_et0_total": 479.13,
+    "weather_wind_mean": 13.338524590163935,
+    "weather_solarrad_total": 2113.17
+  },
+  "Khowai|2020 - 2021|Winter": {
+    "weather_temp_mean": 19.819166666666668,
+    "weather_rain_total": 21.400000000000002,
+    "weather_rain_days": 4,
+    "weather_et0_total": 351.84000000000003,
+    "weather_wind_mean": 9.424166666666668,
+    "weather_solarrad_total": 1818.4
+  },
+  "Khowai|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.46748633879781,
+    "weather_rain_total": 1694.2,
+    "weather_rain_days": 175,
+    "weather_et0_total": 1223.5700000000002,
+    "weather_wind_mean": 11.880054644808745,
+    "weather_solarrad_total": 5771.08
+  },
+  "North tripura|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.682786885245903,
+    "weather_rain_total": 1120.2,
+    "weather_rain_days": 115,
+    "weather_et0_total": 398.43,
+    "weather_wind_mean": 12.522131147540986,
+    "weather_solarrad_total": 1860.2400000000002
+  },
+  "North tripura|2020 - 2021|Rabi": {
+    "weather_temp_mean": 20.09124087591241,
+    "weather_rain_total": 268.3,
+    "weather_rain_days": 15,
+    "weather_et0_total": 390.59,
+    "weather_wind_mean": 9.267153284671535,
+    "weather_solarrad_total": 2066.33
+  },
+  "North tripura|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.385245901639344,
+    "weather_rain_total": 790.4000000000001,
+    "weather_rain_days": 78,
+    "weather_et0_total": 395.26,
+    "weather_wind_mean": 10.214754098360656,
+    "weather_solarrad_total": 1900.21
+  },
+  "North tripura|2020 - 2021|Summer": {
+    "weather_temp_mean": 25.945081967213117,
+    "weather_rain_total": 910.1,
+    "weather_rain_days": 70,
+    "weather_et0_total": 472.86000000000007,
+    "weather_wind_mean": 12.65737704918033,
+    "weather_solarrad_total": 2101.4699999999993
+  },
+  "North tripura|2020 - 2021|Winter": {
+    "weather_temp_mean": 19.165000000000003,
+    "weather_rain_total": 22.9,
+    "weather_rain_days": 6,
+    "weather_et0_total": 340.58,
+    "weather_wind_mean": 9.175833333333335,
+    "weather_solarrad_total": 1826.11
+  },
+  "North tripura|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.170491803278686,
+    "weather_rain_total": 1951.0,
+    "weather_rain_days": 180,
+    "weather_et0_total": 1197.6799999999998,
+    "weather_wind_mean": 11.057923497267758,
+    "weather_solarrad_total": 5732.37
+  },
+  "Sepahijala|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.740983606557375,
+    "weather_rain_total": 1207.6000000000001,
+    "weather_rain_days": 112,
+    "weather_et0_total": 411.22,
+    "weather_wind_mean": 16.21393442622951,
+    "weather_solarrad_total": 1945.7900000000002
+  },
+  "Sepahijala|2020 - 2021|Rabi": {
+    "weather_temp_mean": 20.909489051094887,
+    "weather_rain_total": 175.9,
+    "weather_rain_days": 15,
+    "weather_et0_total": 417.78,
+    "weather_wind_mean": 9.962043795620438,
+    "weather_solarrad_total": 2080.97
+  },
+  "Sepahijala|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.542622950819666,
+    "weather_rain_total": 734.3,
+    "weather_rain_days": 75,
+    "weather_et0_total": 407.24,
+    "weather_wind_mean": 12.533606557377048,
+    "weather_solarrad_total": 1943.78
+  },
+  "Sepahijala|2020 - 2021|Summer": {
+    "weather_temp_mean": 26.788524590163934,
+    "weather_rain_total": 792.4,
+    "weather_rain_days": 65,
+    "weather_et0_total": 493.66,
+    "weather_wind_mean": 14.395081967213114,
+    "weather_solarrad_total": 2155.92
+  },
+  "Sepahijala|2020 - 2021|Winter": {
+    "weather_temp_mean": 20.045833333333334,
+    "weather_rain_total": 25.1,
+    "weather_rain_days": 5,
+    "weather_et0_total": 367.23,
+    "weather_wind_mean": 9.686666666666667,
+    "weather_solarrad_total": 1845.1899999999998
+  },
+  "Sepahijala|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.72786885245902,
+    "weather_rain_total": 1843.4,
+    "weather_rain_days": 172,
+    "weather_et0_total": 1254.6799999999998,
+    "weather_wind_mean": 12.838524590163935,
+    "weather_solarrad_total": 5889.139999999999
+  },
+  "South tripura|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.050819672131148,
+    "weather_rain_total": 1376.2,
+    "weather_rain_days": 114,
+    "weather_et0_total": 390.57,
+    "weather_wind_mean": 14.444262295081966,
+    "weather_solarrad_total": 1896.7899999999997
+  },
+  "South tripura|2020 - 2021|Rabi": {
+    "weather_temp_mean": 21.362043795620437,
+    "weather_rain_total": 283.6,
+    "weather_rain_days": 16,
+    "weather_et0_total": 437.87,
+    "weather_wind_mean": 10.5,
+    "weather_solarrad_total": 2119.04
+  },
+  "South tripura|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.18934426229508,
+    "weather_rain_total": 990.3,
+    "weather_rain_days": 78,
+    "weather_et0_total": 392.91999999999996,
+    "weather_wind_mean": 11.770491803278686,
+    "weather_solarrad_total": 1892.68
+  },
+  "South tripura|2020 - 2021|Summer": {
+    "weather_temp_mean": 26.631147540983605,
+    "weather_rain_total": 760.0,
+    "weather_rain_days": 64,
+    "weather_et0_total": 497.24000000000007,
+    "weather_wind_mean": 13.310655737704916,
+    "weather_solarrad_total": 2162.0200000000004
+  },
+  "South tripura|2020 - 2021|Winter": {
+    "weather_temp_mean": 20.6175,
+    "weather_rain_total": 74.2,
+    "weather_rain_days": 6,
+    "weather_et0_total": 388.0,
+    "weather_wind_mean": 10.432500000000001,
+    "weather_solarrad_total": 1883.02
+  },
+  "South tripura|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.614207650273226,
+    "weather_rain_total": 2108.6,
+    "weather_rain_days": 176,
+    "weather_et0_total": 1257.7600000000002,
+    "weather_wind_mean": 12.202732240437157,
+    "weather_solarrad_total": 5893.3099999999995
+  },
+  "Unakoti|2020 - 2021|Kharif": {
+    "weather_temp_mean": 27.604918032786887,
+    "weather_rain_total": 973.3000000000001,
+    "weather_rain_days": 112,
+    "weather_et0_total": 412.85999999999996,
+    "weather_wind_mean": 12.75655737704918,
+    "weather_solarrad_total": 1929.65
+  },
+  "Unakoti|2020 - 2021|Rabi": {
+    "weather_temp_mean": 20.652554744525546,
+    "weather_rain_total": 277.70000000000005,
+    "weather_rain_days": 17,
+    "weather_et0_total": 400.84,
+    "weather_wind_mean": 8.548905109489052,
+    "weather_solarrad_total": 2077.43
+  },
+  "Unakoti|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.44836065573771,
+    "weather_rain_total": 793.9000000000001,
+    "weather_rain_days": 78,
+    "weather_et0_total": 402.35999999999996,
+    "weather_wind_mean": 9.97377049180328,
+    "weather_solarrad_total": 1926.69
+  },
+  "Unakoti|2020 - 2021|Summer": {
+    "weather_temp_mean": 26.0,
+    "weather_rain_total": 854.8,
+    "weather_rain_days": 70,
+    "weather_et0_total": 480.09000000000003,
+    "weather_wind_mean": 12.506557377049182,
+    "weather_solarrad_total": 2136.4500000000003
+  },
+  "Unakoti|2020 - 2021|Winter": {
+    "weather_temp_mean": 19.78916666666667,
+    "weather_rain_total": 35.0,
+    "weather_rain_days": 8,
+    "weather_et0_total": 350.90999999999997,
+    "weather_wind_mean": 8.4375,
+    "weather_solarrad_total": 1840.7
+  },
+  "Unakoti|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.33606557377049,
+    "weather_rain_total": 1858.0,
+    "weather_rain_days": 181,
+    "weather_et0_total": 1222.02,
+    "weather_wind_mean": 10.762021857923498,
+    "weather_solarrad_total": 5827.26
+  },
+  "West tripura|2020 - 2021|Kharif": {
+    "weather_temp_mean": 28.061475409836063,
+    "weather_rain_total": 1182.1,
+    "weather_rain_days": 112,
+    "weather_et0_total": 416.24,
+    "weather_wind_mean": 16.524590163934427,
+    "weather_solarrad_total": 1909.38
+  },
+  "West tripura|2020 - 2021|Rabi": {
+    "weather_temp_mean": 20.818978102189778,
+    "weather_rain_total": 183.9,
+    "weather_rain_days": 16,
+    "weather_et0_total": 405.62,
+    "weather_wind_mean": 9.786861313868613,
+    "weather_solarrad_total": 2049.08
+  },
+  "West tripura|2020 - 2021|Autumn": {
+    "weather_temp_mean": 26.705737704918036,
+    "weather_rain_total": 731.8000000000001,
+    "weather_rain_days": 77,
+    "weather_et0_total": 408.5399999999999,
+    "weather_wind_mean": 12.618852459016393,
+    "weather_solarrad_total": 1923.83
+  },
+  "West tripura|2020 - 2021|Summer": {
+    "weather_temp_mean": 26.645901639344263,
+    "weather_rain_total": 746.8000000000001,
+    "weather_rain_days": 66,
+    "weather_et0_total": 479.87999999999994,
+    "weather_wind_mean": 14.277049180327868,
+    "weather_solarrad_total": 2105.72
+  },
+  "West tripura|2020 - 2021|Winter": {
+    "weather_temp_mean": 19.930833333333332,
+    "weather_rain_total": 20.6,
+    "weather_rain_days": 6,
+    "weather_et0_total": 355.09999999999997,
+    "weather_wind_mean": 9.605833333333333,
+    "weather_solarrad_total": 1812.45
+  },
+  "West tripura|2020 - 2021|Whole Year": {
+    "weather_temp_mean": 24.739071038251367,
+    "weather_rain_total": 1789.6,
+    "weather_rain_days": 176,
+    "weather_et0_total": 1234.71,
+    "weather_wind_mean": 12.8051912568306,
+    "weather_solarrad_total": 5782.219999999999
+  },
+  "Dhalai|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.645081967213116,
+    "weather_rain_total": 878.2,
+    "weather_rain_days": 105,
+    "weather_et0_total": 435.95000000000005,
+    "weather_wind_mean": 13.103278688524592,
+    "weather_solarrad_total": 2038.1100000000001
+  },
+  "Dhalai|2019 - 2020|Rabi": {
+    "weather_temp_mean": 19.634057971014492,
+    "weather_rain_total": 201.49999999999997,
+    "weather_rain_days": 14,
+    "weather_et0_total": 369.66999999999996,
+    "weather_wind_mean": 8.480434782608695,
+    "weather_solarrad_total": 1971.04
+  },
+  "Dhalai|2019 - 2020|Autumn": {
+    "weather_temp_mean": 25.772131147540986,
+    "weather_rain_total": 675.6,
+    "weather_rain_days": 73,
+    "weather_et0_total": 390.60999999999996,
+    "weather_wind_mean": 9.905737704918034,
+    "weather_solarrad_total": 1903.08
+  },
+  "Dhalai|2019 - 2020|Summer": {
+    "weather_temp_mean": 26.19344262295082,
+    "weather_rain_total": 568.9,
+    "weather_rain_days": 70,
+    "weather_et0_total": 473.18999999999994,
+    "weather_wind_mean": 11.976229508196724,
+    "weather_solarrad_total": 2134.6900000000005
+  },
+  "Dhalai|2019 - 2020|Winter": {
+    "weather_temp_mean": 18.800826446280997,
+    "weather_rain_total": 88.29999999999998,
+    "weather_rain_days": 8,
+    "weather_et0_total": 318.78999999999996,
+    "weather_wind_mean": 8.472727272727273,
+    "weather_solarrad_total": 1721.79
+  },
+  "Dhalai|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.172054794520545,
+    "weather_rain_total": 1568.9,
+    "weather_rain_days": 176,
+    "weather_et0_total": 1219.55,
+    "weather_wind_mean": 10.947123287671234,
+    "weather_solarrad_total": 5852.3
+  },
+  "Gomati|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.40491803278688,
+    "weather_rain_total": 1161.0000000000002,
+    "weather_rain_days": 112,
+    "weather_et0_total": 414.98999999999995,
+    "weather_wind_mean": 13.91311475409836,
+    "weather_solarrad_total": 1961.2300000000002
+  },
+  "Gomati|2019 - 2020|Rabi": {
+    "weather_temp_mean": 20.69927536231884,
+    "weather_rain_total": 159.9,
+    "weather_rain_days": 13,
+    "weather_et0_total": 409.93,
+    "weather_wind_mean": 9.446376811594202,
+    "weather_solarrad_total": 2037.94
+  },
+  "Gomati|2019 - 2020|Autumn": {
+    "weather_temp_mean": 25.90983606557377,
+    "weather_rain_total": 759.1,
+    "weather_rain_days": 76,
+    "weather_et0_total": 395.52000000000004,
+    "weather_wind_mean": 10.615573770491803,
+    "weather_solarrad_total": 1917.1299999999999
+  },
+  "Gomati|2019 - 2020|Summer": {
+    "weather_temp_mean": 26.774590163934423,
+    "weather_rain_total": 466.70000000000005,
+    "weather_rain_days": 57,
+    "weather_et0_total": 497.34999999999997,
+    "weather_wind_mean": 13.101639344262296,
+    "weather_solarrad_total": 2206.7299999999996
+  },
+  "Gomati|2019 - 2020|Winter": {
+    "weather_temp_mean": 19.967768595041317,
+    "weather_rain_total": 89.80000000000001,
+    "weather_rain_days": 8,
+    "weather_et0_total": 356.60999999999996,
+    "weather_wind_mean": 9.59917355371901,
+    "weather_solarrad_total": 1781.12
+  },
+  "Gomati|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.714794520547944,
+    "weather_rain_total": 1756.5,
+    "weather_rain_days": 169,
+    "weather_et0_total": 1272.73,
+    "weather_wind_mean": 11.914520547945205,
+    "weather_solarrad_total": 5934.03
+  },
+  "Khowai|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.898360655737704,
+    "weather_rain_total": 957.4,
+    "weather_rain_days": 111,
+    "weather_et0_total": 429.28999999999996,
+    "weather_wind_mean": 14.281967213114752,
+    "weather_solarrad_total": 1966.23
+  },
+  "Khowai|2019 - 2020|Rabi": {
+    "weather_temp_mean": 20.184782608695652,
+    "weather_rain_total": 178.7,
+    "weather_rain_days": 16,
+    "weather_et0_total": 375.69,
+    "weather_wind_mean": 9.128260869565217,
+    "weather_solarrad_total": 1936.85
+  },
+  "Khowai|2019 - 2020|Autumn": {
+    "weather_temp_mean": 26.10409836065574,
+    "weather_rain_total": 722.3000000000001,
+    "weather_rain_days": 79,
+    "weather_et0_total": 388.09999999999997,
+    "weather_wind_mean": 10.794262295081966,
+    "weather_solarrad_total": 1853.9399999999998
+  },
+  "Khowai|2019 - 2020|Summer": {
+    "weather_temp_mean": 26.54344262295082,
+    "weather_rain_total": 544.9,
+    "weather_rain_days": 62,
+    "weather_et0_total": 478.13999999999993,
+    "weather_wind_mean": 13.076229508196722,
+    "weather_solarrad_total": 2118.9900000000002
+  },
+  "Khowai|2019 - 2020|Winter": {
+    "weather_temp_mean": 19.390909090909087,
+    "weather_rain_total": 83.4,
+    "weather_rain_days": 8,
+    "weather_et0_total": 325.31000000000006,
+    "weather_wind_mean": 9.165289256198347,
+    "weather_solarrad_total": 1694.6899999999998
+  },
+  "Khowai|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.565205479452054,
+    "weather_rain_total": 1609.1,
+    "weather_rain_days": 175,
+    "weather_et0_total": 1225.4099999999999,
+    "weather_wind_mean": 11.959999999999999,
+    "weather_solarrad_total": 5751.98
+  },
+  "North tripura|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.88606557377049,
+    "weather_rain_total": 1093.2,
+    "weather_rain_days": 107,
+    "weather_et0_total": 420.83,
+    "weather_wind_mean": 11.933606557377049,
+    "weather_solarrad_total": 1953.88
+  },
+  "North tripura|2019 - 2020|Rabi": {
+    "weather_temp_mean": 19.593478260869567,
+    "weather_rain_total": 214.89999999999998,
+    "weather_rain_days": 13,
+    "weather_et0_total": 360.9,
+    "weather_wind_mean": 9.054347826086957,
+    "weather_solarrad_total": 1926.56
+  },
+  "North tripura|2019 - 2020|Autumn": {
+    "weather_temp_mean": 25.957377049180334,
+    "weather_rain_total": 809.5999999999999,
+    "weather_rain_days": 73,
+    "weather_et0_total": 381.43999999999994,
+    "weather_wind_mean": 9.665573770491802,
+    "weather_solarrad_total": 1845.97
+  },
+  "North tripura|2019 - 2020|Summer": {
+    "weather_temp_mean": 26.015573770491805,
+    "weather_rain_total": 685.5,
+    "weather_rain_days": 72,
+    "weather_et0_total": 451.63,
+    "weather_wind_mean": 11.761475409836065,
+    "weather_solarrad_total": 2071.2700000000004
+  },
+  "North tripura|2019 - 2020|Winter": {
+    "weather_temp_mean": 18.74380165289256,
+    "weather_rain_total": 86.30000000000001,
+    "weather_rain_days": 7,
+    "weather_et0_total": 310.6000000000001,
+    "weather_wind_mean": 9.104132231404957,
+    "weather_solarrad_total": 1681.9199999999998
+  },
+  "North tripura|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.165479452054793,
+    "weather_rain_total": 1883.0,
+    "weather_rain_days": 180,
+    "weather_et0_total": 1178.96,
+    "weather_wind_mean": 10.836438356164381,
+    "weather_solarrad_total": 5689.22
+  },
+  "Sepahijala|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.89262295081967,
+    "weather_rain_total": 947.4999999999999,
+    "weather_rain_days": 107,
+    "weather_et0_total": 429.63000000000005,
+    "weather_wind_mean": 15.440983606557376,
+    "weather_solarrad_total": 1994.4400000000003
+  },
+  "Sepahijala|2019 - 2020|Rabi": {
+    "weather_temp_mean": 20.39782608695652,
+    "weather_rain_total": 159.29999999999998,
+    "weather_rain_days": 14,
+    "weather_et0_total": 391.34000000000003,
+    "weather_wind_mean": 9.588405797101451,
+    "weather_solarrad_total": 1982.22
+  },
+  "Sepahijala|2019 - 2020|Autumn": {
+    "weather_temp_mean": 26.126229508196722,
+    "weather_rain_total": 626.5,
+    "weather_rain_days": 75,
+    "weather_et0_total": 396.96000000000004,
+    "weather_wind_mean": 11.638524590163936,
+    "weather_solarrad_total": 1904.34
+  },
+  "Sepahijala|2019 - 2020|Summer": {
+    "weather_temp_mean": 27.031967213114754,
+    "weather_rain_total": 501.70000000000005,
+    "weather_rain_days": 56,
+    "weather_et0_total": 503.90000000000003,
+    "weather_wind_mean": 14.32950819672131,
+    "weather_solarrad_total": 2207.35
+  },
+  "Sepahijala|2019 - 2020|Winter": {
+    "weather_temp_mean": 19.605785123966943,
+    "weather_rain_total": 98.3,
+    "weather_rain_days": 6,
+    "weather_et0_total": 339.09000000000003,
+    "weather_wind_mean": 9.718181818181819,
+    "weather_solarrad_total": 1732.13
+  },
+  "Sepahijala|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.796438356164387,
+    "weather_rain_total": 1530.3000000000002,
+    "weather_rain_days": 166,
+    "weather_et0_total": 1267.91,
+    "weather_wind_mean": 12.877534246575342,
+    "weather_solarrad_total": 5896.62
+  },
+  "South tripura|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.178688524590164,
+    "weather_rain_total": 1436.1000000000001,
+    "weather_rain_days": 112,
+    "weather_et0_total": 408.46000000000004,
+    "weather_wind_mean": 14.018852459016394,
+    "weather_solarrad_total": 1950.99
+  },
+  "South tripura|2019 - 2020|Rabi": {
+    "weather_temp_mean": 20.871739130434783,
+    "weather_rain_total": 137.0,
+    "weather_rain_days": 13,
+    "weather_et0_total": 418.78999999999996,
+    "weather_wind_mean": 10.131884057971014,
+    "weather_solarrad_total": 2066.8399999999997
+  },
+  "South tripura|2019 - 2020|Autumn": {
+    "weather_temp_mean": 25.85655737704918,
+    "weather_rain_total": 840.0,
+    "weather_rain_days": 76,
+    "weather_et0_total": 394.79,
+    "weather_wind_mean": 11.005737704918031,
+    "weather_solarrad_total": 1919.96
+  },
+  "South tripura|2019 - 2020|Summer": {
+    "weather_temp_mean": 26.745081967213114,
+    "weather_rain_total": 494.0,
+    "weather_rain_days": 55,
+    "weather_et0_total": 500.74999999999994,
+    "weather_wind_mean": 13.119672131147542,
+    "weather_solarrad_total": 2224.5599999999995
+  },
+  "South tripura|2019 - 2020|Winter": {
+    "weather_temp_mean": 20.13305785123967,
+    "weather_rain_total": 88.9,
+    "weather_rain_days": 8,
+    "weather_et0_total": 363.0,
+    "weather_wind_mean": 10.337190082644629,
+    "weather_solarrad_total": 1798.61
+  },
+  "South tripura|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.768767123287667,
+    "weather_rain_total": 1981.3000000000002,
+    "weather_rain_days": 165,
+    "weather_et0_total": 1287.12,
+    "weather_wind_mean": 12.286575342465754,
+    "weather_solarrad_total": 5968.14
+  },
+  "Unakoti|2019 - 2020|Kharif": {
+    "weather_temp_mean": 27.794262295081968,
+    "weather_rain_total": 994.8,
+    "weather_rain_days": 105,
+    "weather_et0_total": 435.01,
+    "weather_wind_mean": 12.583606557377049,
+    "weather_solarrad_total": 2021.5099999999998
+  },
+  "Unakoti|2019 - 2020|Rabi": {
+    "weather_temp_mean": 20.045652173913044,
+    "weather_rain_total": 232.8,
+    "weather_rain_days": 15,
+    "weather_et0_total": 370.54999999999995,
+    "weather_wind_mean": 8.235507246376812,
+    "weather_solarrad_total": 1954.1399999999999
+  },
+  "Unakoti|2019 - 2020|Autumn": {
+    "weather_temp_mean": 26.009016393442625,
+    "weather_rain_total": 774.9000000000001,
+    "weather_rain_days": 75,
+    "weather_et0_total": 389.52000000000004,
+    "weather_wind_mean": 9.518852459016394,
+    "weather_solarrad_total": 1885.3400000000001
+  },
+  "Unakoti|2019 - 2020|Summer": {
+    "weather_temp_mean": 26.240163934426228,
+    "weather_rain_total": 652.9999999999999,
+    "weather_rain_days": 66,
+    "weather_et0_total": 468.30000000000007,
+    "weather_wind_mean": 11.622950819672132,
+    "weather_solarrad_total": 2119.2100000000005
+  },
+  "Unakoti|2019 - 2020|Winter": {
+    "weather_temp_mean": 19.22809917355372,
+    "weather_rain_total": 100.2,
+    "weather_rain_days": 9,
+    "weather_et0_total": 319.36,
+    "weather_wind_mean": 8.246280991735537,
+    "weather_solarrad_total": 1705.52
+  },
+  "Unakoti|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.37945205479452,
+    "weather_rain_total": 1776.0,
+    "weather_rain_days": 177,
+    "weather_et0_total": 1214.2,
+    "weather_wind_mean": 10.632054794520547,
+    "weather_solarrad_total": 5807.4800000000005
+  },
+  "West tripura|2019 - 2020|Kharif": {
+    "weather_temp_mean": 28.27540983606557,
+    "weather_rain_total": 890.6,
+    "weather_rain_days": 105,
+    "weather_et0_total": 439.77000000000004,
+    "weather_wind_mean": 15.681967213114755,
+    "weather_solarrad_total": 1978.95
+  },
+  "West tripura|2019 - 2020|Rabi": {
+    "weather_temp_mean": 20.293478260869566,
+    "weather_rain_total": 163.8,
+    "weather_rain_days": 16,
+    "weather_et0_total": 378.19000000000005,
+    "weather_wind_mean": 9.397101449275363,
+    "weather_solarrad_total": 1935.1599999999999
+  },
+  "West tripura|2019 - 2020|Autumn": {
+    "weather_temp_mean": 26.352459016393443,
+    "weather_rain_total": 639.5,
+    "weather_rain_days": 71,
+    "weather_et0_total": 397.1700000000001,
+    "weather_wind_mean": 11.609016393442623,
+    "weather_solarrad_total": 1878.0499999999997
+  },
+  "West tripura|2019 - 2020|Summer": {
+    "weather_temp_mean": 27.184426229508194,
+    "weather_rain_total": 505.59999999999997,
+    "weather_rain_days": 56,
+    "weather_et0_total": 501.21,
+    "weather_wind_mean": 14.524590163934427,
+    "weather_solarrad_total": 2147.28
+  },
+  "West tripura|2019 - 2020|Winter": {
+    "weather_temp_mean": 19.485123966942147,
+    "weather_rain_total": 97.4,
+    "weather_rain_days": 9,
+    "weather_et0_total": 326.40999999999997,
+    "weather_wind_mean": 9.43388429752066,
+    "weather_solarrad_total": 1687.13
+  },
+  "West tripura|2019 - 2020|Whole Year": {
+    "weather_temp_mean": 24.950136986301366,
+    "weather_rain_total": 1493.0,
+    "weather_rain_days": 164,
+    "weather_et0_total": 1262.82,
+    "weather_wind_mean": 12.927123287671233,
+    "weather_solarrad_total": 5786.360000000001
+  },
+  "Dhalai|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.618852459016395,
+    "weather_rain_total": 948.8,
+    "weather_rain_days": 112,
+    "weather_et0_total": 442.91999999999996,
+    "weather_wind_mean": 12.518852459016392,
+    "weather_solarrad_total": 2091.5599999999995
+  },
+  "Dhalai|2018 - 2019|Rabi": {
+    "weather_temp_mean": 19.56934306569343,
+    "weather_rain_total": 131.20000000000002,
+    "weather_rain_days": 15,
+    "weather_et0_total": 385.68000000000006,
+    "weather_wind_mean": 8.665693430656935,
+    "weather_solarrad_total": 2018.57
+  },
+  "Dhalai|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.302459016393442,
+    "weather_rain_total": 443.9,
+    "weather_rain_days": 69,
+    "weather_et0_total": 406.52,
+    "weather_wind_mean": 9.636065573770493,
+    "weather_solarrad_total": 1991.6899999999998
+  },
+  "Dhalai|2018 - 2019|Summer": {
+    "weather_temp_mean": 25.417213114754095,
+    "weather_rain_total": 1277.9,
+    "weather_rain_days": 89,
+    "weather_et0_total": 437.17,
+    "weather_wind_mean": 12.53032786885246,
+    "weather_solarrad_total": 2052.66
+  },
+  "Dhalai|2018 - 2019|Winter": {
+    "weather_temp_mean": 18.995833333333334,
+    "weather_rain_total": 110.80000000000001,
+    "weather_rain_days": 13,
+    "weather_et0_total": 330.84,
+    "weather_wind_mean": 8.816666666666666,
+    "weather_solarrad_total": 1742.46
+  },
+  "Dhalai|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 23.77205479452055,
+    "weather_rain_total": 1980.2,
+    "weather_rain_days": 191,
+    "weather_et0_total": 1193.85,
+    "weather_wind_mean": 10.810684931506849,
+    "weather_solarrad_total": 5840.59
+  },
+  "Gomati|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.3,
+    "weather_rain_total": 1096.5,
+    "weather_rain_days": 115,
+    "weather_et0_total": 418.66999999999996,
+    "weather_wind_mean": 13.711475409836064,
+    "weather_solarrad_total": 1997.5900000000001
+  },
+  "Gomati|2018 - 2019|Rabi": {
+    "weather_temp_mean": 20.483211678832117,
+    "weather_rain_total": 87.5,
+    "weather_rain_days": 13,
+    "weather_et0_total": 429.56,
+    "weather_wind_mean": 9.700000000000001,
+    "weather_solarrad_total": 2089.94
+  },
+  "Gomati|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.42295081967213,
+    "weather_rain_total": 599.4000000000001,
+    "weather_rain_days": 71,
+    "weather_et0_total": 410.27,
+    "weather_wind_mean": 10.776229508196721,
+    "weather_solarrad_total": 1995.9299999999998
+  },
+  "Gomati|2018 - 2019|Summer": {
+    "weather_temp_mean": 26.15737704918033,
+    "weather_rain_total": 963.0000000000001,
+    "weather_rain_days": 79,
+    "weather_et0_total": 448.96,
+    "weather_wind_mean": 13.305737704918032,
+    "weather_solarrad_total": 2046.1399999999999
+  },
+  "Gomati|2018 - 2019|Winter": {
+    "weather_temp_mean": 19.965,
+    "weather_rain_total": 56.099999999999994,
+    "weather_rain_days": 9,
+    "weather_et0_total": 372.61,
+    "weather_wind_mean": 9.832500000000001,
+    "weather_solarrad_total": 1811.7399999999998
+  },
+  "Gomati|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 24.198904109589037,
+    "weather_rain_total": 1876.4,
+    "weather_rain_days": 184,
+    "weather_et0_total": 1223.08,
+    "weather_wind_mean": 11.71123287671233,
+    "weather_solarrad_total": 5844.65
+  },
+  "Khowai|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.828688524590167,
+    "weather_rain_total": 881.9,
+    "weather_rain_days": 114,
+    "weather_et0_total": 435.83000000000004,
+    "weather_wind_mean": 13.710655737704917,
+    "weather_solarrad_total": 2022.57
+  },
+  "Khowai|2018 - 2019|Rabi": {
+    "weather_temp_mean": 20.124087591240876,
+    "weather_rain_total": 133.6,
+    "weather_rain_days": 14,
+    "weather_et0_total": 393.65999999999997,
+    "weather_wind_mean": 9.662043795620436,
+    "weather_solarrad_total": 2000.02
+  },
+  "Khowai|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.699999999999996,
+    "weather_rain_total": 493.0,
+    "weather_rain_days": 69,
+    "weather_et0_total": 406.90000000000003,
+    "weather_wind_mean": 10.550819672131146,
+    "weather_solarrad_total": 1952.24
+  },
+  "Khowai|2018 - 2019|Summer": {
+    "weather_temp_mean": 25.809016393442622,
+    "weather_rain_total": 1106.0000000000002,
+    "weather_rain_days": 88,
+    "weather_et0_total": 435.58000000000004,
+    "weather_wind_mean": 13.359836065573772,
+    "weather_solarrad_total": 2015.71
+  },
+  "Khowai|2018 - 2019|Winter": {
+    "weather_temp_mean": 19.529999999999998,
+    "weather_rain_total": 115.7,
+    "weather_rain_days": 10,
+    "weather_et0_total": 337.76,
+    "weather_wind_mean": 9.85,
+    "weather_solarrad_total": 1725.72
+  },
+  "Khowai|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 24.13205479452055,
+    "weather_rain_total": 1836.4,
+    "weather_rain_days": 192,
+    "weather_et0_total": 1192.49,
+    "weather_wind_mean": 11.724931506849316,
+    "weather_solarrad_total": 5736.92
+  },
+  "North tripura|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.907377049180322,
+    "weather_rain_total": 966.9999999999999,
+    "weather_rain_days": 111,
+    "weather_et0_total": 435.50000000000006,
+    "weather_wind_mean": 11.989344262295083,
+    "weather_solarrad_total": 2030.83
+  },
+  "North tripura|2018 - 2019|Rabi": {
+    "weather_temp_mean": 19.536496350364963,
+    "weather_rain_total": 123.6,
+    "weather_rain_days": 13,
+    "weather_et0_total": 383.09,
+    "weather_wind_mean": 9.311678832116787,
+    "weather_solarrad_total": 2018.4099999999999
+  },
+  "North tripura|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.451639344262297,
+    "weather_rain_total": 522.3000000000001,
+    "weather_rain_days": 65,
+    "weather_et0_total": 401.82,
+    "weather_wind_mean": 9.616393442622952,
+    "weather_solarrad_total": 1963.9800000000002
+  },
+  "North tripura|2018 - 2019|Summer": {
+    "weather_temp_mean": 25.395081967213113,
+    "weather_rain_total": 1194.3000000000002,
+    "weather_rain_days": 84,
+    "weather_et0_total": 422.15,
+    "weather_wind_mean": 12.154098360655736,
+    "weather_solarrad_total": 1985.97
+  },
+  "North tripura|2018 - 2019|Winter": {
+    "weather_temp_mean": 18.94,
+    "weather_rain_total": 98.4,
+    "weather_rain_days": 11,
+    "weather_et0_total": 326.97999999999996,
+    "weather_wind_mean": 9.466666666666667,
+    "weather_solarrad_total": 1735.64
+  },
+  "North tripura|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 23.827397260273973,
+    "weather_rain_total": 2000.3999999999999,
+    "weather_rain_days": 183,
+    "weather_et0_total": 1171.71,
+    "weather_wind_mean": 10.697534246575344,
+    "weather_solarrad_total": 5745.08
+  },
+  "Sepahijala|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.812295081967214,
+    "weather_rain_total": 875.5,
+    "weather_rain_days": 108,
+    "weather_et0_total": 432.52000000000004,
+    "weather_wind_mean": 15.21639344262295,
+    "weather_solarrad_total": 2019.4299999999998
+  },
+  "Sepahijala|2018 - 2019|Rabi": {
+    "weather_temp_mean": 20.206569343065695,
+    "weather_rain_total": 145.60000000000002,
+    "weather_rain_days": 13,
+    "weather_et0_total": 412.53999999999996,
+    "weather_wind_mean": 10.159854014598539,
+    "weather_solarrad_total": 2044.1500000000003
+  },
+  "Sepahijala|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.724590163934426,
+    "weather_rain_total": 560.3,
+    "weather_rain_days": 62,
+    "weather_et0_total": 416.49999999999994,
+    "weather_wind_mean": 11.645901639344263,
+    "weather_solarrad_total": 1996.6999999999998
+  },
+  "Sepahijala|2018 - 2019|Summer": {
+    "weather_temp_mean": 26.44918032786885,
+    "weather_rain_total": 986.9000000000001,
+    "weather_rain_days": 80,
+    "weather_et0_total": 452.58,
+    "weather_wind_mean": 14.12295081967213,
+    "weather_solarrad_total": 2055.9500000000003
+  },
+  "Sepahijala|2018 - 2019|Winter": {
+    "weather_temp_mean": 19.635,
+    "weather_rain_total": 98.6,
+    "weather_rain_days": 9,
+    "weather_et0_total": 355.53999999999996,
+    "weather_wind_mean": 10.336666666666668,
+    "weather_solarrad_total": 1767.0100000000002
+  },
+  "Sepahijala|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 24.379178082191785,
+    "weather_rain_total": 1842.5,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1225.52,
+    "weather_wind_mean": 12.524109589041096,
+    "weather_solarrad_total": 5835.35
+  },
+  "South tripura|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.036885245901637,
+    "weather_rain_total": 1372.2,
+    "weather_rain_days": 117,
+    "weather_et0_total": 403.82,
+    "weather_wind_mean": 13.8155737704918,
+    "weather_solarrad_total": 1946.7799999999997
+  },
+  "South tripura|2018 - 2019|Rabi": {
+    "weather_temp_mean": 20.913138686131386,
+    "weather_rain_total": 71.0,
+    "weather_rain_days": 10,
+    "weather_et0_total": 450.38,
+    "weather_wind_mean": 10.508029197080292,
+    "weather_solarrad_total": 2112.99
+  },
+  "South tripura|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.360655737704917,
+    "weather_rain_total": 673.1000000000001,
+    "weather_rain_days": 73,
+    "weather_et0_total": 405.35,
+    "weather_wind_mean": 11.071311475409836,
+    "weather_solarrad_total": 1969.1200000000001
+  },
+  "South tripura|2018 - 2019|Summer": {
+    "weather_temp_mean": 26.133606557377046,
+    "weather_rain_total": 1321.4,
+    "weather_rain_days": 80,
+    "weather_et0_total": 448.2,
+    "weather_wind_mean": 13.199180327868852,
+    "weather_solarrad_total": 2038.53
+  },
+  "South tripura|2018 - 2019|Winter": {
+    "weather_temp_mean": 20.44333333333333,
+    "weather_rain_total": 36.699999999999996,
+    "weather_rain_days": 6,
+    "weather_et0_total": 393.21000000000004,
+    "weather_wind_mean": 10.666666666666666,
+    "weather_solarrad_total": 1836.89
+  },
+  "South tripura|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 24.23972602739726,
+    "weather_rain_total": 2351.1000000000004,
+    "weather_rain_days": 185,
+    "weather_et0_total": 1225.23,
+    "weather_wind_mean": 11.94082191780822,
+    "weather_solarrad_total": 5822.3099999999995
+  },
+  "Unakoti|2018 - 2019|Kharif": {
+    "weather_temp_mean": 27.767213114754096,
+    "weather_rain_total": 1058.8,
+    "weather_rain_days": 114,
+    "weather_et0_total": 444.36,
+    "weather_wind_mean": 12.3,
+    "weather_solarrad_total": 2076.35
+  },
+  "Unakoti|2018 - 2019|Rabi": {
+    "weather_temp_mean": 19.970802919708028,
+    "weather_rain_total": 126.29999999999998,
+    "weather_rain_days": 15,
+    "weather_et0_total": 388.54,
+    "weather_wind_mean": 8.624087591240876,
+    "weather_solarrad_total": 2016.5300000000002
+  },
+  "Unakoti|2018 - 2019|Autumn": {
+    "weather_temp_mean": 25.496721311475405,
+    "weather_rain_total": 598.3,
+    "weather_rain_days": 71,
+    "weather_et0_total": 406.76,
+    "weather_wind_mean": 9.551639344262293,
+    "weather_solarrad_total": 1982.9899999999998
+  },
+  "Unakoti|2018 - 2019|Summer": {
+    "weather_temp_mean": 25.52377049180328,
+    "weather_rain_total": 1381.1000000000004,
+    "weather_rain_days": 83,
+    "weather_et0_total": 436.50000000000006,
+    "weather_wind_mean": 12.076229508196723,
+    "weather_solarrad_total": 2033.2300000000002
+  },
+  "Unakoti|2018 - 2019|Winter": {
+    "weather_temp_mean": 19.401666666666664,
+    "weather_rain_total": 103.1,
+    "weather_rain_days": 14,
+    "weather_et0_total": 333.0,
+    "weather_wind_mean": 8.761666666666667,
+    "weather_solarrad_total": 1739.0700000000002
+  },
+  "Unakoti|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 24.004931506849314,
+    "weather_rain_total": 2272.1000000000004,
+    "weather_rain_days": 188,
+    "weather_et0_total": 1197.65,
+    "weather_wind_mean": 10.561369863013699,
+    "weather_solarrad_total": 5817.789999999999
+  },
+  "West tripura|2018 - 2019|Kharif": {
+    "weather_temp_mean": 28.225409836065577,
+    "weather_rain_total": 798.2000000000002,
+    "weather_rain_days": 106,
+    "weather_et0_total": 446.13,
+    "weather_wind_mean": 15.366393442622948,
+    "weather_solarrad_total": 2022.42
+  },
+  "West tripura|2018 - 2019|Rabi": {
+    "weather_temp_mean": 20.345255474452557,
+    "weather_rain_total": 108.1,
+    "weather_rain_days": 12,
+    "weather_et0_total": 403.83000000000004,
+    "weather_wind_mean": 9.961313868613138,
+    "weather_solarrad_total": 2003.0200000000002
+  },
+  "West tripura|2018 - 2019|Autumn": {
+    "weather_temp_mean": 26.035245901639342,
+    "weather_rain_total": 422.0,
+    "weather_rain_days": 63,
+    "weather_et0_total": 421.02000000000004,
+    "weather_wind_mean": 11.706557377049181,
+    "weather_solarrad_total": 1983.12
+  },
+  "West tripura|2018 - 2019|Summer": {
+    "weather_temp_mean": 26.53196721311475,
+    "weather_rain_total": 1085.1000000000001,
+    "weather_rain_days": 80,
+    "weather_et0_total": 449.45,
+    "weather_wind_mean": 14.091803278688525,
+    "weather_solarrad_total": 2017.68
+  },
+  "West tripura|2018 - 2019|Winter": {
+    "weather_temp_mean": 19.759999999999998,
+    "weather_rain_total": 89.0,
+    "weather_rain_days": 8,
+    "weather_et0_total": 347.11,
+    "weather_wind_mean": 10.161666666666667,
+    "weather_solarrad_total": 1726.5299999999997
+  },
+  "West tripura|2018 - 2019|Whole Year": {
+    "weather_temp_mean": 24.5654794520548,
+    "weather_rain_total": 1769.3,
+    "weather_rain_days": 174,
+    "weather_et0_total": 1227.1299999999999,
+    "weather_wind_mean": 12.533972602739725,
+    "weather_solarrad_total": 5764.040000000001
+  },
+  "Dhalai|2017 - 2018|Kharif": {
+    "weather_temp_mean": 27.046721311475405,
+    "weather_rain_total": 1553.8,
+    "weather_rain_days": 112,
+    "weather_et0_total": 367.21,
+    "weather_wind_mean": 13.85,
+    "weather_solarrad_total": 1708.15
+  },
+  "Dhalai|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.213138686131387,
+    "weather_rain_total": 332.2,
+    "weather_rain_days": 20,
+    "weather_et0_total": 366.73,
+    "weather_wind_mean": 8.85985401459854,
+    "weather_solarrad_total": 1920.9099999999999
+  },
+  "Dhalai|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.572950819672133,
+    "weather_rain_total": 962.5,
+    "weather_rain_days": 80,
+    "weather_et0_total": 359.75,
+    "weather_wind_mean": 10.60655737704918,
+    "weather_solarrad_total": 1751.9
+  },
+  "Dhalai|2017 - 2018|Summer": {
+    "weather_temp_mean": 25.487704918032787,
+    "weather_rain_total": 1544.7,
+    "weather_rain_days": 91,
+    "weather_et0_total": 438.9,
+    "weather_wind_mean": 14.077049180327869,
+    "weather_solarrad_total": 2093.75
+  },
+  "Dhalai|2017 - 2018|Winter": {
+    "weather_temp_mean": 19.59,
+    "weather_rain_total": 127.0,
+    "weather_rain_days": 10,
+    "weather_et0_total": 323.47,
+    "weather_wind_mean": 8.671666666666669,
+    "weather_solarrad_total": 1709.56
+  },
+  "Dhalai|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.164109589041097,
+    "weather_rain_total": 2986.1000000000004,
+    "weather_rain_days": 207,
+    "weather_et0_total": 1160.95,
+    "weather_wind_mean": 11.775068493150684,
+    "weather_solarrad_total": 5685.76
+  },
+  "Gomati|2017 - 2018|Kharif": {
+    "weather_temp_mean": 26.75573770491803,
+    "weather_rain_total": 1664.0,
+    "weather_rain_days": 115,
+    "weather_et0_total": 348.49,
+    "weather_wind_mean": 14.027049180327868,
+    "weather_solarrad_total": 1648.1999999999998
+  },
+  "Gomati|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.845985401459856,
+    "weather_rain_total": 357.49999999999994,
+    "weather_rain_days": 18,
+    "weather_et0_total": 392.92999999999995,
+    "weather_wind_mean": 9.435036496350364,
+    "weather_solarrad_total": 1973.89
+  },
+  "Gomati|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.6344262295082,
+    "weather_rain_total": 1013.1999999999999,
+    "weather_rain_days": 80,
+    "weather_et0_total": 360.94000000000005,
+    "weather_wind_mean": 10.881967213114756,
+    "weather_solarrad_total": 1752.8700000000001
+  },
+  "Gomati|2017 - 2018|Summer": {
+    "weather_temp_mean": 26.112295081967215,
+    "weather_rain_total": 1192.7,
+    "weather_rain_days": 77,
+    "weather_et0_total": 452.17,
+    "weather_wind_mean": 15.168032786885245,
+    "weather_solarrad_total": 2090.76
+  },
+  "Gomati|2017 - 2018|Winter": {
+    "weather_temp_mean": 20.28416666666667,
+    "weather_rain_total": 146.9,
+    "weather_rain_days": 9,
+    "weather_et0_total": 347.3,
+    "weather_wind_mean": 9.204166666666667,
+    "weather_solarrad_total": 1751.8999999999999
+  },
+  "Gomati|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.52821917808219,
+    "weather_rain_total": 2807.5,
+    "weather_rain_days": 194,
+    "weather_et0_total": 1190.82,
+    "weather_wind_mean": 12.52849315068493,
+    "weather_solarrad_total": 5706.17
+  },
+  "Khowai|2017 - 2018|Kharif": {
+    "weather_temp_mean": 27.21065573770492,
+    "weather_rain_total": 1470.1000000000001,
+    "weather_rain_days": 116,
+    "weather_et0_total": 355.3,
+    "weather_wind_mean": 14.995901639344265,
+    "weather_solarrad_total": 1620.6000000000001
+  },
+  "Khowai|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.572992700729927,
+    "weather_rain_total": 295.9,
+    "weather_rain_days": 21,
+    "weather_et0_total": 369.55,
+    "weather_wind_mean": 9.615328467153285,
+    "weather_solarrad_total": 1904.8700000000003
+  },
+  "Khowai|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.857377049180332,
+    "weather_rain_total": 853.3,
+    "weather_rain_days": 84,
+    "weather_et0_total": 356.05,
+    "weather_wind_mean": 11.355737704918031,
+    "weather_solarrad_total": 1700.3999999999999
+  },
+  "Khowai|2017 - 2018|Summer": {
+    "weather_temp_mean": 25.845901639344262,
+    "weather_rain_total": 1484.2,
+    "weather_rain_days": 91,
+    "weather_et0_total": 438.45,
+    "weather_wind_mean": 15.013114754098362,
+    "weather_solarrad_total": 2059.69
+  },
+  "Khowai|2017 - 2018|Winter": {
+    "weather_temp_mean": 19.9625,
+    "weather_rain_total": 124.80000000000001,
+    "weather_rain_days": 11,
+    "weather_et0_total": 325.54,
+    "weather_wind_mean": 9.443333333333333,
+    "weather_solarrad_total": 1694.68
+  },
+  "Khowai|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.477808219178087,
+    "weather_rain_total": 2859.6,
+    "weather_rain_days": 211,
+    "weather_et0_total": 1155.2200000000003,
+    "weather_wind_mean": 12.712876712328766,
+    "weather_solarrad_total": 5572.28
+  },
+  "North tripura|2017 - 2018|Kharif": {
+    "weather_temp_mean": 27.27786885245902,
+    "weather_rain_total": 1956.8,
+    "weather_rain_days": 119,
+    "weather_et0_total": 350.77,
+    "weather_wind_mean": 13.173770491803278,
+    "weather_solarrad_total": 1605.28
+  },
+  "North tripura|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.17810218978102,
+    "weather_rain_total": 321.9,
+    "weather_rain_days": 18,
+    "weather_et0_total": 362.49,
+    "weather_wind_mean": 9.345985401459854,
+    "weather_solarrad_total": 1905.45
+  },
+  "North tripura|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.774590163934427,
+    "weather_rain_total": 1202.2,
+    "weather_rain_days": 84,
+    "weather_et0_total": 352.12,
+    "weather_wind_mean": 10.798360655737703,
+    "weather_solarrad_total": 1689.59
+  },
+  "North tripura|2017 - 2018|Summer": {
+    "weather_temp_mean": 25.266393442622952,
+    "weather_rain_total": 2011.1999999999998,
+    "weather_rain_days": 97,
+    "weather_et0_total": 408.04,
+    "weather_wind_mean": 13.454918032786885,
+    "weather_solarrad_total": 1956.91
+  },
+  "North tripura|2017 - 2018|Winter": {
+    "weather_temp_mean": 19.540000000000003,
+    "weather_rain_total": 128.5,
+    "weather_rain_days": 10,
+    "weather_et0_total": 318.88,
+    "weather_wind_mean": 9.115000000000002,
+    "weather_solarrad_total": 1692.6299999999999
+  },
+  "North tripura|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.15068493150685,
+    "weather_rain_total": 3804.6000000000004,
+    "weather_rain_days": 218,
+    "weather_et0_total": 1111.3000000000002,
+    "weather_wind_mean": 11.654520547945204,
+    "weather_solarrad_total": 5439.88
+  },
+  "Sepahijala|2017 - 2018|Kharif": {
+    "weather_temp_mean": 27.291803278688526,
+    "weather_rain_total": 1631.2,
+    "weather_rain_days": 117,
+    "weather_et0_total": 364.59,
+    "weather_wind_mean": 15.898360655737706,
+    "weather_solarrad_total": 1673.3
+  },
+  "Sepahijala|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.713868613138686,
+    "weather_rain_total": 341.90000000000003,
+    "weather_rain_days": 18,
+    "weather_et0_total": 384.86,
+    "weather_wind_mean": 9.901459854014599,
+    "weather_solarrad_total": 1946.89
+  },
+  "Sepahijala|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.991803278688526,
+    "weather_rain_total": 949.3,
+    "weather_rain_days": 82,
+    "weather_et0_total": 371.11,
+    "weather_wind_mean": 12.032786885245901,
+    "weather_solarrad_total": 1759.03
+  },
+  "Sepahijala|2017 - 2018|Summer": {
+    "weather_temp_mean": 26.365573770491807,
+    "weather_rain_total": 1261.8,
+    "weather_rain_days": 82,
+    "weather_et0_total": 453.95,
+    "weather_wind_mean": 16.20655737704918,
+    "weather_solarrad_total": 2094.57
+  },
+  "Sepahijala|2017 - 2018|Winter": {
+    "weather_temp_mean": 20.09666666666667,
+    "weather_rain_total": 158.8,
+    "weather_rain_days": 9,
+    "weather_et0_total": 337.98,
+    "weather_wind_mean": 9.556666666666667,
+    "weather_solarrad_total": 1725.0700000000002
+  },
+  "Sepahijala|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.698630136986303,
+    "weather_rain_total": 2788.0,
+    "weather_rain_days": 202,
+    "weather_et0_total": 1197.77,
+    "weather_wind_mean": 13.556164383561644,
+    "weather_solarrad_total": 5702.049999999999
+  },
+  "South tripura|2017 - 2018|Kharif": {
+    "weather_temp_mean": 26.53688524590164,
+    "weather_rain_total": 1729.8,
+    "weather_rain_days": 117,
+    "weather_et0_total": 337.92,
+    "weather_wind_mean": 14.472131147540983,
+    "weather_solarrad_total": 1611.1299999999999
+  },
+  "South tripura|2017 - 2018|Rabi": {
+    "weather_temp_mean": 21.041605839416057,
+    "weather_rain_total": 378.1,
+    "weather_rain_days": 15,
+    "weather_et0_total": 400.25,
+    "weather_wind_mean": 9.82919708029197,
+    "weather_solarrad_total": 1989.0900000000001
+  },
+  "South tripura|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.51967213114754,
+    "weather_rain_total": 1121.8999999999999,
+    "weather_rain_days": 80,
+    "weather_et0_total": 353.70000000000005,
+    "weather_wind_mean": 11.075409836065575,
+    "weather_solarrad_total": 1727.88
+  },
+  "South tripura|2017 - 2018|Summer": {
+    "weather_temp_mean": 26.04344262295082,
+    "weather_rain_total": 1086.4999999999998,
+    "weather_rain_days": 73,
+    "weather_et0_total": 453.92999999999995,
+    "weather_wind_mean": 15.134426229508195,
+    "weather_solarrad_total": 2105.37
+  },
+  "South tripura|2017 - 2018|Winter": {
+    "weather_temp_mean": 20.502499999999998,
+    "weather_rain_total": 169.0,
+    "weather_rain_days": 7,
+    "weather_et0_total": 354.19,
+    "weather_wind_mean": 9.667499999999999,
+    "weather_solarrad_total": 1765.3200000000002
+  },
+  "South tripura|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.501917808219176,
+    "weather_rain_total": 2877.1000000000004,
+    "weather_rain_days": 189,
+    "weather_et0_total": 1189.67,
+    "weather_wind_mean": 12.78876712328767,
+    "weather_solarrad_total": 5693.07
+  },
+  "Unakoti|2017 - 2018|Kharif": {
+    "weather_temp_mean": 27.182786885245903,
+    "weather_rain_total": 1976.9,
+    "weather_rain_days": 118,
+    "weather_et0_total": 367.77,
+    "weather_wind_mean": 13.46639344262295,
+    "weather_solarrad_total": 1688.8300000000002
+  },
+  "Unakoti|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.634306569343067,
+    "weather_rain_total": 377.2,
+    "weather_rain_days": 19,
+    "weather_et0_total": 369.10999999999996,
+    "weather_wind_mean": 8.942335766423357,
+    "weather_solarrad_total": 1912.85
+  },
+  "Unakoti|2017 - 2018|Autumn": {
+    "weather_temp_mean": 25.77950819672131,
+    "weather_rain_total": 1328.6,
+    "weather_rain_days": 85,
+    "weather_et0_total": 360.91,
+    "weather_wind_mean": 10.684426229508194,
+    "weather_solarrad_total": 1732.8099999999997
+  },
+  "Unakoti|2017 - 2018|Summer": {
+    "weather_temp_mean": 25.552459016393442,
+    "weather_rain_total": 1741.5,
+    "weather_rain_days": 92,
+    "weather_et0_total": 432.7,
+    "weather_wind_mean": 13.910655737704918,
+    "weather_solarrad_total": 2049.31
+  },
+  "Unakoti|2017 - 2018|Winter": {
+    "weather_temp_mean": 20.0475,
+    "weather_rain_total": 152.10000000000002,
+    "weather_rain_days": 10,
+    "weather_et0_total": 325.51,
+    "weather_wind_mean": 8.671666666666665,
+    "weather_solarrad_total": 1701.97
+  },
+  "Unakoti|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.403561643835616,
+    "weather_rain_total": 3639.2,
+    "weather_rain_days": 213,
+    "weather_et0_total": 1158.4,
+    "weather_wind_mean": 11.693424657534248,
+    "weather_solarrad_total": 5609.58
+  },
+  "West tripura|2017 - 2018|Kharif": {
+    "weather_temp_mean": 27.631147540983612,
+    "weather_rain_total": 1656.5,
+    "weather_rain_days": 113,
+    "weather_et0_total": 370.17,
+    "weather_wind_mean": 16.3172131147541,
+    "weather_solarrad_total": 1649.6499999999999
+  },
+  "West tripura|2017 - 2018|Rabi": {
+    "weather_temp_mean": 20.73795620437956,
+    "weather_rain_total": 337.49999999999994,
+    "weather_rain_days": 17,
+    "weather_et0_total": 375.53,
+    "weather_wind_mean": 9.879562043795621,
+    "weather_solarrad_total": 1904.1399999999999
+  },
+  "West tripura|2017 - 2018|Autumn": {
+    "weather_temp_mean": 26.200819672131146,
+    "weather_rain_total": 970.1,
+    "weather_rain_days": 77,
+    "weather_et0_total": 368.87,
+    "weather_wind_mean": 12.17950819672131,
+    "weather_solarrad_total": 1725.2200000000003
+  },
+  "West tripura|2017 - 2018|Summer": {
+    "weather_temp_mean": 26.413114754098363,
+    "weather_rain_total": 1362.4999999999998,
+    "weather_rain_days": 78,
+    "weather_et0_total": 451.55999999999995,
+    "weather_wind_mean": 16.24344262295082,
+    "weather_solarrad_total": 2074.51
+  },
+  "West tripura|2017 - 2018|Winter": {
+    "weather_temp_mean": 20.11583333333333,
+    "weather_rain_total": 119.69999999999999,
+    "weather_rain_days": 9,
+    "weather_et0_total": 329.5,
+    "weather_wind_mean": 9.585833333333335,
+    "weather_solarrad_total": 1686.9499999999998
+  },
+  "West tripura|2017 - 2018|Whole Year": {
+    "weather_temp_mean": 24.821369863013697,
+    "weather_rain_total": 2904.7999999999997,
+    "weather_rain_days": 192,
+    "weather_et0_total": 1188.91,
+    "weather_wind_mean": 13.648219178082194,
+    "weather_solarrad_total": 5620.67
+  },
+  "Dhalai|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.527868852459015,
+    "weather_rain_total": 843.9,
+    "weather_rain_days": 103,
+    "weather_et0_total": 392.64,
+    "weather_wind_mean": 10.10409836065574,
+    "weather_solarrad_total": 1818.74
+  },
+  "Dhalai|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.286131386861314,
+    "weather_rain_total": 224.00000000000003,
+    "weather_rain_days": 11,
+    "weather_et0_total": 419.28,
+    "weather_wind_mean": 8.244525547445255,
+    "weather_solarrad_total": 2176.66
+  },
+  "Dhalai|2016 - 2017|Autumn": {
+    "weather_temp_mean": 26.10491803278688,
+    "weather_rain_total": 717.4,
+    "weather_rain_days": 70,
+    "weather_et0_total": 375.58000000000004,
+    "weather_wind_mean": 8.154098360655738,
+    "weather_solarrad_total": 1812.11
+  },
+  "Dhalai|2016 - 2017|Summer": {
+    "weather_temp_mean": 26.478688524590165,
+    "weather_rain_total": 1195.5,
+    "weather_rain_days": 84,
+    "weather_et0_total": 448.77000000000004,
+    "weather_wind_mean": 11.495081967213116,
+    "weather_solarrad_total": 2076.79
+  },
+  "Dhalai|2016 - 2017|Winter": {
+    "weather_temp_mean": 20.579166666666666,
+    "weather_rain_total": 202.89999999999998,
+    "weather_rain_days": 7,
+    "weather_et0_total": 363.4,
+    "weather_wind_mean": 8.422500000000001,
+    "weather_solarrad_total": 1904.5
+  },
+  "Dhalai|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 24.793442622950817,
+    "weather_rain_total": 2195.2,
+    "weather_rain_days": 192,
+    "weather_et0_total": 1175.25,
+    "weather_wind_mean": 9.572677595628415,
+    "weather_solarrad_total": 5675.759999999999
+  },
+  "Gomati|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.072131147540986,
+    "weather_rain_total": 1168.8999999999999,
+    "weather_rain_days": 100,
+    "weather_et0_total": 382.96999999999997,
+    "weather_wind_mean": 12.109836065573772,
+    "weather_solarrad_total": 1805.59
+  },
+  "Gomati|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.78759124087591,
+    "weather_rain_total": 309.9,
+    "weather_rain_days": 13,
+    "weather_et0_total": 443.18,
+    "weather_wind_mean": 8.801459854014599,
+    "weather_solarrad_total": 2226.17
+  },
+  "Gomati|2016 - 2017|Autumn": {
+    "weather_temp_mean": 25.880327868852454,
+    "weather_rain_total": 1016.5999999999999,
+    "weather_rain_days": 71,
+    "weather_et0_total": 376.21,
+    "weather_wind_mean": 9.429508196721311,
+    "weather_solarrad_total": 1829.2399999999998
+  },
+  "Gomati|2016 - 2017|Summer": {
+    "weather_temp_mean": 27.06393442622951,
+    "weather_rain_total": 879.8000000000001,
+    "weather_rain_days": 75,
+    "weather_et0_total": 472.33000000000004,
+    "weather_wind_mean": 12.941803278688525,
+    "weather_solarrad_total": 2150.1099999999997
+  },
+  "Gomati|2016 - 2017|Winter": {
+    "weather_temp_mean": 21.114166666666666,
+    "weather_rain_total": 270.0,
+    "weather_rain_days": 6,
+    "weather_et0_total": 386.5,
+    "weather_wind_mean": 9.041666666666666,
+    "weather_solarrad_total": 1951.8200000000002
+  },
+  "Gomati|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 25.030327868852456,
+    "weather_rain_total": 2317.1,
+    "weather_rain_days": 185,
+    "weather_et0_total": 1198.5900000000001,
+    "weather_wind_mean": 10.766120218579234,
+    "weather_solarrad_total": 5750.280000000001
+  },
+  "Khowai|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.764754098360658,
+    "weather_rain_total": 1098.6,
+    "weather_rain_days": 105,
+    "weather_et0_total": 403.30000000000007,
+    "weather_wind_mean": 13.013934426229511,
+    "weather_solarrad_total": 1840.1799999999996
+  },
+  "Khowai|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.497810218978103,
+    "weather_rain_total": 223.9,
+    "weather_rain_days": 13,
+    "weather_et0_total": 425.36,
+    "weather_wind_mean": 8.978102189781023,
+    "weather_solarrad_total": 2185.83
+  },
+  "Khowai|2016 - 2017|Autumn": {
+    "weather_temp_mean": 26.314754098360655,
+    "weather_rain_total": 925.3000000000001,
+    "weather_rain_days": 76,
+    "weather_et0_total": 385.05,
+    "weather_wind_mean": 10.055737704918032,
+    "weather_solarrad_total": 1827.89
+  },
+  "Khowai|2016 - 2017|Summer": {
+    "weather_temp_mean": 26.986885245901632,
+    "weather_rain_total": 980.4,
+    "weather_rain_days": 80,
+    "weather_et0_total": 466.71000000000004,
+    "weather_wind_mean": 13.828688524590165,
+    "weather_solarrad_total": 2114.1
+  },
+  "Khowai|2016 - 2017|Winter": {
+    "weather_temp_mean": 20.7775,
+    "weather_rain_total": 200.3,
+    "weather_rain_days": 8,
+    "weather_et0_total": 368.69999999999993,
+    "weather_wind_mean": 9.248333333333331,
+    "weather_solarrad_total": 1912.8700000000001
+  },
+  "Khowai|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 25.116120218579233,
+    "weather_rain_total": 2253.7,
+    "weather_rain_days": 192,
+    "weather_et0_total": 1207.43,
+    "weather_wind_mean": 11.46448087431694,
+    "weather_solarrad_total": 5725.259999999999
+  },
+  "North tripura|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.7655737704918,
+    "weather_rain_total": 1304.5,
+    "weather_rain_days": 111,
+    "weather_et0_total": 381.78000000000003,
+    "weather_wind_mean": 9.70983606557377,
+    "weather_solarrad_total": 1763.12
+  },
+  "North tripura|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.314598540145983,
+    "weather_rain_total": 203.2,
+    "weather_rain_days": 16,
+    "weather_et0_total": 414.40999999999997,
+    "weather_wind_mean": 9.067153284671534,
+    "weather_solarrad_total": 2165.2200000000003
+  },
+  "North tripura|2016 - 2017|Autumn": {
+    "weather_temp_mean": 26.383606557377046,
+    "weather_rain_total": 894.4,
+    "weather_rain_days": 79,
+    "weather_et0_total": 373.08,
+    "weather_wind_mean": 8.39344262295082,
+    "weather_solarrad_total": 1794.9099999999999
+  },
+  "North tripura|2016 - 2017|Summer": {
+    "weather_temp_mean": 26.110655737704917,
+    "weather_rain_total": 1909.1000000000001,
+    "weather_rain_days": 96,
+    "weather_et0_total": 421.54999999999995,
+    "weather_wind_mean": 11.100819672131147,
+    "weather_solarrad_total": 1982.75
+  },
+  "North tripura|2016 - 2017|Winter": {
+    "weather_temp_mean": 20.567500000000003,
+    "weather_rain_total": 176.60000000000002,
+    "weather_rain_days": 9,
+    "weather_et0_total": 357.89,
+    "weather_wind_mean": 9.260833333333332,
+    "weather_solarrad_total": 1891.3400000000001
+  },
+  "North tripura|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 24.787158469945357,
+    "weather_rain_total": 3240.6,
+    "weather_rain_days": 216,
+    "weather_et0_total": 1139.9699999999998,
+    "weather_wind_mean": 9.624590163934426,
+    "weather_solarrad_total": 5543.620000000001
+  },
+  "Sepahijala|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.42704918032787,
+    "weather_rain_total": 1076.1,
+    "weather_rain_days": 101,
+    "weather_et0_total": 392.45,
+    "weather_wind_mean": 14.44918032786885,
+    "weather_solarrad_total": 1801.3200000000004
+  },
+  "Sepahijala|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.458394160583943,
+    "weather_rain_total": 264.4,
+    "weather_rain_days": 13,
+    "weather_et0_total": 441.82,
+    "weather_wind_mean": 9.475182481751824,
+    "weather_solarrad_total": 2226.12
+  },
+  "Sepahijala|2016 - 2017|Autumn": {
+    "weather_temp_mean": 26.007377049180327,
+    "weather_rain_total": 882.0,
+    "weather_rain_days": 73,
+    "weather_et0_total": 383.26,
+    "weather_wind_mean": 11.067213114754098,
+    "weather_solarrad_total": 1822.02
+  },
+  "Sepahijala|2016 - 2017|Summer": {
+    "weather_temp_mean": 27.339344262295082,
+    "weather_rain_total": 849.6,
+    "weather_rain_days": 73,
+    "weather_et0_total": 487.99999999999994,
+    "weather_wind_mean": 14.799180327868852,
+    "weather_solarrad_total": 2178.57
+  },
+  "Sepahijala|2016 - 2017|Winter": {
+    "weather_temp_mean": 20.745833333333334,
+    "weather_rain_total": 238.0,
+    "weather_rain_days": 8,
+    "weather_et0_total": 383.94,
+    "weather_wind_mean": 9.775,
+    "weather_solarrad_total": 1950.02
+  },
+  "Sepahijala|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 25.1775956284153,
+    "weather_rain_total": 2156.0,
+    "weather_rain_days": 180,
+    "weather_et0_total": 1233.5700000000002,
+    "weather_wind_mean": 12.347267759562843,
+    "weather_solarrad_total": 5786.959999999999
+  },
+  "South tripura|2016 - 2017|Kharif": {
+    "weather_temp_mean": 26.848360655737707,
+    "weather_rain_total": 1236.3,
+    "weather_rain_days": 101,
+    "weather_et0_total": 385.23,
+    "weather_wind_mean": 12.23688524590164,
+    "weather_solarrad_total": 1826.38
+  },
+  "South tripura|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.826277372262773,
+    "weather_rain_total": 266.29999999999995,
+    "weather_rain_days": 13,
+    "weather_et0_total": 454.03999999999996,
+    "weather_wind_mean": 9.076642335766424,
+    "weather_solarrad_total": 2244.4700000000003
+  },
+  "South tripura|2016 - 2017|Autumn": {
+    "weather_temp_mean": 25.684426229508198,
+    "weather_rain_total": 968.0999999999999,
+    "weather_rain_days": 72,
+    "weather_et0_total": 380.41,
+    "weather_wind_mean": 9.57950819672131,
+    "weather_solarrad_total": 1853.3
+  },
+  "South tripura|2016 - 2017|Summer": {
+    "weather_temp_mean": 27.082786885245905,
+    "weather_rain_total": 786.9000000000001,
+    "weather_rain_days": 70,
+    "weather_et0_total": 484.41,
+    "weather_wind_mean": 13.222950819672132,
+    "weather_solarrad_total": 2193.3300000000004
+  },
+  "South tripura|2016 - 2017|Winter": {
+    "weather_temp_mean": 21.178333333333335,
+    "weather_rain_total": 221.60000000000002,
+    "weather_rain_days": 7,
+    "weather_et0_total": 396.02,
+    "weather_wind_mean": 9.353333333333333,
+    "weather_solarrad_total": 1965.2399999999998
+  },
+  "South tripura|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 24.95710382513661,
+    "weather_rain_total": 2197.9,
+    "weather_rain_days": 178,
+    "weather_et0_total": 1222.3,
+    "weather_wind_mean": 10.923770491803278,
+    "weather_solarrad_total": 5838.59
+  },
+  "Unakoti|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.218852459016396,
+    "weather_rain_total": 843.9,
+    "weather_rain_days": 103,
+    "weather_et0_total": 393.56,
+    "weather_wind_mean": 10.10409836065574,
+    "weather_solarrad_total": 1818.74
+  },
+  "Unakoti|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.37518248175182,
+    "weather_rain_total": 226.50000000000003,
+    "weather_rain_days": 12,
+    "weather_et0_total": 419.78000000000003,
+    "weather_wind_mean": 8.3007299270073,
+    "weather_solarrad_total": 2167.3
+  },
+  "Unakoti|2016 - 2017|Autumn": {
+    "weather_temp_mean": 25.81311475409836,
+    "weather_rain_total": 717.4,
+    "weather_rain_days": 70,
+    "weather_et0_total": 375.51000000000005,
+    "weather_wind_mean": 8.154098360655738,
+    "weather_solarrad_total": 1812.11
+  },
+  "Unakoti|2016 - 2017|Summer": {
+    "weather_temp_mean": 26.004918032786886,
+    "weather_rain_total": 1195.5,
+    "weather_rain_days": 84,
+    "weather_et0_total": 447.05,
+    "weather_wind_mean": 11.495081967213116,
+    "weather_solarrad_total": 2076.79
+  },
+  "Unakoti|2016 - 2017|Winter": {
+    "weather_temp_mean": 20.723333333333336,
+    "weather_rain_total": 205.39999999999998,
+    "weather_rain_days": 8,
+    "weather_et0_total": 364.08,
+    "weather_wind_mean": 8.486666666666668,
+    "weather_solarrad_total": 1895.14
+  },
+  "Unakoti|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 24.437158469945356,
+    "weather_rain_total": 2195.4,
+    "weather_rain_days": 192,
+    "weather_et0_total": 1172.78,
+    "weather_wind_mean": 9.575136612021858,
+    "weather_solarrad_total": 5675.379999999999
+  },
+  "West tripura|2016 - 2017|Kharif": {
+    "weather_temp_mean": 27.628688524590164,
+    "weather_rain_total": 872.0,
+    "weather_rain_days": 96,
+    "weather_et0_total": 398.88,
+    "weather_wind_mean": 14.161475409836065,
+    "weather_solarrad_total": 1811.7800000000002
+  },
+  "West tripura|2016 - 2017|Rabi": {
+    "weather_temp_mean": 21.44963503649635,
+    "weather_rain_total": 193.9,
+    "weather_rain_days": 10,
+    "weather_et0_total": 434.23,
+    "weather_wind_mean": 9.391240875912407,
+    "weather_solarrad_total": 2202.84
+  },
+  "West tripura|2016 - 2017|Autumn": {
+    "weather_temp_mean": 26.150000000000002,
+    "weather_rain_total": 688.6,
+    "weather_rain_days": 68,
+    "weather_et0_total": 384.72,
+    "weather_wind_mean": 10.932786885245903,
+    "weather_solarrad_total": 1817.59
+  },
+  "West tripura|2016 - 2017|Summer": {
+    "weather_temp_mean": 27.340983606557373,
+    "weather_rain_total": 910.5,
+    "weather_rain_days": 71,
+    "weather_et0_total": 484.55000000000007,
+    "weather_wind_mean": 14.467213114754097,
+    "weather_solarrad_total": 2156.54
+  },
+  "West tripura|2016 - 2017|Winter": {
+    "weather_temp_mean": 20.725833333333334,
+    "weather_rain_total": 176.79999999999998,
+    "weather_rain_days": 6,
+    "weather_et0_total": 376.74,
+    "weather_wind_mean": 9.667499999999999,
+    "weather_solarrad_total": 1928.3
+  },
+  "West tripura|2016 - 2017|Whole Year": {
+    "weather_temp_mean": 25.222404371584698,
+    "weather_rain_total": 1956.3999999999999,
+    "weather_rain_days": 172,
+    "weather_et0_total": 1229.74,
+    "weather_wind_mean": 12.12431693989071,
+    "weather_solarrad_total": 5751.6
+  },
+  "Dhalai|2015 - 2016|Kharif": {
+    "weather_temp_mean": 27.129508196721314,
+    "weather_rain_total": 1300.1999999999998,
+    "weather_rain_days": 99,
+    "weather_et0_total": 364.18,
+    "weather_wind_mean": 11.799180327868852,
+    "weather_solarrad_total": 1673.0600000000002
+  },
+  "Dhalai|2015 - 2016|Rabi": {
+    "weather_temp_mean": 20.81594202898551,
+    "weather_rain_total": 90.2,
+    "weather_rain_days": 17,
+    "weather_et0_total": 402.78999999999996,
+    "weather_wind_mean": 7.4384057971014474,
+    "weather_solarrad_total": 2105.5299999999997
+  },
+  "Dhalai|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.26967213114754,
+    "weather_rain_total": 880.0,
+    "weather_rain_days": 68,
+    "weather_et0_total": 463.0899999999999,
+    "weather_wind_mean": 10.593442622950821,
+    "weather_solarrad_total": 2134.5400000000004
+  },
+  "Dhalai|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.502465753424662,
+    "weather_rain_total": 2050.9,
+    "weather_rain_days": 167,
+    "weather_et0_total": 1182.6399999999999,
+    "weather_wind_mean": 9.511506849315069,
+    "weather_solarrad_total": 5707.35
+  },
+  "Gomati|2015 - 2016|Kharif": {
+    "weather_temp_mean": 26.657377049180326,
+    "weather_rain_total": 1599.3999999999999,
+    "weather_rain_days": 107,
+    "weather_et0_total": 328.68,
+    "weather_wind_mean": 13.219672131147542,
+    "weather_solarrad_total": 1553.4399999999998
+  },
+  "Gomati|2015 - 2016|Rabi": {
+    "weather_temp_mean": 21.390579710144927,
+    "weather_rain_total": 113.0,
+    "weather_rain_days": 19,
+    "weather_et0_total": 407.33000000000004,
+    "weather_wind_mean": 7.914492753623189,
+    "weather_solarrad_total": 2088.92
+  },
+  "Gomati|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.70245901639344,
+    "weather_rain_total": 878.9,
+    "weather_rain_days": 71,
+    "weather_et0_total": 484.48999999999995,
+    "weather_wind_mean": 12.486065573770492,
+    "weather_solarrad_total": 2178.42
+  },
+  "Gomati|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.707945205479447,
+    "weather_rain_total": 2365.3,
+    "weather_rain_days": 176,
+    "weather_et0_total": 1185.29,
+    "weather_wind_mean": 10.687945205479451,
+    "weather_solarrad_total": 5641.94
+  },
+  "Khowai|2015 - 2016|Kharif": {
+    "weather_temp_mean": 27.351639344262296,
+    "weather_rain_total": 1394.2,
+    "weather_rain_days": 105,
+    "weather_et0_total": 360.96,
+    "weather_wind_mean": 14.445901639344264,
+    "weather_solarrad_total": 1643.84
+  },
+  "Khowai|2015 - 2016|Rabi": {
+    "weather_temp_mean": 21.110869565217392,
+    "weather_rain_total": 99.0,
+    "weather_rain_days": 17,
+    "weather_et0_total": 405.8299999999999,
+    "weather_wind_mean": 8.09927536231884,
+    "weather_solarrad_total": 2086.54
+  },
+  "Khowai|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.57131147540984,
+    "weather_rain_total": 895.2,
+    "weather_rain_days": 73,
+    "weather_et0_total": 471.20000000000005,
+    "weather_wind_mean": 13.230327868852457,
+    "weather_solarrad_total": 2142.3400000000006
+  },
+  "Khowai|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.747671232876716,
+    "weather_rain_total": 2351.9,
+    "weather_rain_days": 181,
+    "weather_et0_total": 1187.9099999999999,
+    "weather_wind_mean": 11.323835616438355,
+    "weather_solarrad_total": 5655.85
+  },
+  "North tripura|2015 - 2016|Kharif": {
+    "weather_temp_mean": 27.309016393442622,
+    "weather_rain_total": 1628.4,
+    "weather_rain_days": 113,
+    "weather_et0_total": 349.40000000000003,
+    "weather_wind_mean": 11.522950819672129,
+    "weather_solarrad_total": 1584.8
+  },
+  "North tripura|2015 - 2016|Rabi": {
+    "weather_temp_mean": 20.96014492753623,
+    "weather_rain_total": 132.8,
+    "weather_rain_days": 24,
+    "weather_et0_total": 402.65,
+    "weather_wind_mean": 8.070289855072463,
+    "weather_solarrad_total": 2111.95
+  },
+  "North tripura|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.148360655737704,
+    "weather_rain_total": 1219.1,
+    "weather_rain_days": 81,
+    "weather_et0_total": 443.4,
+    "weather_wind_mean": 10.789344262295081,
+    "weather_solarrad_total": 2046.14
+  },
+  "North tripura|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.616438356164384,
+    "weather_rain_total": 2697.2,
+    "weather_rain_days": 195,
+    "weather_et0_total": 1159.53,
+    "weather_wind_mean": 9.836164383561643,
+    "weather_solarrad_total": 5574.459999999999
+  },
+  "Sepahijala|2015 - 2016|Kharif": {
+    "weather_temp_mean": 27.097540983606557,
+    "weather_rain_total": 1483.9,
+    "weather_rain_days": 104,
+    "weather_et0_total": 346.28000000000003,
+    "weather_wind_mean": 15.220491803278689,
+    "weather_solarrad_total": 1583.06
+  },
+  "Sepahijala|2015 - 2016|Rabi": {
+    "weather_temp_mean": 21.33695652173913,
+    "weather_rain_total": 100.6,
+    "weather_rain_days": 13,
+    "weather_et0_total": 419.44,
+    "weather_wind_mean": 8.920289855072463,
+    "weather_solarrad_total": 2100.8199999999997
+  },
+  "Sepahijala|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.852459016393443,
+    "weather_rain_total": 858.1,
+    "weather_rain_days": 69,
+    "weather_et0_total": 492.65,
+    "weather_wind_mean": 13.909836065573769,
+    "weather_solarrad_total": 2200.7400000000002
+  },
+  "Sepahijala|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.784109589041098,
+    "weather_rain_total": 2299.6,
+    "weather_rain_days": 172,
+    "weather_et0_total": 1208.12,
+    "weather_wind_mean": 12.09232876712329,
+    "weather_solarrad_total": 5667.959999999999
+  },
+  "South tripura|2015 - 2016|Kharif": {
+    "weather_temp_mean": 26.482786885245897,
+    "weather_rain_total": 1774.1000000000001,
+    "weather_rain_days": 106,
+    "weather_et0_total": 331.14000000000004,
+    "weather_wind_mean": 13.293442622950819,
+    "weather_solarrad_total": 1567.24
+  },
+  "South tripura|2015 - 2016|Rabi": {
+    "weather_temp_mean": 21.378985507246377,
+    "weather_rain_total": 88.5,
+    "weather_rain_days": 13,
+    "weather_et0_total": 415.96000000000004,
+    "weather_wind_mean": 8.031159420289855,
+    "weather_solarrad_total": 2105.33
+  },
+  "South tripura|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.760655737704916,
+    "weather_rain_total": 833.0999999999999,
+    "weather_rain_days": 65,
+    "weather_et0_total": 498.63000000000005,
+    "weather_wind_mean": 12.554918032786885,
+    "weather_solarrad_total": 2219.87
+  },
+  "South tripura|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.64575342465753,
+    "weather_rain_total": 2421.5,
+    "weather_rain_days": 166,
+    "weather_et0_total": 1209.39,
+    "weather_wind_mean": 10.771232876712329,
+    "weather_solarrad_total": 5712.43
+  },
+  "Unakoti|2015 - 2016|Kharif": {
+    "weather_temp_mean": 26.826229508196718,
+    "weather_rain_total": 1300.1999999999998,
+    "weather_rain_days": 99,
+    "weather_et0_total": 367.37000000000006,
+    "weather_wind_mean": 11.799180327868852,
+    "weather_solarrad_total": 1673.0600000000002
+  },
+  "Unakoti|2015 - 2016|Rabi": {
+    "weather_temp_mean": 20.547101449275363,
+    "weather_rain_total": 90.2,
+    "weather_rain_days": 17,
+    "weather_et0_total": 401.67999999999995,
+    "weather_wind_mean": 7.4384057971014474,
+    "weather_solarrad_total": 2105.5299999999997
+  },
+  "Unakoti|2015 - 2016|Summer": {
+    "weather_temp_mean": 25.874590163934425,
+    "weather_rain_total": 880.0,
+    "weather_rain_days": 68,
+    "weather_et0_total": 462.13000000000005,
+    "weather_wind_mean": 10.593442622950821,
+    "weather_solarrad_total": 2134.5400000000004
+  },
+  "Unakoti|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.189315068493148,
+    "weather_rain_total": 2050.9,
+    "weather_rain_days": 167,
+    "weather_et0_total": 1183.84,
+    "weather_wind_mean": 9.511506849315069,
+    "weather_solarrad_total": 5707.35
+  },
+  "West tripura|2015 - 2016|Kharif": {
+    "weather_temp_mean": 27.269672131147544,
+    "weather_rain_total": 1308.5,
+    "weather_rain_days": 98,
+    "weather_et0_total": 353.11,
+    "weather_wind_mean": 15.115573770491803,
+    "weather_solarrad_total": 1599.9499999999998
+  },
+  "West tripura|2015 - 2016|Rabi": {
+    "weather_temp_mean": 21.321739130434782,
+    "weather_rain_total": 106.60000000000001,
+    "weather_rain_days": 15,
+    "weather_et0_total": 415.52,
+    "weather_wind_mean": 8.556521739130437,
+    "weather_solarrad_total": 2086.94
+  },
+  "West tripura|2015 - 2016|Summer": {
+    "weather_temp_mean": 26.789344262295085,
+    "weather_rain_total": 957.0999999999999,
+    "weather_rain_days": 74,
+    "weather_et0_total": 483.99000000000007,
+    "weather_wind_mean": 13.610655737704919,
+    "weather_solarrad_total": 2172.64
+  },
+  "West tripura|2015 - 2016|Whole Year": {
+    "weather_temp_mean": 24.80958904109589,
+    "weather_rain_total": 2284.1,
+    "weather_rain_days": 171,
+    "weather_et0_total": 1199.63,
+    "weather_wind_mean": 11.854520547945205,
+    "weather_solarrad_total": 5636.07
+  },
+  "Dhalai|2014 - 2015|Kharif": {
+    "weather_temp_mean": 27.495081967213114,
+    "weather_rain_total": 859.2,
+    "weather_rain_days": 99,
+    "weather_et0_total": 394.66,
+    "weather_wind_mean": 10.699180327868854,
+    "weather_solarrad_total": 1822.26
+  },
+  "Dhalai|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.251824817518248,
+    "weather_rain_total": 29.200000000000003,
+    "weather_rain_days": 8,
+    "weather_et0_total": 417.02,
+    "weather_wind_mean": 7.686131386861314,
+    "weather_solarrad_total": 2157.45
+  },
+  "Dhalai|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.812054794520552,
+    "weather_rain_total": 1264.1,
+    "weather_rain_days": 149,
+    "weather_et0_total": 1293.68,
+    "weather_wind_mean": 9.544931506849315,
+    "weather_solarrad_total": 6158.459999999999
+  },
+  "Gomati|2014 - 2015|Kharif": {
+    "weather_temp_mean": 26.985245901639342,
+    "weather_rain_total": 1050.5,
+    "weather_rain_days": 104,
+    "weather_et0_total": 371.66999999999996,
+    "weather_wind_mean": 12.854918032786887,
+    "weather_solarrad_total": 1752.17
+  },
+  "Gomati|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.694890510948905,
+    "weather_rain_total": 49.9,
+    "weather_rain_days": 11,
+    "weather_et0_total": 432.96999999999997,
+    "weather_wind_mean": 8.323357664233576,
+    "weather_solarrad_total": 2184.65
+  },
+  "Gomati|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.970410958904107,
+    "weather_rain_total": 1490.1999999999998,
+    "weather_rain_days": 160,
+    "weather_et0_total": 1308.81,
+    "weather_wind_mean": 10.895616438356166,
+    "weather_solarrad_total": 6162.68
+  },
+  "Khowai|2014 - 2015|Kharif": {
+    "weather_temp_mean": 27.70081967213115,
+    "weather_rain_total": 952.5999999999999,
+    "weather_rain_days": 102,
+    "weather_et0_total": 398.03,
+    "weather_wind_mean": 14.15737704918033,
+    "weather_solarrad_total": 1801.92
+  },
+  "Khowai|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.419708029197082,
+    "weather_rain_total": 36.5,
+    "weather_rain_days": 11,
+    "weather_et0_total": 420.9,
+    "weather_wind_mean": 8.507299270072993,
+    "weather_solarrad_total": 2141.26
+  },
+  "Khowai|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.989863013698628,
+    "weather_rain_total": 1374.1,
+    "weather_rain_days": 148,
+    "weather_et0_total": 1306.3400000000001,
+    "weather_wind_mean": 11.416438356164383,
+    "weather_solarrad_total": 6139.550000000001
+  },
+  "North tripura|2014 - 2015|Kharif": {
+    "weather_temp_mean": 27.640983606557384,
+    "weather_rain_total": 1379.9999999999998,
+    "weather_rain_days": 116,
+    "weather_et0_total": 377.2,
+    "weather_wind_mean": 10.055737704918034,
+    "weather_solarrad_total": 1737.7499999999998
+  },
+  "North tripura|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.505109489051094,
+    "weather_rain_total": 41.1,
+    "weather_rain_days": 9,
+    "weather_et0_total": 418.51,
+    "weather_wind_mean": 8.24087591240876,
+    "weather_solarrad_total": 2156.23
+  },
+  "North tripura|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.848219178082193,
+    "weather_rain_total": 2080.6,
+    "weather_rain_days": 179,
+    "weather_et0_total": 1260.2199999999998,
+    "weather_wind_mean": 9.496164383561645,
+    "weather_solarrad_total": 6036.8
+  },
+  "Sepahijala|2014 - 2015|Kharif": {
+    "weather_temp_mean": 27.372950819672134,
+    "weather_rain_total": 1032.3999999999999,
+    "weather_rain_days": 99,
+    "weather_et0_total": 380.23999999999995,
+    "weather_wind_mean": 15.494262295081969,
+    "weather_solarrad_total": 1729.39
+  },
+  "Sepahijala|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.3992700729927,
+    "weather_rain_total": 39.3,
+    "weather_rain_days": 9,
+    "weather_et0_total": 435.28,
+    "weather_wind_mean": 9.092700729927007,
+    "weather_solarrad_total": 2169.3
+  },
+  "Sepahijala|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.99232876712329,
+    "weather_rain_total": 1479.0,
+    "weather_rain_days": 149,
+    "weather_et0_total": 1325.8400000000001,
+    "weather_wind_mean": 12.31068493150685,
+    "weather_solarrad_total": 6148.34
+  },
+  "South tripura|2014 - 2015|Kharif": {
+    "weather_temp_mean": 26.821311475409836,
+    "weather_rain_total": 1088.5,
+    "weather_rain_days": 93,
+    "weather_et0_total": 378.56,
+    "weather_wind_mean": 13.04918032786885,
+    "weather_solarrad_total": 1792.3400000000001
+  },
+  "South tripura|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.594160583941605,
+    "weather_rain_total": 36.3,
+    "weather_rain_days": 9,
+    "weather_et0_total": 442.03999999999996,
+    "weather_wind_mean": 8.364963503649635,
+    "weather_solarrad_total": 2214.29
+  },
+  "South tripura|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.90821917808219,
+    "weather_rain_total": 1423.1,
+    "weather_rain_days": 141,
+    "weather_et0_total": 1338.17,
+    "weather_wind_mean": 11.007945205479452,
+    "weather_solarrad_total": 6263.700000000001
+  },
+  "Unakoti|2014 - 2015|Kharif": {
+    "weather_temp_mean": 27.174590163934425,
+    "weather_rain_total": 859.2,
+    "weather_rain_days": 99,
+    "weather_et0_total": 395.7900000000001,
+    "weather_wind_mean": 10.699180327868854,
+    "weather_solarrad_total": 1822.26
+  },
+  "Unakoti|2014 - 2015|Rabi": {
+    "weather_temp_mean": 20.982481751824817,
+    "weather_rain_total": 29.200000000000003,
+    "weather_rain_days": 8,
+    "weather_et0_total": 416.56,
+    "weather_wind_mean": 7.686131386861314,
+    "weather_solarrad_total": 2157.45
+  },
+  "Unakoti|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 24.49890410958904,
+    "weather_rain_total": 1264.1,
+    "weather_rain_days": 149,
+    "weather_et0_total": 1293.9199999999998,
+    "weather_wind_mean": 9.544931506849315,
+    "weather_solarrad_total": 6158.459999999999
+  },
+  "West tripura|2014 - 2015|Kharif": {
+    "weather_temp_mean": 27.569672131147538,
+    "weather_rain_total": 836.1999999999999,
+    "weather_rain_days": 95,
+    "weather_et0_total": 388.38,
+    "weather_wind_mean": 15.19426229508197,
+    "weather_solarrad_total": 1745.7
+  },
+  "West tripura|2014 - 2015|Rabi": {
+    "weather_temp_mean": 21.3992700729927,
+    "weather_rain_total": 28.5,
+    "weather_rain_days": 7,
+    "weather_et0_total": 427.99,
+    "weather_wind_mean": 8.838686131386861,
+    "weather_solarrad_total": 2141.93
+  },
+  "West tripura|2014 - 2015|Whole Year": {
+    "weather_temp_mean": 25.022739726027396,
+    "weather_rain_total": 1246.7999999999997,
+    "weather_rain_days": 140,
+    "weather_et0_total": 1318.08,
+    "weather_wind_mean": 12.006027397260274,
+    "weather_solarrad_total": 6120.120000000001
+  },
+  "Dhalai|2013 - 2014|Kharif": {
+    "weather_temp_mean": 27.327868852459012,
+    "weather_rain_total": 739.1,
+    "weather_rain_days": 90,
+    "weather_et0_total": 392.8,
+    "weather_wind_mean": 9.881147540983607,
+    "weather_solarrad_total": 1826.5999999999997
+  },
+  "Dhalai|2013 - 2014|Rabi": {
+    "weather_temp_mean": 20.572992700729927,
+    "weather_rain_total": 74.0,
+    "weather_rain_days": 10,
+    "weather_et0_total": 417.30999999999995,
+    "weather_wind_mean": 7.758394160583943,
+    "weather_solarrad_total": 2183.1099999999997
+  },
+  "Dhalai|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.505205479452055,
+    "weather_rain_total": 1747.7000000000003,
+    "weather_rain_days": 149,
+    "weather_et0_total": 1238.46,
+    "weather_wind_mean": 9.38054794520548,
+    "weather_solarrad_total": 5912.360000000001
+  },
+  "Gomati|2013 - 2014|Kharif": {
+    "weather_temp_mean": 26.73688524590164,
+    "weather_rain_total": 932.3000000000001,
+    "weather_rain_days": 100,
+    "weather_et0_total": 365.22,
+    "weather_wind_mean": 11.504918032786886,
+    "weather_solarrad_total": 1733.5299999999997
+  },
+  "Gomati|2013 - 2014|Rabi": {
+    "weather_temp_mean": 21.103649635036493,
+    "weather_rain_total": 82.8,
+    "weather_rain_days": 8,
+    "weather_et0_total": 437.90999999999997,
+    "weather_wind_mean": 8.804379562043795,
+    "weather_solarrad_total": 2227.0299999999997
+  },
+  "Gomati|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.641917808219176,
+    "weather_rain_total": 2063.1,
+    "weather_rain_days": 158,
+    "weather_et0_total": 1242.3700000000001,
+    "weather_wind_mean": 10.73890410958904,
+    "weather_solarrad_total": 5833.6
+  },
+  "Khowai|2013 - 2014|Kharif": {
+    "weather_temp_mean": 27.53360655737705,
+    "weather_rain_total": 818.3000000000001,
+    "weather_rain_days": 98,
+    "weather_et0_total": 397.64000000000004,
+    "weather_wind_mean": 12.698360655737703,
+    "weather_solarrad_total": 1819.82
+  },
+  "Khowai|2013 - 2014|Rabi": {
+    "weather_temp_mean": 20.637226277372264,
+    "weather_rain_total": 71.5,
+    "weather_rain_days": 9,
+    "weather_et0_total": 423.40999999999997,
+    "weather_wind_mean": 8.62919708029197,
+    "weather_solarrad_total": 2190.39
+  },
+  "Khowai|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.727123287671226,
+    "weather_rain_total": 2012.5000000000002,
+    "weather_rain_days": 160,
+    "weather_et0_total": 1261.92,
+    "weather_wind_mean": 11.293424657534247,
+    "weather_solarrad_total": 5895.639999999999
+  },
+  "North tripura|2013 - 2014|Kharif": {
+    "weather_temp_mean": 27.529508196721313,
+    "weather_rain_total": 1145.5,
+    "weather_rain_days": 114,
+    "weather_et0_total": 381.97999999999996,
+    "weather_wind_mean": 9.688524590163937,
+    "weather_solarrad_total": 1766.4899999999998
+  },
+  "North tripura|2013 - 2014|Rabi": {
+    "weather_temp_mean": 20.61094890510949,
+    "weather_rain_total": 97.5,
+    "weather_rain_days": 15,
+    "weather_et0_total": 414.38,
+    "weather_wind_mean": 8.224817518248177,
+    "weather_solarrad_total": 2172.17
+  },
+  "North tripura|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.54027397260274,
+    "weather_rain_total": 2539.7,
+    "weather_rain_days": 190,
+    "weather_et0_total": 1214.53,
+    "weather_wind_mean": 9.590958904109588,
+    "weather_solarrad_total": 5812.27
+  },
+  "Sepahijala|2013 - 2014|Kharif": {
+    "weather_temp_mean": 27.151639344262296,
+    "weather_rain_total": 912.6,
+    "weather_rain_days": 94,
+    "weather_et0_total": 380.88000000000005,
+    "weather_wind_mean": 13.950000000000001,
+    "weather_solarrad_total": 1747.14
+  },
+  "Sepahijala|2013 - 2014|Rabi": {
+    "weather_temp_mean": 20.71240875912409,
+    "weather_rain_total": 73.3,
+    "weather_rain_days": 7,
+    "weather_et0_total": 440.1,
+    "weather_wind_mean": 9.175912408759123,
+    "weather_solarrad_total": 2222.44
+  },
+  "Sepahijala|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.685205479452055,
+    "weather_rain_total": 2105.8,
+    "weather_rain_days": 152,
+    "weather_et0_total": 1276.8700000000001,
+    "weather_wind_mean": 12.228767123287671,
+    "weather_solarrad_total": 5886.69
+  },
+  "South tripura|2013 - 2014|Kharif": {
+    "weather_temp_mean": 26.522131147540982,
+    "weather_rain_total": 1161.6000000000001,
+    "weather_rain_days": 100,
+    "weather_et0_total": 369.81,
+    "weather_wind_mean": 11.698360655737705,
+    "weather_solarrad_total": 1761.0800000000002
+  },
+  "South tripura|2013 - 2014|Rabi": {
+    "weather_temp_mean": 21.121897810218975,
+    "weather_rain_total": 93.1,
+    "weather_rain_days": 9,
+    "weather_et0_total": 447.13,
+    "weather_wind_mean": 8.802189781021898,
+    "weather_solarrad_total": 2242.42
+  },
+  "South tripura|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.54821917808219,
+    "weather_rain_total": 2194.3999999999996,
+    "weather_rain_days": 155,
+    "weather_et0_total": 1260.26,
+    "weather_wind_mean": 10.836712328767122,
+    "weather_solarrad_total": 5888.91
+  },
+  "Unakoti|2013 - 2014|Kharif": {
+    "weather_temp_mean": 27.01065573770492,
+    "weather_rain_total": 739.1,
+    "weather_rain_days": 90,
+    "weather_et0_total": 393.7,
+    "weather_wind_mean": 9.881147540983607,
+    "weather_solarrad_total": 1826.5999999999997
+  },
+  "Unakoti|2013 - 2014|Rabi": {
+    "weather_temp_mean": 20.27080291970803,
+    "weather_rain_total": 74.0,
+    "weather_rain_days": 10,
+    "weather_et0_total": 416.20000000000005,
+    "weather_wind_mean": 7.758394160583943,
+    "weather_solarrad_total": 2183.1099999999997
+  },
+  "Unakoti|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.171232876712327,
+    "weather_rain_total": 1747.7000000000003,
+    "weather_rain_days": 149,
+    "weather_et0_total": 1236.98,
+    "weather_wind_mean": 9.38054794520548,
+    "weather_solarrad_total": 5912.360000000001
+  },
+  "West tripura|2013 - 2014|Kharif": {
+    "weather_temp_mean": 27.384426229508197,
+    "weather_rain_total": 694.8000000000001,
+    "weather_rain_days": 91,
+    "weather_et0_total": 390.73999999999995,
+    "weather_wind_mean": 13.75983606557377,
+    "weather_solarrad_total": 1771.8700000000001
+  },
+  "West tripura|2013 - 2014|Rabi": {
+    "weather_temp_mean": 20.7,
+    "weather_rain_total": 65.8,
+    "weather_rain_days": 7,
+    "weather_et0_total": 433.56999999999994,
+    "weather_wind_mean": 9.0007299270073,
+    "weather_solarrad_total": 2199.84
+  },
+  "West tripura|2013 - 2014|Whole Year": {
+    "weather_temp_mean": 24.742465753424657,
+    "weather_rain_total": 1787.6000000000001,
+    "weather_rain_days": 149,
+    "weather_et0_total": 1275.33,
+    "weather_wind_mean": 12.046575342465754,
+    "weather_solarrad_total": 5876.7
+  },
+  "Dhalai|2012 - 2013|Kharif": {
+    "weather_temp_mean": 27.42950819672131,
+    "weather_rain_total": 840.7,
+    "weather_rain_days": 102,
+    "weather_et0_total": 397.29,
+    "weather_wind_mean": 12.344262295081966,
+    "weather_solarrad_total": 1814.9800000000002
+  },
+  "Dhalai|2012 - 2013|Rabi": {
+    "weather_temp_mean": 20.51824817518248,
+    "weather_rain_total": 46.0,
+    "weather_rain_days": 7,
+    "weather_et0_total": 423.85,
+    "weather_wind_mean": 7.4693430656934305,
+    "weather_solarrad_total": 2218.0299999999997
+  },
+  "Dhalai|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.413661202185796,
+    "weather_rain_total": 1646.1,
+    "weather_rain_days": 174,
+    "weather_et0_total": 1226.4100000000003,
+    "weather_wind_mean": 10.153825136612022,
+    "weather_solarrad_total": 5880.86
+  },
+  "Gomati|2012 - 2013|Kharif": {
+    "weather_temp_mean": 26.768032786885247,
+    "weather_rain_total": 944.2999999999997,
+    "weather_rain_days": 106,
+    "weather_et0_total": 362.87,
+    "weather_wind_mean": 13.754098360655739,
+    "weather_solarrad_total": 1712.7300000000002
+  },
+  "Gomati|2012 - 2013|Rabi": {
+    "weather_temp_mean": 21.005109489051094,
+    "weather_rain_total": 60.00000000000001,
+    "weather_rain_days": 11,
+    "weather_et0_total": 448.57000000000005,
+    "weather_wind_mean": 8.623357664233575,
+    "weather_solarrad_total": 2253.73
+  },
+  "Gomati|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.608196721311476,
+    "weather_rain_total": 1736.3,
+    "weather_rain_days": 174,
+    "weather_et0_total": 1236.27,
+    "weather_wind_mean": 11.280874316939888,
+    "weather_solarrad_total": 5884.719999999999
+  },
+  "Khowai|2012 - 2013|Kharif": {
+    "weather_temp_mean": 27.613934426229505,
+    "weather_rain_total": 956.7999999999998,
+    "weather_rain_days": 105,
+    "weather_et0_total": 398.3,
+    "weather_wind_mean": 15.318032786885245,
+    "weather_solarrad_total": 1789.2300000000002
+  },
+  "Khowai|2012 - 2013|Rabi": {
+    "weather_temp_mean": 20.626277372262773,
+    "weather_rain_total": 50.8,
+    "weather_rain_days": 7,
+    "weather_et0_total": 431.99,
+    "weather_wind_mean": 8.416058394160585,
+    "weather_solarrad_total": 2216.41
+  },
+  "Khowai|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.667759562841535,
+    "weather_rain_total": 1810.9,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1248.3,
+    "weather_wind_mean": 12.087158469945354,
+    "weather_solarrad_total": 5885.42
+  },
+  "North tripura|2012 - 2013|Kharif": {
+    "weather_temp_mean": 27.518852459016394,
+    "weather_rain_total": 1371.1999999999998,
+    "weather_rain_days": 119,
+    "weather_et0_total": 371.71999999999997,
+    "weather_wind_mean": 11.670491803278688,
+    "weather_solarrad_total": 1696.21
+  },
+  "North tripura|2012 - 2013|Rabi": {
+    "weather_temp_mean": 20.64963503649635,
+    "weather_rain_total": 64.5,
+    "weather_rain_days": 10,
+    "weather_et0_total": 421.26,
+    "weather_wind_mean": 8.028467153284673,
+    "weather_solarrad_total": 2202.5200000000004
+  },
+  "North tripura|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.34426229508197,
+    "weather_rain_total": 2583.0,
+    "weather_rain_days": 208,
+    "weather_et0_total": 1175.29,
+    "weather_wind_mean": 10.087704918032786,
+    "weather_solarrad_total": 5674.620000000001
+  },
+  "Sepahijala|2012 - 2013|Kharif": {
+    "weather_temp_mean": 27.227049180327867,
+    "weather_rain_total": 1020.7,
+    "weather_rain_days": 110,
+    "weather_et0_total": 378.62,
+    "weather_wind_mean": 16.54590163934426,
+    "weather_solarrad_total": 1720.1100000000004
+  },
+  "Sepahijala|2012 - 2013|Rabi": {
+    "weather_temp_mean": 20.565693430656935,
+    "weather_rain_total": 51.2,
+    "weather_rain_days": 10,
+    "weather_et0_total": 451.36,
+    "weather_wind_mean": 9.321167883211679,
+    "weather_solarrad_total": 2247.43
+  },
+  "Sepahijala|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.6775956284153,
+    "weather_rain_total": 1772.9,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1267.69,
+    "weather_wind_mean": 12.862841530054643,
+    "weather_solarrad_total": 5924.19
+  },
+  "South tripura|2012 - 2013|Kharif": {
+    "weather_temp_mean": 26.560655737704916,
+    "weather_rain_total": 966.0999999999999,
+    "weather_rain_days": 110,
+    "weather_et0_total": 364.62,
+    "weather_wind_mean": 13.992622950819671,
+    "weather_solarrad_total": 1734.6000000000001
+  },
+  "South tripura|2012 - 2013|Rabi": {
+    "weather_temp_mean": 21.038686131386864,
+    "weather_rain_total": 49.300000000000004,
+    "weather_rain_days": 7,
+    "weather_et0_total": 461.14,
+    "weather_wind_mean": 8.789781021897811,
+    "weather_solarrad_total": 2270.27
+  },
+  "South tripura|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.518032786885247,
+    "weather_rain_total": 1664.9,
+    "weather_rain_days": 172,
+    "weather_et0_total": 1254.74,
+    "weather_wind_mean": 11.385792349726776,
+    "weather_solarrad_total": 5969.06
+  },
+  "Unakoti|2012 - 2013|Kharif": {
+    "weather_temp_mean": 27.069672131147545,
+    "weather_rain_total": 840.7,
+    "weather_rain_days": 102,
+    "weather_et0_total": 398.09,
+    "weather_wind_mean": 12.344262295081966,
+    "weather_solarrad_total": 1814.9800000000002
+  },
+  "Unakoti|2012 - 2013|Rabi": {
+    "weather_temp_mean": 20.244525547445257,
+    "weather_rain_total": 46.0,
+    "weather_rain_days": 7,
+    "weather_et0_total": 423.09000000000003,
+    "weather_wind_mean": 7.4693430656934305,
+    "weather_solarrad_total": 2218.0299999999997
+  },
+  "Unakoti|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.034699453551916,
+    "weather_rain_total": 1646.1,
+    "weather_rain_days": 174,
+    "weather_et0_total": 1223.8,
+    "weather_wind_mean": 10.153825136612022,
+    "weather_solarrad_total": 5880.86
+  },
+  "West tripura|2012 - 2013|Kharif": {
+    "weather_temp_mean": 27.455737704918036,
+    "weather_rain_total": 831.5,
+    "weather_rain_days": 99,
+    "weather_et0_total": 388.21,
+    "weather_wind_mean": 16.279508196721313,
+    "weather_solarrad_total": 1737.4999999999998
+  },
+  "West tripura|2012 - 2013|Rabi": {
+    "weather_temp_mean": 20.545255474452553,
+    "weather_rain_total": 52.4,
+    "weather_rain_days": 9,
+    "weather_et0_total": 442.76,
+    "weather_wind_mean": 9.004379562043795,
+    "weather_solarrad_total": 2222.52
+  },
+  "West tripura|2012 - 2013|Whole Year": {
+    "weather_temp_mean": 24.740710382513658,
+    "weather_rain_total": 1556.4,
+    "weather_rain_days": 162,
+    "weather_et0_total": 1266.79,
+    "weather_wind_mean": 12.714207650273224,
+    "weather_solarrad_total": 5892.21
+  },
+  "Dhalai|2011 - 2012|Kharif": {
+    "weather_temp_mean": 27.11967213114754,
+    "weather_rain_total": 973.6999999999999,
+    "weather_rain_days": 99,
+    "weather_et0_total": 379.86,
+    "weather_wind_mean": 10.262295081967212,
+    "weather_solarrad_total": 1780.8300000000002
+  },
+  "Dhalai|2011 - 2012|Rabi": {
+    "weather_temp_mean": 20.8768115942029,
+    "weather_rain_total": 68.1,
+    "weather_rain_days": 10,
+    "weather_et0_total": 434.15,
+    "weather_wind_mean": 7.936231884057971,
+    "weather_solarrad_total": 2219.88
+  },
+  "Dhalai|2011 - 2012|Whole Year": {
+    "weather_temp_mean": 24.513698630136993,
+    "weather_rain_total": 1576.6999999999998,
+    "weather_rain_days": 162,
+    "weather_et0_total": 1243.47,
+    "weather_wind_mean": 9.25123287671233,
+    "weather_solarrad_total": 5986.45
+  },
+  "North tripura|2011 - 2012|Kharif": {
+    "weather_temp_mean": 27.37049180327869,
+    "weather_rain_total": 1509.2999999999997,
+    "weather_rain_days": 118,
+    "weather_et0_total": 372.94,
+    "weather_wind_mean": 9.744262295081969,
+    "weather_solarrad_total": 1733.4399999999998
+  },
+  "North tripura|2011 - 2012|Rabi": {
+    "weather_temp_mean": 20.966666666666665,
+    "weather_rain_total": 72.0,
+    "weather_rain_days": 12,
+    "weather_et0_total": 432.94000000000005,
+    "weather_wind_mean": 8.413768115942029,
+    "weather_solarrad_total": 2207.0
+  },
+  "North tripura|2011 - 2012|Whole Year": {
+    "weather_temp_mean": 24.610958904109587,
+    "weather_rain_total": 2416.2,
+    "weather_rain_days": 194,
+    "weather_et0_total": 1223.98,
+    "weather_wind_mean": 9.258904109589041,
+    "weather_solarrad_total": 5888.07
+  },
+  "South tripura|2011 - 2012|Kharif": {
+    "weather_temp_mean": 26.28688524590164,
+    "weather_rain_total": 1433.6,
+    "weather_rain_days": 107,
+    "weather_et0_total": 343.04,
+    "weather_wind_mean": 12.626229508196722,
+    "weather_solarrad_total": 1649.3100000000002
+  },
+  "South tripura|2011 - 2012|Rabi": {
+    "weather_temp_mean": 21.49927536231884,
+    "weather_rain_total": 42.2,
+    "weather_rain_days": 7,
+    "weather_et0_total": 463.14,
+    "weather_wind_mean": 8.672463768115941,
+    "weather_solarrad_total": 2272.1500000000005
+  },
+  "South tripura|2011 - 2012|Whole Year": {
+    "weather_temp_mean": 24.572328767123288,
+    "weather_rain_total": 1959.6999999999998,
+    "weather_rain_days": 163,
+    "weather_et0_total": 1253.43,
+    "weather_wind_mean": 10.58109589041096,
+    "weather_solarrad_total": 5946.78
+  },
+  "West tripura|2011 - 2012|Kharif": {
+    "weather_temp_mean": 27.104098360655737,
+    "weather_rain_total": 1090.5,
+    "weather_rain_days": 101,
+    "weather_et0_total": 358.96,
+    "weather_wind_mean": 14.700819672131148,
+    "weather_solarrad_total": 1643.6999999999998
+  },
+  "West tripura|2011 - 2012|Rabi": {
+    "weather_temp_mean": 21.210869565217394,
+    "weather_rain_total": 53.3,
+    "weather_rain_days": 9,
+    "weather_et0_total": 449.28999999999996,
+    "weather_wind_mean": 8.981159420289854,
+    "weather_solarrad_total": 2210.0600000000004
+  },
+  "West tripura|2011 - 2012|Whole Year": {
+    "weather_temp_mean": 24.783561643835615,
+    "weather_rain_total": 1694.6999999999998,
+    "weather_rain_days": 164,
+    "weather_et0_total": 1255.8400000000001,
+    "weather_wind_mean": 11.79205479452055,
+    "weather_solarrad_total": 5859.58
+  },
+  "Dhalai|2010 - 2011|Kharif": {
+    "weather_temp_mean": 27.463934426229503,
+    "weather_rain_total": 858.8000000000001,
+    "weather_rain_days": 106,
+    "weather_et0_total": 387.78000000000003,
+    "weather_wind_mean": 10.843442622950821,
+    "weather_solarrad_total": 1797.08
+  },
+  "Dhalai|2010 - 2011|Rabi": {
+    "weather_temp_mean": 21.182481751824817,
+    "weather_rain_total": 130.0,
+    "weather_rain_days": 14,
+    "weather_et0_total": 419.90999999999997,
+    "weather_wind_mean": 7.453284671532848,
+    "weather_solarrad_total": 2178.9
+  },
+  "Dhalai|2010 - 2011|Whole Year": {
+    "weather_temp_mean": 25.130410958904104,
+    "weather_rain_total": 1884.1,
+    "weather_rain_days": 183,
+    "weather_et0_total": 1225.6499999999999,
+    "weather_wind_mean": 10.377534246575342,
+    "weather_solarrad_total": 5770.16
+  },
+  "North tripura|2010 - 2011|Kharif": {
+    "weather_temp_mean": 27.535245901639346,
+    "weather_rain_total": 1425.2,
+    "weather_rain_days": 118,
+    "weather_et0_total": 360.06000000000006,
+    "weather_wind_mean": 9.969672131147542,
+    "weather_solarrad_total": 1661.67
+  },
+  "North tripura|2010 - 2011|Rabi": {
+    "weather_temp_mean": 21.26934306569343,
+    "weather_rain_total": 165.10000000000002,
+    "weather_rain_days": 19,
+    "weather_et0_total": 418.22,
+    "weather_wind_mean": 8.218248175182483,
+    "weather_solarrad_total": 2163.2799999999997
+  },
+  "North tripura|2010 - 2011|Whole Year": {
+    "weather_temp_mean": 25.01178082191781,
+    "weather_rain_total": 3034.8,
+    "weather_rain_days": 212,
+    "weather_et0_total": 1156.47,
+    "weather_wind_mean": 9.975068493150683,
+    "weather_solarrad_total": 5524.01
+  },
+  "South tripura|2010 - 2011|Kharif": {
+    "weather_temp_mean": 26.77377049180328,
+    "weather_rain_total": 1234.8000000000002,
+    "weather_rain_days": 106,
+    "weather_et0_total": 374.22,
+    "weather_wind_mean": 12.348360655737707,
+    "weather_solarrad_total": 1792.8600000000004
+  },
+  "South tripura|2010 - 2011|Rabi": {
+    "weather_temp_mean": 21.894160583941606,
+    "weather_rain_total": 112.3,
+    "weather_rain_days": 20,
+    "weather_et0_total": 450.93999999999994,
+    "weather_wind_mean": 8.357664233576642,
+    "weather_solarrad_total": 2220.74
+  },
+  "South tripura|2010 - 2011|Whole Year": {
+    "weather_temp_mean": 25.195890410958903,
+    "weather_rain_total": 2073.0,
+    "weather_rain_days": 174,
+    "weather_et0_total": 1251.77,
+    "weather_wind_mean": 11.578356164383562,
+    "weather_solarrad_total": 5877.030000000001
+  },
+  "West tripura|2010 - 2011|Kharif": {
+    "weather_temp_mean": 27.564754098360655,
+    "weather_rain_total": 999.8,
+    "weather_rain_days": 109,
+    "weather_et0_total": 381.19,
+    "weather_wind_mean": 14.710655737704917,
+    "weather_solarrad_total": 1742.39
+  },
+  "West tripura|2010 - 2011|Rabi": {
+    "weather_temp_mean": 21.554744525547445,
+    "weather_rain_total": 78.19999999999999,
+    "weather_rain_days": 11,
+    "weather_et0_total": 444.55000000000007,
+    "weather_wind_mean": 9.067883211678831,
+    "weather_solarrad_total": 2189.58
+  },
+  "West tripura|2010 - 2011|Whole Year": {
+    "weather_temp_mean": 25.507123287671234,
+    "weather_rain_total": 1746.9,
+    "weather_rain_days": 167,
+    "weather_et0_total": 1270.84,
+    "weather_wind_mean": 13.158082191780824,
+    "weather_solarrad_total": 5779.35
+  },
+  "Dhalai|2009 - 2010|Kharif": {
+    "weather_temp_mean": 27.55327868852459,
+    "weather_rain_total": 964.4000000000002,
+    "weather_rain_days": 94,
+    "weather_et0_total": 401.57000000000005,
+    "weather_wind_mean": 11.411475409836065,
+    "weather_solarrad_total": 1851.7199999999998
+  },
+  "Dhalai|2009 - 2010|Rabi": {
+    "weather_temp_mean": 21.32116788321168,
+    "weather_rain_total": 56.7,
+    "weather_rain_days": 13,
+    "weather_et0_total": 429.79999999999995,
+    "weather_wind_mean": 7.5379562043795625,
+    "weather_solarrad_total": 2222.84
+  },
+  "Dhalai|2009 - 2010|Whole Year": {
+    "weather_temp_mean": 25.170410958904107,
+    "weather_rain_total": 1435.5,
+    "weather_rain_days": 154,
+    "weather_et0_total": 1293.97,
+    "weather_wind_mean": 9.909041095890409,
+    "weather_solarrad_total": 6103.1
+  },
+  "North tripura|2009 - 2010|Kharif": {
+    "weather_temp_mean": 27.679508196721315,
+    "weather_rain_total": 1451.1000000000001,
+    "weather_rain_days": 114,
+    "weather_et0_total": 384.63999999999993,
+    "weather_wind_mean": 10.881967213114756,
+    "weather_solarrad_total": 1766.6700000000003
+  },
+  "North tripura|2009 - 2010|Rabi": {
+    "weather_temp_mean": 21.467153284671532,
+    "weather_rain_total": 97.0,
+    "weather_rain_days": 14,
+    "weather_et0_total": 427.63,
+    "weather_wind_mean": 8.074452554744527,
+    "weather_solarrad_total": 2212.16
+  },
+  "North tripura|2009 - 2010|Whole Year": {
+    "weather_temp_mean": 25.185205479452055,
+    "weather_rain_total": 2241.3,
+    "weather_rain_days": 196,
+    "weather_et0_total": 1252.33,
+    "weather_wind_mean": 9.753972602739728,
+    "weather_solarrad_total": 5961.450000000001
+  },
+  "South tripura|2009 - 2010|Kharif": {
+    "weather_temp_mean": 26.72622950819672,
+    "weather_rain_total": 1348.9,
+    "weather_rain_days": 109,
+    "weather_et0_total": 369.27,
+    "weather_wind_mean": 13.116393442622954,
+    "weather_solarrad_total": 1749.4199999999998
+  },
+  "South tripura|2009 - 2010|Rabi": {
+    "weather_temp_mean": 21.842335766423354,
+    "weather_rain_total": 104.0,
+    "weather_rain_days": 12,
+    "weather_et0_total": 459.24999999999994,
+    "weather_wind_mean": 8.257664233576643,
+    "weather_solarrad_total": 2268.29
+  },
+  "South tripura|2009 - 2010|Whole Year": {
+    "weather_temp_mean": 25.125479452054794,
+    "weather_rain_total": 1849.2000000000003,
+    "weather_rain_days": 165,
+    "weather_et0_total": 1299.4099999999999,
+    "weather_wind_mean": 11.182191780821919,
+    "weather_solarrad_total": 6086.74
+  },
+  "West tripura|2009 - 2010|Kharif": {
+    "weather_temp_mean": 27.56311475409836,
+    "weather_rain_total": 1133.2,
+    "weather_rain_days": 108,
+    "weather_et0_total": 390.21,
+    "weather_wind_mean": 15.113934426229509,
+    "weather_solarrad_total": 1768.53
+  },
+  "West tripura|2009 - 2010|Rabi": {
+    "weather_temp_mean": 21.68905109489051,
+    "weather_rain_total": 49.699999999999996,
+    "weather_rain_days": 8,
+    "weather_et0_total": 453.53000000000003,
+    "weather_wind_mean": 8.716058394160585,
+    "weather_solarrad_total": 2247.6800000000003
+  },
+  "West tripura|2009 - 2010|Whole Year": {
+    "weather_temp_mean": 25.481369863013697,
+    "weather_rain_total": 1759.9,
+    "weather_rain_days": 162,
+    "weather_et0_total": 1326.58,
+    "weather_wind_mean": 12.39068493150685,
+    "weather_solarrad_total": 6071.5599999999995
+  },
+  "Dhalai|2008 - 2009|Kharif": {
+    "weather_temp_mean": 26.921311475409833,
+    "weather_rain_total": 854.0,
+    "weather_rain_days": 111,
+    "weather_et0_total": 371.09,
+    "weather_wind_mean": 11.185245901639345,
+    "weather_solarrad_total": 1741.3899999999999
+  },
+  "Dhalai|2008 - 2009|Rabi": {
+    "weather_temp_mean": 21.715328467153284,
+    "weather_rain_total": 107.50000000000001,
+    "weather_rain_days": 6,
+    "weather_et0_total": 433.01,
+    "weather_wind_mean": 8.065693430656934,
+    "weather_solarrad_total": 2199.7000000000003
+  },
+  "Dhalai|2008 - 2009|Whole Year": {
+    "weather_temp_mean": 24.531693989071034,
+    "weather_rain_total": 1466.8000000000002,
+    "weather_rain_days": 184,
+    "weather_et0_total": 1212.37,
+    "weather_wind_mean": 9.325409836065573,
+    "weather_solarrad_total": 5892.85
+  },
+  "North tripura|2008 - 2009|Kharif": {
+    "weather_temp_mean": 27.095081967213115,
+    "weather_rain_total": 1353.7,
+    "weather_rain_days": 117,
+    "weather_et0_total": 354.4100000000001,
+    "weather_wind_mean": 10.563934426229507,
+    "weather_solarrad_total": 1645.9899999999998
+  },
+  "North tripura|2008 - 2009|Rabi": {
+    "weather_temp_mean": 21.927737226277376,
+    "weather_rain_total": 115.7,
+    "weather_rain_days": 9,
+    "weather_et0_total": 427.83000000000004,
+    "weather_wind_mean": 8.540145985401459,
+    "weather_solarrad_total": 2181.9399999999996
+  },
+  "North tripura|2008 - 2009|Whole Year": {
+    "weather_temp_mean": 24.568579234972677,
+    "weather_rain_total": 2224.5,
+    "weather_rain_days": 204,
+    "weather_et0_total": 1179.32,
+    "weather_wind_mean": 9.320491803278689,
+    "weather_solarrad_total": 5756.040000000001
+  },
+  "South tripura|2008 - 2009|Kharif": {
+    "weather_temp_mean": 26.0983606557377,
+    "weather_rain_total": 1471.1999999999998,
+    "weather_rain_days": 115,
+    "weather_et0_total": 335.46999999999997,
+    "weather_wind_mean": 13.33606557377049,
+    "weather_solarrad_total": 1625.0
+  },
+  "South tripura|2008 - 2009|Rabi": {
+    "weather_temp_mean": 22.16788321167883,
+    "weather_rain_total": 115.4,
+    "weather_rain_days": 8,
+    "weather_et0_total": 451.08,
+    "weather_wind_mean": 8.230656934306568,
+    "weather_solarrad_total": 2222.5
+  },
+  "South tripura|2008 - 2009|Whole Year": {
+    "weather_temp_mean": 24.64672131147541,
+    "weather_rain_total": 1955.0,
+    "weather_rain_days": 176,
+    "weather_et0_total": 1230.46,
+    "weather_wind_mean": 10.651092896174864,
+    "weather_solarrad_total": 5868.2
+  },
+  "West tripura|2008 - 2009|Kharif": {
+    "weather_temp_mean": 26.910655737704914,
+    "weather_rain_total": 1036.5,
+    "weather_rain_days": 112,
+    "weather_et0_total": 352.38000000000005,
+    "weather_wind_mean": 15.386065573770491,
+    "weather_solarrad_total": 1622.95
+  },
+  "West tripura|2008 - 2009|Rabi": {
+    "weather_temp_mean": 22.044525547445254,
+    "weather_rain_total": 203.39999999999998,
+    "weather_rain_days": 5,
+    "weather_et0_total": 447.26000000000005,
+    "weather_wind_mean": 9.273722627737227,
+    "weather_solarrad_total": 2180.3999999999996
+  },
+  "West tripura|2008 - 2009|Whole Year": {
+    "weather_temp_mean": 24.81830601092896,
+    "weather_rain_total": 1731.6,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1230.89,
+    "weather_wind_mean": 12.019125683060109,
+    "weather_solarrad_total": 5783.639999999999
+  },
+  "Dhalai|2007 - 2008|Kharif": {
+    "weather_temp_mean": 27.122950819672134,
+    "weather_rain_total": 1140.4,
+    "weather_rain_days": 105,
+    "weather_et0_total": 372.6,
+    "weather_wind_mean": 11.662295081967214,
+    "weather_solarrad_total": 1728.11
+  },
+  "Dhalai|2007 - 2008|Rabi": {
+    "weather_temp_mean": 20.545652173913044,
+    "weather_rain_total": 166.4,
+    "weather_rain_days": 19,
+    "weather_et0_total": 395.93000000000006,
+    "weather_wind_mean": 7.731159420289856,
+    "weather_solarrad_total": 2099.02
+  },
+  "Dhalai|2007 - 2008|Whole Year": {
+    "weather_temp_mean": 24.27890410958904,
+    "weather_rain_total": 2051.4,
+    "weather_rain_days": 188,
+    "weather_et0_total": 1193.4699999999998,
+    "weather_wind_mean": 9.81041095890411,
+    "weather_solarrad_total": 5816.92
+  },
+  "North tripura|2007 - 2008|Kharif": {
+    "weather_temp_mean": 27.299180327868857,
+    "weather_rain_total": 1710.4000000000003,
+    "weather_rain_days": 118,
+    "weather_et0_total": 361.78999999999996,
+    "weather_wind_mean": 11.229508196721312,
+    "weather_solarrad_total": 1653.9900000000002
+  },
+  "North tripura|2007 - 2008|Rabi": {
+    "weather_temp_mean": 20.68550724637681,
+    "weather_rain_total": 217.89999999999998,
+    "weather_rain_days": 21,
+    "weather_et0_total": 394.28999999999996,
+    "weather_wind_mean": 8.23623188405797,
+    "weather_solarrad_total": 2094.25
+  },
+  "North tripura|2007 - 2008|Whole Year": {
+    "weather_temp_mean": 24.32054794520548,
+    "weather_rain_total": 2970.7,
+    "weather_rain_days": 209,
+    "weather_et0_total": 1163.87,
+    "weather_wind_mean": 9.773698630136987,
+    "weather_solarrad_total": 5692.74
+  },
+  "South tripura|2007 - 2008|Kharif": {
+    "weather_temp_mean": 26.343442622950825,
+    "weather_rain_total": 1686.1,
+    "weather_rain_days": 114,
+    "weather_et0_total": 341.12000000000006,
+    "weather_wind_mean": 12.982786885245902,
+    "weather_solarrad_total": 1637.88
+  },
+  "South tripura|2007 - 2008|Rabi": {
+    "weather_temp_mean": 21.107246376811595,
+    "weather_rain_total": 182.6,
+    "weather_rain_days": 18,
+    "weather_et0_total": 416.5,
+    "weather_wind_mean": 8.46304347826087,
+    "weather_solarrad_total": 2129.01
+  },
+  "South tripura|2007 - 2008|Whole Year": {
+    "weather_temp_mean": 24.369589041095896,
+    "weather_rain_total": 2582.0,
+    "weather_rain_days": 190,
+    "weather_et0_total": 1206.3899999999999,
+    "weather_wind_mean": 11.09835616438356,
+    "weather_solarrad_total": 5794.38
+  },
+  "West tripura|2007 - 2008|Kharif": {
+    "weather_temp_mean": 27.171311475409833,
+    "weather_rain_total": 1419.2000000000003,
+    "weather_rain_days": 106,
+    "weather_et0_total": 356.90999999999997,
+    "weather_wind_mean": 15.173770491803277,
+    "weather_solarrad_total": 1631.06
+  },
+  "West tripura|2007 - 2008|Rabi": {
+    "weather_temp_mean": 20.757971014492753,
+    "weather_rain_total": 202.2,
+    "weather_rain_days": 18,
+    "weather_et0_total": 413.46999999999997,
+    "weather_wind_mean": 9.268840579710146,
+    "weather_solarrad_total": 2106.97
+  },
+  "West tripura|2007 - 2008|Whole Year": {
+    "weather_temp_mean": 24.64246575342466,
+    "weather_rain_total": 2267.1,
+    "weather_rain_days": 178,
+    "weather_et0_total": 1216.12,
+    "weather_wind_mean": 12.373972602739727,
+    "weather_solarrad_total": 5728.18
+  },
+  "Dhalai|2006 - 2007|Kharif": {
+    "weather_temp_mean": 27.55327868852459,
+    "weather_rain_total": 928.1,
+    "weather_rain_days": 101,
+    "weather_et0_total": 429.21000000000004,
+    "weather_wind_mean": 11.000819672131147,
+    "weather_solarrad_total": 1996.1200000000001
+  },
+  "Dhalai|2006 - 2007|Rabi": {
+    "weather_temp_mean": 20.84817518248175,
+    "weather_rain_total": 95.5,
+    "weather_rain_days": 16,
+    "weather_et0_total": 407.6,
+    "weather_wind_mean": 7.153284671532846,
+    "weather_solarrad_total": 2155.35
+  },
+  "Dhalai|2006 - 2007|Whole Year": {
+    "weather_temp_mean": 25.312054794520552,
+    "weather_rain_total": 1441.2000000000003,
+    "weather_rain_days": 153,
+    "weather_et0_total": 1329.51,
+    "weather_wind_mean": 9.635616438356164,
+    "weather_solarrad_total": 6258.82
+  },
+  "North tripura|2006 - 2007|Kharif": {
+    "weather_temp_mean": 27.791803278688523,
+    "weather_rain_total": 1322.6,
+    "weather_rain_days": 115,
+    "weather_et0_total": 422.00999999999993,
+    "weather_wind_mean": 10.589344262295082,
+    "weather_solarrad_total": 1953.58
+  },
+  "North tripura|2006 - 2007|Rabi": {
+    "weather_temp_mean": 21.065693430656935,
+    "weather_rain_total": 166.10000000000002,
+    "weather_rain_days": 21,
+    "weather_et0_total": 406.23,
+    "weather_wind_mean": 7.772992700729928,
+    "weather_solarrad_total": 2154.05
+  },
+  "North tripura|2006 - 2007|Whole Year": {
+    "weather_temp_mean": 25.33123287671233,
+    "weather_rain_total": 2147.5,
+    "weather_rain_days": 182,
+    "weather_et0_total": 1295.57,
+    "weather_wind_mean": 9.536438356164384,
+    "weather_solarrad_total": 6173.12
+  },
+  "South tripura|2006 - 2007|Kharif": {
+    "weather_temp_mean": 26.632786885245903,
+    "weather_rain_total": 1240.5,
+    "weather_rain_days": 109,
+    "weather_et0_total": 390.30999999999995,
+    "weather_wind_mean": 12.977868852459016,
+    "weather_solarrad_total": 1870.93
+  },
+  "South tripura|2006 - 2007|Rabi": {
+    "weather_temp_mean": 21.501459854014602,
+    "weather_rain_total": 104.4,
+    "weather_rain_days": 11,
+    "weather_et0_total": 432.53000000000003,
+    "weather_wind_mean": 8.167883211678832,
+    "weather_solarrad_total": 2184.7400000000002
+  },
+  "South tripura|2006 - 2007|Whole Year": {
+    "weather_temp_mean": 25.291780821917808,
+    "weather_rain_total": 1788.6,
+    "weather_rain_days": 155,
+    "weather_et0_total": 1328.92,
+    "weather_wind_mean": 10.940547945205479,
+    "weather_solarrad_total": 6147.13
+  },
+  "West tripura|2006 - 2007|Kharif": {
+    "weather_temp_mean": 27.501639344262298,
+    "weather_rain_total": 972.1999999999999,
+    "weather_rain_days": 99,
+    "weather_et0_total": 404.95,
+    "weather_wind_mean": 15.045081967213113,
+    "weather_solarrad_total": 1842.34
+  },
+  "West tripura|2006 - 2007|Rabi": {
+    "weather_temp_mean": 21.318978102189778,
+    "weather_rain_total": 80.0,
+    "weather_rain_days": 14,
+    "weather_et0_total": 427.78000000000003,
+    "weather_wind_mean": 8.825547445255474,
+    "weather_solarrad_total": 2153.48
+  },
+  "West tripura|2006 - 2007|Whole Year": {
+    "weather_temp_mean": 25.575068493150685,
+    "weather_rain_total": 1534.5,
+    "weather_rain_days": 143,
+    "weather_et0_total": 1340.17,
+    "weather_wind_mean": 12.214246575342464,
+    "weather_solarrad_total": 6088.87
+  },
+  "Dhalai|2005 - 2006|Kharif": {
+    "weather_temp_mean": 27.594262295081965,
+    "weather_rain_total": 791.7,
+    "weather_rain_days": 104,
+    "weather_et0_total": 412.07000000000005,
+    "weather_wind_mean": 11.045901639344262,
+    "weather_solarrad_total": 1902.18
+  },
+  "Dhalai|2005 - 2006|Rabi": {
+    "weather_temp_mean": 21.849635036496352,
+    "weather_rain_total": 94.7,
+    "weather_rain_days": 16,
+    "weather_et0_total": 432.45000000000005,
+    "weather_wind_mean": 8.102919708029198,
+    "weather_solarrad_total": 2184.05
+  },
+  "Dhalai|2005 - 2006|Whole Year": {
+    "weather_temp_mean": 24.80383561643836,
+    "weather_rain_total": 1481.8,
+    "weather_rain_days": 180,
+    "weather_et0_total": 1244.19,
+    "weather_wind_mean": 9.7013698630137,
+    "weather_solarrad_total": 5979.460000000001
+  },
+  "North tripura|2005 - 2006|Kharif": {
+    "weather_temp_mean": 27.748360655737706,
+    "weather_rain_total": 1235.8999999999999,
+    "weather_rain_days": 115,
+    "weather_et0_total": 398.2,
+    "weather_wind_mean": 10.304918032786885,
+    "weather_solarrad_total": 1831.9
+  },
+  "North tripura|2005 - 2006|Rabi": {
+    "weather_temp_mean": 21.896350364963507,
+    "weather_rain_total": 181.1,
+    "weather_rain_days": 22,
+    "weather_et0_total": 423.7,
+    "weather_wind_mean": 8.294890510948905,
+    "weather_solarrad_total": 2166.97
+  },
+  "North tripura|2005 - 2006|Whole Year": {
+    "weather_temp_mean": 24.74301369863014,
+    "weather_rain_total": 2374.5,
+    "weather_rain_days": 207,
+    "weather_et0_total": 1202.92,
+    "weather_wind_mean": 9.531506849315068,
+    "weather_solarrad_total": 5830.49
+  },
+  "South tripura|2005 - 2006|Kharif": {
+    "weather_temp_mean": 26.781967213114754,
+    "weather_rain_total": 1230.1000000000001,
+    "weather_rain_days": 109,
+    "weather_et0_total": 385.35,
+    "weather_wind_mean": 12.59344262295082,
+    "weather_solarrad_total": 1825.6299999999999
+  },
+  "South tripura|2005 - 2006|Rabi": {
+    "weather_temp_mean": 22.303649635036496,
+    "weather_rain_total": 95.0,
+    "weather_rain_days": 16,
+    "weather_et0_total": 456.96000000000004,
+    "weather_wind_mean": 8.516058394160583,
+    "weather_solarrad_total": 2226.96
+  },
+  "South tripura|2005 - 2006|Whole Year": {
+    "weather_temp_mean": 24.930958904109588,
+    "weather_rain_total": 1777.6000000000001,
+    "weather_rain_days": 179,
+    "weather_et0_total": 1283.17,
+    "weather_wind_mean": 10.87041095890411,
+    "weather_solarrad_total": 6072.220000000001
+  },
+  "West tripura|2005 - 2006|Kharif": {
+    "weather_temp_mean": 27.581147540983608,
+    "weather_rain_total": 911.0,
+    "weather_rain_days": 105,
+    "weather_et0_total": 397.95,
+    "weather_wind_mean": 14.385245901639344,
+    "weather_solarrad_total": 1805.9299999999998
+  },
+  "West tripura|2005 - 2006|Rabi": {
+    "weather_temp_mean": 21.972262773722626,
+    "weather_rain_total": 114.69999999999999,
+    "weather_rain_days": 16,
+    "weather_et0_total": 450.29,
+    "weather_wind_mean": 9.383941605839416,
+    "weather_solarrad_total": 2183.3900000000003
+  },
+  "West tripura|2005 - 2006|Whole Year": {
+    "weather_temp_mean": 25.147123287671235,
+    "weather_rain_total": 1700.0,
+    "weather_rain_days": 176,
+    "weather_et0_total": 1277.56,
+    "weather_wind_mean": 12.064931506849314,
+    "weather_solarrad_total": 5930.52
+  },
+  "Dhalai|2004 - 2005|Kharif": {
+    "weather_temp_mean": 26.72704918032787,
+    "weather_rain_total": 1143.5,
+    "weather_rain_days": 113,
+    "weather_et0_total": 364.46999999999997,
+    "weather_wind_mean": 10.964754098360654,
+    "weather_solarrad_total": 1719.73
+  },
+  "Dhalai|2004 - 2005|Rabi": {
+    "weather_temp_mean": 21.229197080291975,
+    "weather_rain_total": 83.19999999999999,
+    "weather_rain_days": 6,
+    "weather_et0_total": 433.78999999999996,
+    "weather_wind_mean": 7.978832116788321,
+    "weather_solarrad_total": 2215.49
+  },
+  "Dhalai|2004 - 2005|Whole Year": {
+    "weather_temp_mean": 24.374043715846994,
+    "weather_rain_total": 2240.2,
+    "weather_rain_days": 178,
+    "weather_et0_total": 1207.6599999999999,
+    "weather_wind_mean": 9.784699453551914,
+    "weather_solarrad_total": 5811.26
+  },
+  "North tripura|2004 - 2005|Kharif": {
+    "weather_temp_mean": 26.93360655737705,
+    "weather_rain_total": 1623.2,
+    "weather_rain_days": 120,
+    "weather_et0_total": 354.66999999999996,
+    "weather_wind_mean": 10.904918032786886,
+    "weather_solarrad_total": 1647.46
+  },
+  "North tripura|2004 - 2005|Rabi": {
+    "weather_temp_mean": 21.34963503649635,
+    "weather_rain_total": 134.2,
+    "weather_rain_days": 9,
+    "weather_et0_total": 428.65999999999997,
+    "weather_wind_mean": 8.595620437956205,
+    "weather_solarrad_total": 2195.92
+  },
+  "North tripura|2004 - 2005|Whole Year": {
+    "weather_temp_mean": 24.43005464480874,
+    "weather_rain_total": 3452.0,
+    "weather_rain_days": 197,
+    "weather_et0_total": 1179.9,
+    "weather_wind_mean": 9.91120218579235,
+    "weather_solarrad_total": 5670.51
+  },
+  "South tripura|2004 - 2005|Kharif": {
+    "weather_temp_mean": 26.024590163934427,
+    "weather_rain_total": 1735.4999999999998,
+    "weather_rain_days": 117,
+    "weather_et0_total": 338.7,
+    "weather_wind_mean": 12.87950819672131,
+    "weather_solarrad_total": 1650.5900000000001
+  },
+  "South tripura|2004 - 2005|Rabi": {
+    "weather_temp_mean": 21.77664233576642,
+    "weather_rain_total": 51.699999999999996,
+    "weather_rain_days": 6,
+    "weather_et0_total": 465.78999999999996,
+    "weather_wind_mean": 8.520437956204379,
+    "weather_solarrad_total": 2290.34
+  },
+  "South tripura|2004 - 2005|Whole Year": {
+    "weather_temp_mean": 24.37295081967213,
+    "weather_rain_total": 2503.9,
+    "weather_rain_days": 177,
+    "weather_et0_total": 1218.03,
+    "weather_wind_mean": 11.372131147540985,
+    "weather_solarrad_total": 5827.85
+  },
+  "West tripura|2004 - 2005|Kharif": {
+    "weather_temp_mean": 26.85737704918033,
+    "weather_rain_total": 1741.9,
+    "weather_rain_days": 114,
+    "weather_et0_total": 352.62,
+    "weather_wind_mean": 15.277049180327868,
+    "weather_solarrad_total": 1627.4900000000002
+  },
+  "West tripura|2004 - 2005|Rabi": {
+    "weather_temp_mean": 21.63357664233577,
+    "weather_rain_total": 147.59999999999997,
+    "weather_rain_days": 3,
+    "weather_et0_total": 458.1700000000001,
+    "weather_wind_mean": 9.220437956204378,
+    "weather_solarrad_total": 2231.1000000000004
+  },
+  "West tripura|2004 - 2005|Whole Year": {
+    "weather_temp_mean": 24.681420765027323,
+    "weather_rain_total": 2787.4,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1237.5500000000002,
+    "weather_wind_mean": 12.884972677595627,
+    "weather_solarrad_total": 5747.49
+  },
+  "Dhalai|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.51967213114754,
+    "weather_rain_total": 1343.2,
+    "weather_rain_days": 113,
+    "weather_et0_total": 472.85999999999996,
+    "weather_wind_mean": 13.95901639344262,
+    "weather_solarrad_total": 2262.69
+  },
+  "Dhalai|2025 - 2026|Rabi": {
+    "weather_temp_mean": 20.921167883211677,
+    "weather_rain_total": 67.89999999999999,
+    "weather_rain_days": 13,
+    "weather_et0_total": 407.92,
+    "weather_wind_mean": 8.253284671532848,
+    "weather_solarrad_total": 2095.76
+  },
+  "Dhalai|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.122131147540987,
+    "weather_rain_total": 897.8000000000001,
+    "weather_rain_days": 81,
+    "weather_et0_total": 433.73,
+    "weather_wind_mean": 11.332786885245902,
+    "weather_solarrad_total": 2126.12
+  },
+  "Dhalai|2025 - 2026|Summer": {
+    "weather_temp_mean": 26.763114754098364,
+    "weather_rain_total": 801.9,
+    "weather_rain_days": 68,
+    "weather_et0_total": 496.56,
+    "weather_wind_mean": 14.679508196721311,
+    "weather_solarrad_total": 2165.75
+  },
+  "Dhalai|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.016666666666666,
+    "weather_rain_total": 14.200000000000001,
+    "weather_rain_days": 3,
+    "weather_et0_total": 344.44,
+    "weather_wind_mean": 7.890833333333334,
+    "weather_solarrad_total": 1791.8100000000002
+  },
+  "Dhalai|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 24.77917808219178,
+    "weather_rain_total": 2123.7000000000003,
+    "weather_rain_days": 182,
+    "weather_et0_total": 1294.83,
+    "weather_wind_mean": 11.997808219178081,
+    "weather_solarrad_total": 6136.370000000001
+  },
+  "Gomati|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.12459016393442,
+    "weather_rain_total": 1316.9,
+    "weather_rain_days": 113,
+    "weather_et0_total": 440.01,
+    "weather_wind_mean": 14.961475409836067,
+    "weather_solarrad_total": 2176.9600000000005
+  },
+  "Gomati|2025 - 2026|Rabi": {
+    "weather_temp_mean": 21.3978102189781,
+    "weather_rain_total": 82.7,
+    "weather_rain_days": 14,
+    "weather_et0_total": 442.45,
+    "weather_wind_mean": 9.159854014598539,
+    "weather_solarrad_total": 2190.9700000000003
+  },
+  "Gomati|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.097540983606553,
+    "weather_rain_total": 783.3,
+    "weather_rain_days": 80,
+    "weather_et0_total": 433.39000000000004,
+    "weather_wind_mean": 11.577868852459016,
+    "weather_solarrad_total": 2128.2999999999997
+  },
+  "Gomati|2025 - 2026|Summer": {
+    "weather_temp_mean": 27.220491803278687,
+    "weather_rain_total": 745.4,
+    "weather_rain_days": 68,
+    "weather_et0_total": 510.62,
+    "weather_wind_mean": 15.314754098360657,
+    "weather_solarrad_total": 2241.79
+  },
+  "Gomati|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.520833333333332,
+    "weather_rain_total": 48.7,
+    "weather_rain_days": 5,
+    "weather_et0_total": 377.30999999999995,
+    "weather_wind_mean": 9.057500000000001,
+    "weather_solarrad_total": 1885.79
+  },
+  "Gomati|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 25.053150684931506,
+    "weather_rain_total": 1953.7,
+    "weather_rain_days": 183,
+    "weather_et0_total": 1323.05,
+    "weather_wind_mean": 12.8413698630137,
+    "weather_solarrad_total": 6257.24
+  },
+  "Khowai|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.69180327868853,
+    "weather_rain_total": 1164.7999999999997,
+    "weather_rain_days": 114,
+    "weather_et0_total": 465.22999999999996,
+    "weather_wind_mean": 14.620491803278691,
+    "weather_solarrad_total": 2201.2000000000007
+  },
+  "Khowai|2025 - 2026|Rabi": {
+    "weather_temp_mean": 21.468613138686134,
+    "weather_rain_total": 35.1,
+    "weather_rain_days": 9,
+    "weather_et0_total": 423.49,
+    "weather_wind_mean": 9.116058394160584,
+    "weather_solarrad_total": 2087.52
+  },
+  "Khowai|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.639344262295083,
+    "weather_rain_total": 721.6000000000001,
+    "weather_rain_days": 76,
+    "weather_et0_total": 438.21000000000004,
+    "weather_wind_mean": 12.0,
+    "weather_solarrad_total": 2067.3600000000006
+  },
+  "Khowai|2025 - 2026|Summer": {
+    "weather_temp_mean": 27.069672131147545,
+    "weather_rain_total": 679.2999999999998,
+    "weather_rain_days": 67,
+    "weather_et0_total": 509.09999999999997,
+    "weather_wind_mean": 15.028688524590164,
+    "weather_solarrad_total": 2221.5099999999998
+  },
+  "Khowai|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.46,
+    "weather_rain_total": 20.1,
+    "weather_rain_days": 4,
+    "weather_et0_total": 355.79999999999995,
+    "weather_wind_mean": 8.692499999999999,
+    "weather_solarrad_total": 1791.4099999999999
+  },
+  "Khowai|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 25.16739726027397,
+    "weather_rain_total": 1773.0,
+    "weather_rain_days": 179,
+    "weather_et0_total": 1320.7,
+    "weather_wind_mean": 12.604657534246575,
+    "weather_solarrad_total": 6138.85
+  },
+  "North tripura|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.69344262295082,
+    "weather_rain_total": 1583.8000000000002,
+    "weather_rain_days": 114,
+    "weather_et0_total": 465.59000000000003,
+    "weather_wind_mean": 13.463114754098358,
+    "weather_solarrad_total": 2224.8100000000004
+  },
+  "North tripura|2025 - 2026|Rabi": {
+    "weather_temp_mean": 20.967153284671532,
+    "weather_rain_total": 35.9,
+    "weather_rain_days": 7,
+    "weather_et0_total": 398.74,
+    "weather_wind_mean": 8.707299270072994,
+    "weather_solarrad_total": 2051.95
+  },
+  "North tripura|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.246721311475408,
+    "weather_rain_total": 889.1999999999999,
+    "weather_rain_days": 75,
+    "weather_et0_total": 426.11,
+    "weather_wind_mean": 11.06311475409836,
+    "weather_solarrad_total": 2086.5299999999997
+  },
+  "North tripura|2025 - 2026|Summer": {
+    "weather_temp_mean": 26.48032786885246,
+    "weather_rain_total": 991.9,
+    "weather_rain_days": 78,
+    "weather_et0_total": 468.42999999999995,
+    "weather_wind_mean": 14.495901639344263,
+    "weather_solarrad_total": 2068.44
+  },
+  "North tripura|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.042500000000004,
+    "weather_rain_total": 16.6,
+    "weather_rain_days": 3,
+    "weather_et0_total": 334.94,
+    "weather_wind_mean": 8.395000000000001,
+    "weather_solarrad_total": 1744.67
+  },
+  "North tripura|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 24.742191780821923,
+    "weather_rain_total": 2428.7,
+    "weather_rain_days": 187,
+    "weather_et0_total": 1251.19,
+    "weather_wind_mean": 11.970684931506847,
+    "weather_solarrad_total": 5960.9
+  },
+  "Sepahijala|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.490983606557382,
+    "weather_rain_total": 1120.4,
+    "weather_rain_days": 109,
+    "weather_et0_total": 447.93000000000006,
+    "weather_wind_mean": 15.097540983606558,
+    "weather_solarrad_total": 2185.6200000000003
+  },
+  "Sepahijala|2025 - 2026|Rabi": {
+    "weather_temp_mean": 21.588321167883212,
+    "weather_rain_total": 36.5,
+    "weather_rain_days": 9,
+    "weather_et0_total": 440.72,
+    "weather_wind_mean": 9.316058394160583,
+    "weather_solarrad_total": 2157.32
+  },
+  "Sepahijala|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.30655737704918,
+    "weather_rain_total": 693.4999999999999,
+    "weather_rain_days": 74,
+    "weather_et0_total": 432.15999999999997,
+    "weather_wind_mean": 11.737704918032785,
+    "weather_solarrad_total": 2115.64
+  },
+  "Sepahijala|2025 - 2026|Summer": {
+    "weather_temp_mean": 27.420491803278686,
+    "weather_rain_total": 689.6000000000001,
+    "weather_rain_days": 66,
+    "weather_et0_total": 509.83000000000004,
+    "weather_wind_mean": 14.864754098360656,
+    "weather_solarrad_total": 2253.5600000000004
+  },
+  "Sepahijala|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.708333333333332,
+    "weather_rain_total": 27.299999999999997,
+    "weather_rain_days": 5,
+    "weather_et0_total": 376.04999999999995,
+    "weather_wind_mean": 9.151666666666666,
+    "weather_solarrad_total": 1853.7700000000002
+  },
+  "Sepahijala|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 25.17753424657534,
+    "weather_rain_total": 1748.5,
+    "weather_rain_days": 173,
+    "weather_et0_total": 1312.4699999999998,
+    "weather_wind_mean": 12.616438356164384,
+    "weather_solarrad_total": 6238.0599999999995
+  },
+  "South tripura|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.042622950819673,
+    "weather_rain_total": 1425.7999999999997,
+    "weather_rain_days": 114,
+    "weather_et0_total": 431.56,
+    "weather_wind_mean": 15.72622950819672,
+    "weather_solarrad_total": 2133.04
+  },
+  "South tripura|2025 - 2026|Rabi": {
+    "weather_temp_mean": 21.673722627737227,
+    "weather_rain_total": 66.6,
+    "weather_rain_days": 12,
+    "weather_et0_total": 449.92,
+    "weather_wind_mean": 9.721897810218978,
+    "weather_solarrad_total": 2209.4399999999996
+  },
+  "South tripura|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.122950819672134,
+    "weather_rain_total": 764.7,
+    "weather_rain_days": 80,
+    "weather_et0_total": 431.6300000000001,
+    "weather_wind_mean": 12.147540983606557,
+    "weather_solarrad_total": 2122.4500000000003
+  },
+  "South tripura|2025 - 2026|Summer": {
+    "weather_temp_mean": 27.19426229508197,
+    "weather_rain_total": 813.1,
+    "weather_rain_days": 67,
+    "weather_et0_total": 507.49,
+    "weather_wind_mean": 15.495901639344261,
+    "weather_solarrad_total": 2234.19
+  },
+  "South tripura|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.858333333333334,
+    "weather_rain_total": 31.7,
+    "weather_rain_days": 4,
+    "weather_et0_total": 385.75,
+    "weather_wind_mean": 9.601666666666667,
+    "weather_solarrad_total": 1904.2
+  },
+  "South tripura|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 25.06821917808219,
+    "weather_rain_total": 2114.0,
+    "weather_rain_days": 180,
+    "weather_et0_total": 1312.5,
+    "weather_wind_mean": 13.048493150684932,
+    "weather_solarrad_total": 6239.58
+  },
+  "Unakoti|2025 - 2026|Kharif": {
+    "weather_temp_mean": 27.472131147540985,
+    "weather_rain_total": 1611.6,
+    "weather_rain_days": 117,
+    "weather_et0_total": 469.65,
+    "weather_wind_mean": 13.37377049180328,
+    "weather_solarrad_total": 2264.1100000000006
+  },
+  "Unakoti|2025 - 2026|Rabi": {
+    "weather_temp_mean": 21.073722627737226,
+    "weather_rain_total": 55.00000000000001,
+    "weather_rain_days": 7,
+    "weather_et0_total": 404.34000000000003,
+    "weather_wind_mean": 8.051094890510951,
+    "weather_solarrad_total": 2074.1000000000004
+  },
+  "Unakoti|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.090983606557376,
+    "weather_rain_total": 1034.5,
+    "weather_rain_days": 77,
+    "weather_et0_total": 432.08,
+    "weather_wind_mean": 10.941803278688525,
+    "weather_solarrad_total": 2126.95
+  },
+  "Unakoti|2025 - 2026|Summer": {
+    "weather_temp_mean": 26.5672131147541,
+    "weather_rain_total": 920.3999999999999,
+    "weather_rain_days": 74,
+    "weather_et0_total": 481.15000000000003,
+    "weather_wind_mean": 14.381967213114756,
+    "weather_solarrad_total": 2109.5800000000004
+  },
+  "Unakoti|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.203333333333333,
+    "weather_rain_total": 19.700000000000003,
+    "weather_rain_days": 3,
+    "weather_et0_total": 340.71000000000004,
+    "weather_wind_mean": 7.746666666666667,
+    "weather_solarrad_total": 1766.43
+  },
+  "Unakoti|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 24.724931506849316,
+    "weather_rain_total": 2457.6,
+    "weather_rain_days": 188,
+    "weather_et0_total": 1272.51,
+    "weather_wind_mean": 11.679726027397262,
+    "weather_solarrad_total": 6059.65
+  },
+  "West tripura|2025 - 2026|Kharif": {
+    "weather_temp_mean": 28.102459016393446,
+    "weather_rain_total": 1099.3,
+    "weather_rain_days": 113,
+    "weather_et0_total": 467.34999999999997,
+    "weather_wind_mean": 15.544262295081968,
+    "weather_solarrad_total": 2170.6800000000003
+  },
+  "West tripura|2025 - 2026|Rabi": {
+    "weather_temp_mean": 21.887591240875913,
+    "weather_rain_total": 52.4,
+    "weather_rain_days": 8,
+    "weather_et0_total": 439.22,
+    "weather_wind_mean": 9.11094890510949,
+    "weather_solarrad_total": 2119.55
+  },
+  "West tripura|2025 - 2026|Autumn": {
+    "weather_temp_mean": 26.826229508196718,
+    "weather_rain_total": 767.9,
+    "weather_rain_days": 73,
+    "weather_et0_total": 442.16999999999996,
+    "weather_wind_mean": 11.671311475409837,
+    "weather_solarrad_total": 2087.7799999999997
+  },
+  "West tripura|2025 - 2026|Summer": {
+    "weather_temp_mean": 28.03688524590164,
+    "weather_rain_total": 661.4,
+    "weather_rain_days": 62,
+    "weather_et0_total": 537.45,
+    "weather_wind_mean": 15.220491803278687,
+    "weather_solarrad_total": 2253.24
+  },
+  "West tripura|2025 - 2026|Winter": {
+    "weather_temp_mean": 20.98416666666667,
+    "weather_rain_total": 35.400000000000006,
+    "weather_rain_days": 4,
+    "weather_et0_total": 373.74,
+    "weather_wind_mean": 9.134166666666665,
+    "weather_solarrad_total": 1816.67
+  },
+  "West tripura|2025 - 2026|Whole Year": {
+    "weather_temp_mean": 25.70328767123288,
+    "weather_rain_total": 1741.4,
+    "weather_rain_days": 171,
+    "weather_et0_total": 1359.5300000000002,
+    "weather_wind_mean": 12.905205479452055,
+    "weather_solarrad_total": 6182.33
+  }
+}

@@ -1,0 +1,3184 @@
+{
+  "generated_at": "2026-03-25T12:11:33.831835",
+  "run_date": "2026-03-25",
+  "model_version": "XGBoost \u00b7 seasonal weather features \u00b7 33 features",
+  "alert_threshold": -20.0,
+  "critical_threshold": -30.0,
+  "summary": {
+    "total": 176,
+    "critical": 3,
+    "watch": 6,
+    "normal": 167,
+    "districts_flagged": 8
+  },
+  "predictions": [
+    {
+      "district": "Dhalai",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.789,
+      "normal": 0.828,
+      "anomaly": -4.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.563,
+      "normal": 1.712,
+      "anomaly": -8.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.465,
+      "normal": 1.434,
+      "anomaly": 2.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.427,
+      "normal": 1.522,
+      "anomaly": -6.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 9.259,
+      "normal": 10.748,
+      "anomaly": -13.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.599,
+      "normal": 1.606,
+      "anomaly": -0.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.883,
+      "normal": 2.676,
+      "anomaly": -29.6,
+      "status": "watch",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.811,
+      "normal": 0.936,
+      "anomaly": -13.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 8.781,
+      "normal": 9.618,
+      "anomaly": -8.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.617,
+      "normal": 0.766,
+      "anomaly": -19.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.654,
+      "normal": 0.784,
+      "anomaly": -16.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.961,
+      "normal": 1.002,
+      "anomaly": -4.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.823,
+      "normal": 0.81,
+      "anomaly": 1.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.986,
+      "normal": 2.906,
+      "anomaly": 2.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 897.8,
+        "rain_days": 81,
+        "temp_mean": 26.1,
+        "et0_total": 433.7,
+        "wind_mean": 11.3,
+        "solarrad_total": 2126.1
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.423,
+      "normal": 1.008,
+      "anomaly": 41.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.416,
+      "normal": 3.028,
+      "anomaly": 12.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 801.9,
+        "rain_days": 68,
+        "temp_mean": 26.8,
+        "et0_total": 496.6,
+        "wind_mean": 14.7,
+        "solarrad_total": 2165.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 2.888,
+      "normal": 3.162,
+      "anomaly": -8.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 14.2,
+        "rain_days": 3,
+        "temp_mean": 20.0,
+        "et0_total": 344.4,
+        "wind_mean": 7.9,
+        "solarrad_total": 1791.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.592,
+      "normal": 0.614,
+      "anomaly": -3.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 57.299,
+      "normal": 56.33,
+      "anomaly": 1.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 2123.7,
+        "rain_days": 182,
+        "temp_mean": 24.8,
+        "et0_total": 1294.8,
+        "wind_mean": 12.0,
+        "solarrad_total": 6136.4
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.685,
+      "normal": 0.732,
+      "anomaly": -6.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1343.2,
+        "rain_days": 113,
+        "temp_mean": 27.5,
+        "et0_total": 472.9,
+        "wind_mean": 14.0,
+        "solarrad_total": 2262.7
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.75,
+      "normal": 0.806,
+      "anomaly": -7.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Dhalai",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.192,
+      "normal": 2.182,
+      "anomaly": 0.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 67.9,
+        "rain_days": 13,
+        "temp_mean": 20.9,
+        "et0_total": 407.9,
+        "wind_mean": 8.3,
+        "solarrad_total": 2095.8
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.78,
+      "normal": 0.804,
+      "anomaly": -3.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.449,
+      "normal": 1.298,
+      "anomaly": 11.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.158,
+      "normal": 1.114,
+      "anomaly": 3.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.331,
+      "normal": 1.228,
+      "anomaly": 8.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 8.678,
+      "normal": 8.518,
+      "anomaly": 1.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.741,
+      "normal": 1.62,
+      "anomaly": 7.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.761,
+      "normal": 2.618,
+      "anomaly": -32.7,
+      "status": "critical",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.752,
+      "normal": 0.676,
+      "anomaly": 11.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 8.768,
+      "normal": 8.894,
+      "anomaly": -1.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.618,
+      "normal": 0.588,
+      "anomaly": 5.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.676,
+      "normal": 0.75,
+      "anomaly": -9.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.87,
+      "normal": 0.884,
+      "anomaly": -1.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.84,
+      "normal": 0.834,
+      "anomaly": 0.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.747,
+      "normal": 2.602,
+      "anomaly": 5.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 783.3,
+        "rain_days": 80,
+        "temp_mean": 26.1,
+        "et0_total": 433.4,
+        "wind_mean": 11.6,
+        "solarrad_total": 2128.3
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.361,
+      "normal": 1.052,
+      "anomaly": 29.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.418,
+      "normal": 3.274,
+      "anomaly": 4.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 745.4,
+        "rain_days": 68,
+        "temp_mean": 27.2,
+        "et0_total": 510.6,
+        "wind_mean": 15.3,
+        "solarrad_total": 2241.8
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 3.502,
+      "normal": 3.238,
+      "anomaly": 8.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 48.7,
+        "rain_days": 5,
+        "temp_mean": 20.5,
+        "et0_total": 377.3,
+        "wind_mean": 9.1,
+        "solarrad_total": 1885.8
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.649,
+      "normal": 0.574,
+      "anomaly": 13.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 48.483,
+      "normal": 46.96,
+      "anomaly": 3.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1953.7,
+        "rain_days": 183,
+        "temp_mean": 25.1,
+        "et0_total": 1323.0,
+        "wind_mean": 12.8,
+        "solarrad_total": 6257.2
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.674,
+      "normal": 0.648,
+      "anomaly": 4.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1316.9,
+        "rain_days": 113,
+        "temp_mean": 27.1,
+        "et0_total": 440.0,
+        "wind_mean": 15.0,
+        "solarrad_total": 2177.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.733,
+      "normal": 0.752,
+      "anomaly": -2.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Gomati",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.159,
+      "normal": 2.062,
+      "anomaly": 4.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 82.7,
+        "rain_days": 14,
+        "temp_mean": 21.4,
+        "et0_total": 442.4,
+        "wind_mean": 9.2,
+        "solarrad_total": 2191.0
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.761,
+      "normal": 0.766,
+      "anomaly": -0.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.504,
+      "normal": 1.454,
+      "anomaly": 3.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.342,
+      "normal": 1.518,
+      "anomaly": -11.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.372,
+      "normal": 1.44,
+      "anomaly": -4.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 8.88,
+      "normal": 9.292,
+      "anomaly": -4.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.607,
+      "normal": 1.622,
+      "anomaly": -0.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.908,
+      "normal": 2.594,
+      "anomaly": -26.5,
+      "status": "watch",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.741,
+      "normal": 0.68,
+      "anomaly": 9.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 8.783,
+      "normal": 8.732,
+      "anomaly": 0.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.637,
+      "normal": 0.63,
+      "anomaly": 1.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.657,
+      "normal": 0.74,
+      "anomaly": -11.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.938,
+      "normal": 0.938,
+      "anomaly": -0.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.83,
+      "normal": 0.806,
+      "anomaly": 2.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.945,
+      "normal": 2.682,
+      "anomaly": 9.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 721.6,
+        "rain_days": 76,
+        "temp_mean": 26.6,
+        "et0_total": 438.2,
+        "wind_mean": 12.0,
+        "solarrad_total": 2067.4
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.863,
+      "normal": 1.14,
+      "anomaly": 63.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.492,
+      "normal": 3.238,
+      "anomaly": 7.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 679.3,
+        "rain_days": 67,
+        "temp_mean": 27.1,
+        "et0_total": 509.1,
+        "wind_mean": 15.0,
+        "solarrad_total": 2221.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 3.486,
+      "normal": 3.15,
+      "anomaly": 10.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 20.1,
+        "rain_days": 4,
+        "temp_mean": 20.5,
+        "et0_total": 355.8,
+        "wind_mean": 8.7,
+        "solarrad_total": 1791.4
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.642,
+      "normal": 0.6,
+      "anomaly": 7.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 55.2,
+      "normal": 55.424,
+      "anomaly": -0.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1773.0,
+        "rain_days": 179,
+        "temp_mean": 25.2,
+        "et0_total": 1320.7,
+        "wind_mean": 12.6,
+        "solarrad_total": 6138.9
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.678,
+      "normal": 0.672,
+      "anomaly": 0.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1164.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.2,
+        "wind_mean": 14.6,
+        "solarrad_total": 2201.2
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.755,
+      "normal": 0.762,
+      "anomaly": -1.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "Khowai",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.146,
+      "normal": 2.058,
+      "anomaly": 4.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.1,
+        "rain_days": 9,
+        "temp_mean": 21.5,
+        "et0_total": 423.5,
+        "wind_mean": 9.1,
+        "solarrad_total": 2087.5
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.727,
+      "normal": 0.73,
+      "anomaly": -0.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.39,
+      "normal": 1.366,
+      "anomaly": 1.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.274,
+      "normal": 1.268,
+      "anomaly": 0.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.308,
+      "normal": 1.378,
+      "anomaly": -5.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 8.616,
+      "normal": 8.74,
+      "anomaly": -1.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.568,
+      "normal": 1.6,
+      "anomaly": -2.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.886,
+      "normal": 2.48,
+      "anomaly": -23.9,
+      "status": "watch",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.749,
+      "normal": 0.826,
+      "anomaly": -9.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 9.157,
+      "normal": 8.832,
+      "anomaly": 3.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.586,
+      "normal": 0.62,
+      "anomaly": -5.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.633,
+      "normal": 0.742,
+      "anomaly": -14.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.853,
+      "normal": 0.788,
+      "anomaly": 8.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.832,
+      "normal": 0.846,
+      "anomaly": -1.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.794,
+      "normal": 2.802,
+      "anomaly": -0.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 889.2,
+        "rain_days": 75,
+        "temp_mean": 26.2,
+        "et0_total": 426.1,
+        "wind_mean": 11.1,
+        "solarrad_total": 2086.5
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.48,
+      "normal": 1.176,
+      "anomaly": 25.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.093,
+      "normal": 2.97,
+      "anomaly": 4.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 991.9,
+        "rain_days": 78,
+        "temp_mean": 26.5,
+        "et0_total": 468.4,
+        "wind_mean": 14.5,
+        "solarrad_total": 2068.4
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 3.368,
+      "normal": 3.074,
+      "anomaly": 9.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 16.6,
+        "rain_days": 3,
+        "temp_mean": 20.0,
+        "et0_total": 334.9,
+        "wind_mean": 8.4,
+        "solarrad_total": 1744.7
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.597,
+      "normal": 0.58,
+      "anomaly": 2.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 55.772,
+      "normal": 56.362,
+      "anomaly": -1.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 2428.7,
+        "rain_days": 187,
+        "temp_mean": 24.7,
+        "et0_total": 1251.2,
+        "wind_mean": 12.0,
+        "solarrad_total": 5960.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.646,
+      "normal": 0.628,
+      "anomaly": 2.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1583.8,
+        "rain_days": 114,
+        "temp_mean": 27.7,
+        "et0_total": 465.6,
+        "wind_mean": 13.5,
+        "solarrad_total": 2224.8
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.683,
+      "normal": 0.682,
+      "anomaly": 0.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "North tripura",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.142,
+      "normal": 2.17,
+      "anomaly": -1.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.9,
+        "rain_days": 7,
+        "temp_mean": 21.0,
+        "et0_total": 398.7,
+        "wind_mean": 8.7,
+        "solarrad_total": 2051.9
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.749,
+      "normal": 0.764,
+      "anomaly": -1.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.373,
+      "normal": 1.322,
+      "anomaly": 3.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.402,
+      "normal": 1.392,
+      "anomaly": 0.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.387,
+      "normal": 1.444,
+      "anomaly": -3.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 8.796,
+      "normal": 8.474,
+      "anomaly": 3.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.595,
+      "normal": 1.836,
+      "anomaly": -13.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.86,
+      "normal": 2.814,
+      "anomaly": -33.9,
+      "status": "critical",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.713,
+      "normal": 0.67,
+      "anomaly": 6.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 7.851,
+      "normal": 7.152,
+      "anomaly": 9.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.602,
+      "normal": 0.648,
+      "anomaly": -7.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.675,
+      "normal": 0.702,
+      "anomaly": -3.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.915,
+      "normal": 0.87,
+      "anomaly": 5.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.839,
+      "normal": 0.816,
+      "anomaly": 2.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.684,
+      "normal": 2.55,
+      "anomaly": 5.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 693.5,
+        "rain_days": 74,
+        "temp_mean": 26.3,
+        "et0_total": 432.2,
+        "wind_mean": 11.7,
+        "solarrad_total": 2115.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.459,
+      "normal": 1.022,
+      "anomaly": 42.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.165,
+      "normal": 3.35,
+      "anomaly": -5.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 689.6,
+        "rain_days": 66,
+        "temp_mean": 27.4,
+        "et0_total": 509.8,
+        "wind_mean": 14.9,
+        "solarrad_total": 2253.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 3.491,
+      "normal": 3.308,
+      "anomaly": 5.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 27.3,
+        "rain_days": 5,
+        "temp_mean": 20.7,
+        "et0_total": 376.0,
+        "wind_mean": 9.2,
+        "solarrad_total": 1853.8
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.688,
+      "normal": 0.688,
+      "anomaly": -0.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 58.558,
+      "normal": 61.95,
+      "anomaly": -5.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1748.5,
+        "rain_days": 173,
+        "temp_mean": 25.2,
+        "et0_total": 1312.5,
+        "wind_mean": 12.6,
+        "solarrad_total": 6238.1
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.73,
+      "normal": 0.736,
+      "anomaly": -0.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1120.4,
+        "rain_days": 109,
+        "temp_mean": 27.5,
+        "et0_total": 447.9,
+        "wind_mean": 15.1,
+        "solarrad_total": 2185.6
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.773,
+      "normal": 0.752,
+      "anomaly": 2.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "Sepahijala",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.239,
+      "normal": 2.148,
+      "anomaly": 4.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 36.5,
+        "rain_days": 9,
+        "temp_mean": 21.6,
+        "et0_total": 440.7,
+        "wind_mean": 9.3,
+        "solarrad_total": 2157.3
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.772,
+      "normal": 0.768,
+      "anomaly": 0.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.437,
+      "normal": 1.448,
+      "anomaly": -0.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.454,
+      "normal": 1.45,
+      "anomaly": 0.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.553,
+      "normal": 1.488,
+      "anomaly": 4.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 8.266,
+      "normal": 8.074,
+      "anomaly": 2.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.667,
+      "normal": 1.772,
+      "anomaly": -5.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.814,
+      "normal": 2.63,
+      "anomaly": -31.0,
+      "status": "critical",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.721,
+      "normal": 0.732,
+      "anomaly": -1.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 7.711,
+      "normal": 7.58,
+      "anomaly": 1.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.639,
+      "normal": 0.638,
+      "anomaly": 0.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.644,
+      "normal": 0.692,
+      "anomaly": -6.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.909,
+      "normal": 0.928,
+      "anomaly": -2.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.876,
+      "normal": 0.856,
+      "anomaly": 2.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.742,
+      "normal": 2.708,
+      "anomaly": 1.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 764.7,
+        "rain_days": 80,
+        "temp_mean": 26.1,
+        "et0_total": 431.6,
+        "wind_mean": 12.1,
+        "solarrad_total": 2122.5
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.467,
+      "normal": 1.046,
+      "anomaly": 40.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.459,
+      "normal": 3.418,
+      "anomaly": 1.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 813.1,
+        "rain_days": 67,
+        "temp_mean": 27.2,
+        "et0_total": 507.5,
+        "wind_mean": 15.5,
+        "solarrad_total": 2234.2
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 3.481,
+      "normal": 3.354,
+      "anomaly": 3.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 31.7,
+        "rain_days": 4,
+        "temp_mean": 20.9,
+        "et0_total": 385.8,
+        "wind_mean": 9.6,
+        "solarrad_total": 1904.2
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.692,
+      "normal": 0.796,
+      "anomaly": -13.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 51.031,
+      "normal": 49.856,
+      "anomaly": 2.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 2114.0,
+        "rain_days": 180,
+        "temp_mean": 25.1,
+        "et0_total": 1312.5,
+        "wind_mean": 13.0,
+        "solarrad_total": 6239.6
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.742,
+      "normal": 0.712,
+      "anomaly": 4.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1425.8,
+        "rain_days": 114,
+        "temp_mean": 27.0,
+        "et0_total": 431.6,
+        "wind_mean": 15.7,
+        "solarrad_total": 2133.0
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.762,
+      "normal": 0.774,
+      "anomaly": -1.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "South tripura",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.121,
+      "normal": 2.144,
+      "anomaly": -1.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 66.6,
+        "rain_days": 12,
+        "temp_mean": 21.7,
+        "et0_total": 449.9,
+        "wind_mean": 9.7,
+        "solarrad_total": 2209.4
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.757,
+      "normal": 0.752,
+      "anomaly": 0.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.581,
+      "normal": 1.558,
+      "anomaly": 1.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.367,
+      "normal": 1.474,
+      "anomaly": -7.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.361,
+      "normal": 1.38,
+      "anomaly": -1.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 8.251,
+      "normal": 8.254,
+      "anomaly": -0.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.575,
+      "normal": 1.648,
+      "anomaly": -4.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 1.917,
+      "normal": 2.7,
+      "anomaly": -29.0,
+      "status": "watch",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.752,
+      "normal": 0.798,
+      "anomaly": -5.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 8.491,
+      "normal": 8.83,
+      "anomaly": -3.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.599,
+      "normal": 0.606,
+      "anomaly": -1.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.677,
+      "normal": 0.712,
+      "anomaly": -4.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.777,
+      "normal": 0.684,
+      "anomaly": 13.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.838,
+      "normal": 0.85,
+      "anomaly": -1.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 3.181,
+      "normal": 2.95,
+      "anomaly": 7.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1034.5,
+        "rain_days": 77,
+        "temp_mean": 26.1,
+        "et0_total": 432.1,
+        "wind_mean": 10.9,
+        "solarrad_total": 2126.9
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.517,
+      "normal": 1.042,
+      "anomaly": 45.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 3.433,
+      "normal": 3.196,
+      "anomaly": 7.4,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 920.4,
+        "rain_days": 74,
+        "temp_mean": 26.6,
+        "et0_total": 481.2,
+        "wind_mean": 14.4,
+        "solarrad_total": 2109.6
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 2.857,
+      "normal": 3.222,
+      "anomaly": -11.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 19.7,
+        "rain_days": 3,
+        "temp_mean": 20.2,
+        "et0_total": 340.7,
+        "wind_mean": 7.7,
+        "solarrad_total": 1766.4
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.638,
+      "normal": 0.67,
+      "anomaly": -4.7,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 60.046,
+      "normal": 59.69,
+      "anomaly": 0.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 2457.6,
+        "rain_days": 188,
+        "temp_mean": 24.7,
+        "et0_total": 1272.5,
+        "wind_mean": 11.7,
+        "solarrad_total": 6059.6
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.632,
+      "normal": 0.642,
+      "anomaly": -1.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1611.6,
+        "rain_days": 117,
+        "temp_mean": 27.5,
+        "et0_total": 469.6,
+        "wind_mean": 13.4,
+        "solarrad_total": 2264.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.665,
+      "normal": 0.684,
+      "anomaly": -2.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "Unakoti",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.142,
+      "normal": 2.094,
+      "anomaly": 2.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 55.0,
+        "rain_days": 7,
+        "temp_mean": 21.1,
+        "et0_total": 404.3,
+        "wind_mean": 8.1,
+        "solarrad_total": 2074.1
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Arhar/Tur",
+      "season": "Kharif",
+      "predicted": 0.784,
+      "normal": 0.802,
+      "anomaly": -2.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Cotton(lint)",
+      "season": "Kharif",
+      "predicted": 1.493,
+      "normal": 1.456,
+      "anomaly": 2.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Groundnut",
+      "season": "Kharif",
+      "predicted": 1.331,
+      "normal": 1.304,
+      "anomaly": 2.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Groundnut",
+      "season": "Rabi",
+      "predicted": 1.556,
+      "normal": 1.538,
+      "anomaly": 1.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Jute",
+      "season": "Kharif",
+      "predicted": 9.347,
+      "normal": 10.188,
+      "anomaly": -8.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Maize",
+      "season": "Kharif",
+      "predicted": 1.63,
+      "normal": 1.544,
+      "anomaly": 5.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Maize",
+      "season": "Rabi",
+      "predicted": 2.003,
+      "normal": 2.602,
+      "anomaly": -23.0,
+      "status": "watch",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Masoor",
+      "season": "Rabi",
+      "predicted": 0.745,
+      "normal": 0.682,
+      "anomaly": 9.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Mesta",
+      "season": "Kharif",
+      "predicted": 8.349,
+      "normal": 8.426,
+      "anomaly": -0.9,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Moong(Green Gram)",
+      "season": "Kharif",
+      "predicted": 0.586,
+      "normal": 0.586,
+      "anomaly": 0.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Moong(Green Gram)",
+      "season": "Rabi",
+      "predicted": 0.662,
+      "normal": 0.71,
+      "anomaly": -6.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Peas & beans (Pulses)",
+      "season": "Rabi",
+      "predicted": 0.912,
+      "normal": 0.838,
+      "anomaly": 8.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Rapeseed &Mustard",
+      "season": "Rabi",
+      "predicted": 0.894,
+      "normal": 0.944,
+      "anomaly": -5.3,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Rice",
+      "season": "Autumn",
+      "predicted": 2.87,
+      "normal": 2.658,
+      "anomaly": 8.0,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 767.9,
+        "rain_days": 73,
+        "temp_mean": 26.8,
+        "et0_total": 442.2,
+        "wind_mean": 11.7,
+        "solarrad_total": 2087.8
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Rice",
+      "season": "Kharif",
+      "predicted": 1.732,
+      "normal": 1.082,
+      "anomaly": 60.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Rice",
+      "season": "Summer",
+      "predicted": 2.999,
+      "normal": 3.45,
+      "anomaly": -13.1,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 661.4,
+        "rain_days": 62,
+        "temp_mean": 28.0,
+        "et0_total": 537.5,
+        "wind_mean": 15.2,
+        "solarrad_total": 2253.2
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Rice",
+      "season": "Winter",
+      "predicted": 3.485,
+      "normal": 3.24,
+      "anomaly": 7.6,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 35.4,
+        "rain_days": 4,
+        "temp_mean": 21.0,
+        "et0_total": 373.7,
+        "wind_mean": 9.1,
+        "solarrad_total": 1816.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Sesamum",
+      "season": "Kharif",
+      "predicted": 0.668,
+      "normal": 0.854,
+      "anomaly": -21.8,
+      "status": "watch",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Sugarcane",
+      "season": "Whole Year",
+      "predicted": 57.511,
+      "normal": 61.042,
+      "anomaly": -5.8,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1741.4,
+        "rain_days": 171,
+        "temp_mean": 25.7,
+        "et0_total": 1359.5,
+        "wind_mean": 12.9,
+        "solarrad_total": 6182.3
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Urad",
+      "season": "Kharif",
+      "predicted": 0.685,
+      "normal": 0.664,
+      "anomaly": 3.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 1099.3,
+        "rain_days": 113,
+        "temp_mean": 28.1,
+        "et0_total": 467.3,
+        "wind_mean": 15.5,
+        "solarrad_total": 2170.7
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Urad",
+      "season": "Rabi",
+      "predicted": 0.749,
+      "normal": 0.748,
+      "anomaly": 0.2,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    },
+    {
+      "district": "West tripura",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "predicted": 2.153,
+      "normal": 2.122,
+      "anomaly": 1.5,
+      "status": "normal",
+      "weather_year": 2025,
+      "weather": {
+        "rain_total": 52.4,
+        "rain_days": 8,
+        "temp_mean": 21.9,
+        "et0_total": 439.2,
+        "wind_mean": 9.1,
+        "solarrad_total": 2119.6
+      }
+    }
+  ]
+}

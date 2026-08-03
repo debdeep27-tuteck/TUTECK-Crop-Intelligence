@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropAI Admin Panel</title>
+
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400&display=swap">
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f7f5f0;
+            --border: #e0ddd5;
+            --border2: #c8c4b8;
+            --leaf: #378c50;
+            --leaf-dark: #3d6a49;
+            --text: #1a1a18;
+            --text2: #33332e;
+            --text3: #8e8e0c;
+            --red: #c0392b;
+            --sky: #2f8b47;
+            --mono: 'DM Mono', monospace;
+            --head: 'DM Serif Display', serif;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            padding: 30px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(74, 124, 89, .08), transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(14, 165, 233, .06), transparent 45%);
+            pointer-events: none;
+        }
+
+        .page {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-family: var(--head);
+            font-size: 32px;
+            color: var(--leaf);
+        }
+
+        .subtitle {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-top: 5px;
+        }
+
+        .logout-btn {
+            height: 42px;
+            padding: 0 18px;
+            border: none;
+            background: var(--red);
+            color: white;
+            border-radius: 6px;
+            font-family: var(--mono);
+            cursor: pointer;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, .75);
+            backdrop-filter: blur(6px);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .05);
+        }
+
+        .section-title {
+            font-family: var(--head);
+            font-size: 22px;
+            color: var(--leaf);
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .input,
+        .select {
+            height: 42px;
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 0 12px;
+            font-size: 14px;
+        }
+
+        .btn {
+            height: 42px;
+            border: none;
+            background: var(--leaf);
+            color: white;
+            border-radius: 6px;
+            padding: 0 14px;
+            cursor: pointer;
+            font-family: var(--mono);
+        }
+
+        .btn:hover {
+            background: var(--leaf-dark);
+        }
+
+        .table-wrap {
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border2);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(74, 124, 89, .12);
+            color: var(--leaf);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .action-btn {
+            border: none;
+            padding: 7px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 6px;
+            font-size: 12px;
+        }
+
+        .delete-btn {
+            background: #fbe4e1;
+            color: var(--red);
+        }
+
+        .permission-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: white;
+        }
+
+        .role-title {
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            color: var(--leaf);
+        }
+
+        .checkbox-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-list label {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-btn {
+            width: 100%;
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+            font-family: var(--mono);
+            font-size: 12px;
+        }
+
+        .error {
+            background: #fdecea;
+            color: #c0392b;
+        }
+
+        .success {
+            background: #e9f7ef;
+            color: #1e8449;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            height: 42px;
+            padding: 0 18px;
+            border: none;
+            border-radius: 6px;
+            background: var(--sky);
+            color: #fff;
+            cursor: pointer;
+            font-family: var(--mono);
+            transition: .2s;
+        }
+
+        .nav-btn:hover {
+            opacity: .9;
+        }
+
+        .admin-only {
+            display: none;
+        }
+
+        @media(max-width:1000px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class=" page">
+
+        <div class="header">
+
+            <div>
+                <div class="title">CropAI Admin Panel</div>
+                <div class="subtitle">User Management & Role Permissions</div>
+            </div>
+
+            <div class="header-actions">
+
+                <button class="nav-btn" onclick="goToMain()">
+                    Crop-Intelligence Dashboard
+                </button>
+
+                <button class="nav-btn admin-only" id="adminBtn" onclick="goToAdmin()">
+                    Admin Panel
+                </button>
+
+                <button class="logout-btn" onclick="logout()">
+                    Logout
+                </button>
+
+            </div>
+
+        </div>
+
+        <div id="errorBox" class="msg error"></div>
+        <div id="successBox" class="msg success"></div>
+
+        <div class="grid">
+
+            <div class="card">
+
+                <div class="section-title">
+                    Users
+                </div>
+
+                <div class="form-row">
+                    <input class="input" id="email" placeholder="Email">
+                    <input class="input" id="password" placeholder="Password">
+
+                    <select class="select" id="role">
+                        <option value="admin">Admin</option>
+                        <option value="analyst">Analyst</option>
+                        <option value="farmer">Farmer</option>
+                    </select>
+
+                    <button class="btn" onclick="createUser()">
+                        Add User
+                    </button>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="usersBody">
+
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="card">
+
+                <div class="section-title">
+                    Role Permissions
+                </div>
+
+                <div id="permissionsContainer">
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        const SESSION_KEY = "cropai_session";
+
+        function showError(msg) {
+            const e = document.getElementById("errorBox");
+            e.innerText = msg;
+            e.classList.add("show");
+            setTimeout(() => e.classList.remove("show"), 4000);
+        }
+        function goToMain() {
+            window.location.href = "/dashboard";
+        }
+
+        function goToAdmin() {
+            window.location.href = "/admin";
+        }
+        function showSuccess(msg) {
+            const e = document.getElementById("successBox");
+            e.innerText = msg;
+            e.classList.add("show");
+            setTimeout(() => e.classList.remove("show"), 4000);
+        }
+
+        function getSession() {
+            const raw = localStorage.getItem(SESSION_KEY);
+
+            if (!raw) {
+                window.location = "/";
+                return null;
+            }
+
+            return JSON.parse(raw);
+        }
+
+        const session = getSession();
+
+        if (!session) {
+            throw new Error();
+        }
+
+        function authHeaders() {
+            return {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + session.token
+            };
+        }
+
+        async function loadUsers() {
+
+            const res = await fetch("/api/users", {
+                headers: authHeaders()
+            });
+
+            if (!res.ok) {
+                showError("Admin authorization failed.");
+                return;
+            }
+
+            const users = await res.json();
+
+            const tbody = document.getElementById("usersBody");
+
+            tbody.innerHTML = "";
+
+            users.forEach(user => {
+
+                tbody.innerHTML += `
+<tr>
+<td>${user.email}</td>
+<td>
+<span class="role-badge">${user.role}</span>
+</td>
+<td>
+<button class="action-btn delete-btn"
+onclick="deleteUser('${user.uid}')">
+Delete
+</button>
+</td>
+</tr>
+`;
+
+            });
+        }
+
+        async function createUser() {
+
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const role = document.getElementById("role").value;
+
+            if (!email || !password) {
+                showError("Please fill all fields.");
+                return;
+            }
+
+            const res = await fetch("/api/users", {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    email,
+                    password,
+                    role
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error);
+                return;
+            }
+
+            showSuccess("User created.");
+
+            document.getElementById("email").value = "";
+            document.getElementById("password").value = "";
+
+            loadUsers();
+        }
+
+        async function deleteUser(uid) {
+
+            if (!confirm("Delete this user?"))
+                return;
+
+            const res = await fetch(`/api/users/${uid}`, {
+                method: "DELETE",
+                headers: authHeaders()
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error);
+                return;
+            }
+
+            showSuccess("User deleted.");
+            loadUsers();
+        }
+
+        async function loadPermissions() {
+
+            const res = await fetch("/api/permissions", {
+                headers: authHeaders()
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError("Unable to load permissions.");
+                return;
+            }
+
+            const container = document.getElementById("permissionsContainer");
+            container.innerHTML = "";
+
+            Object.entries(data.permissions).forEach(([role, cfg]) => {
+
+                const html = `
+
+<div class="permission-card">
+
+<div class="role-title">${role}</div>
+
+<div class="checkbox-list">
+
+${data.all_pages.map(page => `
+
+<label>
+<input type="checkbox"
+data-role="${role}"
+data-page="${page}"
+${cfg.pages.includes(page) ? "checked" : ""}>
+${page}
+</label>
+
+`).join("")}
+
+</div>
+
+<label style="display:block;margin-bottom:12px;">
+<input
+type="checkbox"
+id="crud-${role}"
+${cfg.crud ? "checked" : ""}>
+CRUD Access
+</label>
+
+<button
+class="btn save-btn"
+onclick="saveRole('${role}')">
+Save
+</button>
+
+</div>
+`;
+
+                container.insertAdjacentHTML("beforeend", html);
+
+            });
+        }
+
+        async function saveRole(role) {
+
+            const checkboxes = [
+                ...document.querySelectorAll(
+                    `input[data-role="${role}"]`
+                )
+            ];
+
+            const pages = checkboxes
+                .filter(i => i.checked)
+                .map(i => i.dataset.page);
+
+            const crud = document.getElementById(
+                `crud-${role}`
+            ).checked;
+
+            const res = await fetch(
+                `/api/permissions/${role}`,
+                {
+                    method: "PATCH",
+                    headers: authHeaders(),
+                    body: JSON.stringify({
+                        pages,
+                        crud
+                    })
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error);
+                return;
+            }
+
+            showSuccess(
+                role.toUpperCase() + " permissions updated."
+            );
+
+            loadPermissions();
+        }
+
+        function logout() {
+
+            localStorage.removeItem(
+                SESSION_KEY
+            );
+
+            window.location = "/";
+        }
+
+        (async function () {
+
+            if (session.role !== "admin") {
+                document.body.innerHTML =
+                    "<h2 style='padding:40px'>Admin access required</h2>";
+                return;
+            }
+
+            await loadUsers();
+            await loadPermissions();
+
+        })();
+    </script>
+
+</body>
+
+</html>

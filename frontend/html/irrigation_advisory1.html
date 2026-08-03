@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Irrigation Advisor — Tripura</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Literata:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/irrigation_advisory1.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-group">
+    <span class="logo-text">💧 IrriSense</span>
+    <span class="logo-sub" id="state-header-sub">Tripura · AI Irrigation Advisor</span>
+  </div>
+  <div class="header-badges">
+    <span class="hbadge">OPEN-METEO LIVE</span>
+    <span class="hbadge">FAO-56 MODEL</span>
+  </div>
+</header>
+
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Farm Details</div>
+      <div class="sidebar-desc">Enter your farm's parameters to get a precision irrigation schedule for the next 7 days.</div>
+    </div>
+
+    <div class="form-body">
+
+      <div class="section-tag">Location &amp; Crop</div>
+
+      <div class="field">
+        <label>District</label>
+        <select id="district"></select>
+      </div>
+
+      <div class="field">
+        <label>Crop</label>
+        <select id="crop">
+          <option value="Rice" selected>Rice</option>
+          <option value="Wheat">Wheat</option>
+          <option value="Maize">Maize</option>
+          <option value="Groundnut">Groundnut</option>
+          <option value="Sugarcane">Sugarcane</option>
+          <option value="Jute">Jute</option>
+          <option value="Rapeseed &Mustard">Rapeseed &amp; Mustard</option>
+          <option value="Arhar/Tur">Arhar / Tur</option>
+          <option value="Moong(Green Gram)">Moong (Green Gram)</option>
+          <option value="Urad">Urad</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Sowing Date <span class="hint">When was crop sown?</span></label>
+        <input type="date" id="sowing_date">
+      </div>
+
+      <div class="section-tag">Soil &amp; Irrigation</div>
+
+      <div class="field">
+        <label>Soil Type</label>
+        <select id="soil_type">
+          <option selected>Red Laterite</option>
+          <option>Alluvial</option>
+          <option>Clay</option>
+          <option>Loam</option>
+          <option>Sandy Loam</option>
+          <option>Sandy</option>
+          <option>Black Cotton</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Irrigation Method</label>
+        <select id="irrigation_method">
+          <option>Flood</option>
+          <option>Furrow</option>
+          <option>Sprinkler</option>
+          <option>Drip</option>
+          <option>Rainfed</option>
+        </select>
+      </div>
+
+      <div class="input-row">
+        <div class="field">
+          <label>Area (ha)</label>
+          <input type="number" id="area_ha" value="2" min="0.1" step="0.1">
+        </div>
+        <div class="field">
+          <label>Area (bigha) <span class="hint">auto</span></label>
+          <input type="number" id="area_bigha" value="7.9" min="0" step="0.5" placeholder="Bigha">
+        </div>
+      </div>
+
+      <div class="section-tag">Current Conditions</div>
+
+      <div class="field">
+        <label>How does your topsoil feel? <span class="hint">press a handful</span></label>
+        <select id="soil_feel">
+          <option value="dry">🟤 Dry — loose, crumbly, flows through fingers</option>
+          <option value="slightly" selected>🟡 Slightly moist — weak ball, crumbles easily</option>
+          <option value="moist">🟢 Moist — firm ball, stains hand</option>
+          <option value="wet">💧 Wet — free water visible, waterlogged</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Last significant rainfall <span class="hint">≥5mm on your field</span></label>
+        <input type="date" id="last_rain_date">
+        <span class="hint" id="last-rain-warning" style="display:none;color:#b91c1c;font-size:11px;margin-top:4px">
+          ⚠️ Date can't be in the future — it's been ignored.
+        </span>
+      </div>
+
+      <button class="run-btn" id="run-btn" onclick="runAdvise()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="btn-icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><polyline points="12 6 12 12 16 14"/></svg>
+        Get Irrigation Schedule
+      </button>
+
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main-panel" id="main-panel">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">💧</div>
+      <div class="empty-title">AI Irrigation Advisor</div>
+      <div class="empty-body">
+        Get a precision 7-day irrigation schedule using live weather forecasts, soil moisture modelling, and FAO-56 crop water requirements.
+      </div>
+      <div class="empty-steps">
+        <div class="step-row"><div class="step-num">1</div>Select your district and crop</div>
+        <div class="step-row"><div class="step-num">2</div>Enter sowing date, soil type, and irrigation method</div>
+        <div class="step-row"><div class="step-num">3</div>Click <strong>Get Irrigation Schedule</strong></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-wrap" id="results-wrap" style="display:none"></div>
+
+  </main>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Fetching live weather &amp; computing schedule…</div>
+</div>
+
+<script>
+// ── State-aware district population ──────────────────────────────────
+const _STATE = new URLSearchParams(location.search).get('state')
+            || localStorage.getItem('cropai_state') || 'tripura';
+const _DISTRICTS = {
+  tripura:  ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
+  meghalaya:['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills',
+             'North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills',
+             'South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
+  rajasthan:['Ajmer','Alwar','Banswara','Baran','Barmer','Bharatpur','Bhilwara','Bikaner','Bundi',
+             'Chittorgarh','Churu','Dausa','Dholpur','Dungarpur','Hanumangarh','Jaipur','Jaisalmer',
+             'Jalore','Jhalawar','Jhunjhunu','Jodhpur','Karauli','Kota','Nagaur','Pali','Pratapgarh',
+             'Rajsamand','Sawai Madhopur','Sikar','Sirohi','Sri Ganganagar','Tonk','Udaipur']
+};
+const _stateName = _STATE.charAt(0).toUpperCase() + _STATE.slice(1);
+const _dists = _DISTRICTS[_STATE] || _DISTRICTS.tripura;
+const _sel = document.getElementById('district');
+_dists.forEach((d, i) => {
+  const o = document.createElement('option');
+  o.value = d; o.textContent = d;
+  if (i === _dists.length - 1) o.selected = true;
+  _sel.appendChild(o);
+});
+const _sub = document.getElementById('state-header-sub');
+if (_sub) _sub.textContent = `${_stateName} · AI Irrigation Advisor`;
+</script>
+<script src="../js/irrigation_advisory1.js"></script>
+</body>
+</html>

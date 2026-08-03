@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tripura Crop Shortage Early Warning System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/alert_dashboard.css">
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <div style="display:flex;align-items:center">
+    <div class="logo" id="state-header-logo">TRIPURA · EWAS</div>
+    <div class="hdiv"></div>
+    <div class="htitle">Crop Shortage Early Warning System</div>
+  </div>
+  <div class="hright">
+    <div class="gen-time" id="gen-time">Loading...</div>
+    <div class="status-pill"><div class="sdot"></div><span id="model-status">INITIALISING</span></div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-sect">
+      <div class="sb-label">Filters</div>
+      <div class="filter-group">
+        <select id="f-district"><option value="all">All districts</option></select>
+        <select id="f-season"><option value="all">All seasons</option>
+          <option>Kharif</option><option>Rabi</option><option>Autumn</option>
+          <option>Summer</option><option>Winter</option><option>Whole Year</option>
+        </select>
+        <select id="f-status"><option value="all">All statuses</option>
+          <option value="critical">Critical only</option>
+          <option value="watch">Watch only</option>
+          <option value="normal">Normal only</option>
+        </select>
+        <select id="f-crop"><option value="all">All crops</option></select>
+        <button class="btn-apply" onclick="applyFilters()">APPLY FILTERS</button>
+      </div>
+    </div>
+
+    <div class="sb-sect">
+      <div class="sb-label">Alert threshold</div>
+      <input type="range" id="thr-slider" min="10" max="40" value="20"
+        style="width:100%;accent-color:var(--green);cursor:pointer" oninput="onThreshold(this.value)">
+      <div class="threshold-row">
+        <span class="thr-hint">Alert if anomaly below</span>
+        <span class="thr-val" id="thr-label">−20%</span>
+      </div>
+    </div>
+
+    <div class="sb-sect">
+      <div class="sb-label">Legend</div>
+      <div class="legend-item"><div class="leg-dot" style="background:var(--red)"></div>Critical (≤ −30%)</div>
+      <div class="legend-item"><div class="leg-dot" style="background:var(--amber)"></div>Watch (−20% to −30%)</div>
+      <div class="legend-item"><div class="leg-dot" style="background:var(--green)"></div>Normal (&gt; −20%)</div>
+    </div>
+
+    <div class="sb-sect" style="flex:1">
+      <div class="sb-label">Data source</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6">
+        Weather: Open-Meteo Historical API<br>
+        Model: XGBoost · 33 features<br>
+        History: 2004–2022 · <span id="state-data-label">Tripura</span><br>
+        <span style="color:var(--text2)">Run <code style="font-family:var(--mono);font-size:10px">generate_alerts.py</code> to refresh</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="lbar"><div class="lprog" id="lprog"></div></div>
+
+    <!-- Summary -->
+    <div class="summary-strip">
+      <div class="sum-card">
+        <div class="sum-label">Critical alerts</div>
+        <div class="sum-val c-red" id="s-crit">—</div>
+        <div class="sum-sub" id="s-crit-sub">anomaly ≤ −30%</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Watch alerts</div>
+        <div class="sum-val c-amb" id="s-watch">—</div>
+        <div class="sum-sub">anomaly −20% to −30%</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Districts flagged</div>
+        <div class="sum-val c-red" id="s-dist">—</div>
+        <div class="sum-sub">of 8 total</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Total predictions</div>
+        <div class="sum-val c-txt" id="s-total">—</div>
+        <div class="sum-sub" id="s-total-sub">combos evaluated</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('district')">District ↕</th>
+          <th onclick="sortBy('crop')">Crop ↕</th>
+          <th onclick="sortBy('season')">Season</th>
+          <th onclick="sortBy('predicted')">Predicted (t/ha) ↕</th>
+          <th onclick="sortBy('normal')">Normal (t/ha)</th>
+          <th onclick="sortBy('anomaly')">Anomaly ↕</th>
+          <th onclick="sortBy('status')">Status</th>
+          <th>Weather year</th>
+          <th>Detail</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Action footer -->
+    <div class="action-panel">
+      <div class="action-header">Recommended government interventions</div>
+      <div class="action-grid">
+        <div class="action-card">
+          <div class="action-icon">🚢</div>
+          <div class="action-title">Import planning</div>
+          <div class="action-desc">Initiate procurement 8–12 weeks before shortfall</div>
+        </div>
+        <div class="action-card">
+          <div class="action-icon">🛡️</div>
+          <div class="action-title">Crop insurance</div>
+          <div class="action-desc">Activate PMFBY for Critical districts</div>
+        </div>
+        <div class="action-card">
+          <div class="action-icon">💧</div>
+          <div class="action-title">Irrigation order</div>
+          <div class="action-desc">Emergency canal/borewell release for rain-deficit areas</div>
+        </div>
+        <div class="action-card">
+          <div class="action-icon">🌱</div>
+          <div class="action-title">Fertilizer subsidy</div>
+          <div class="action-desc">Targeted DBT release for high-anomaly districts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="overlay" id="overlay" onclick="closeDetail(event)">
+  <div class="detail" id="detail-panel">
+    <div class="d-head">
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;margin-bottom:4px" id="d-subtitle"></div>
+        <div style="font-size:15px;font-weight:500" id="d-title"></div>
+      </div>
+      <button class="d-close" onclick="document.getElementById('overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="d-body" id="d-body"></div>
+  </div>
+</div>
+
+<script>
+// ── State-aware header update ─────────────────────────────────────────
+const _STATE = new URLSearchParams(location.search).get('state')
+            || localStorage.getItem('cropai_state') || 'tripura';
+const _stateName = _STATE.charAt(0).toUpperCase() + _STATE.slice(1);
+const _logo = document.getElementById('state-header-logo');
+if (_logo) _logo.textContent = `${_stateName.toUpperCase()} · EWAS`;
+const _dl = document.getElementById('state-data-label');
+if (_dl) _dl.textContent = _stateName;
+</script>
+<script src="../js/alert_dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CropAI — Intelligence Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../css/crop_dashboard.css">
+</head>
+
+<body>
+
+  <!-- ── INNER NAV ── -->
+  <div class="inner-nav">
+    <button class="i-tab active" onclick="showPage('overview',this)">Overview</button>
+    <button class="i-tab" onclick="showPage('eda',this)">Crop Analysis</button>
+    <button class="i-tab" onclick="showPage('conditional',this)">Conditional Yield</button>
+    <button class="i-tab" onclick="showPage('weather',this)">Weather &amp; Soil</button>
+    <button class="i-tab" onclick="showPage('trends',this)">Yield Trends</button>
+    <button class="i-tab" onclick="showPage('models',this)">ML Models</button>
+    <button class="i-tab" onclick="showPage('predict',this)">Predict Yield</button>
+    <button class="i-tab" onclick="showPage('alerts',this)">Live Alerts</button>
+  </div>
+
+  <!-- ═══════════ PAGE: OVERVIEW ═══════════ -->
+  <div class="page active" id="page-overview">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Crop <span class="accent">Intelligence</span></div>
+        <div class="ph-sub">XGBOOST MODEL · NASA POWER WEATHER</div>
+      </div>
+    </div>
+
+    <div class="stat-strip">
+      <div class="sc">
+        <div class="sc-lbl">Records</div>
+        <div class="sc-val g">—</div>
+        <div class="sc-sub">Loading…</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Crops</div>
+        <div class="sc-val b">—</div>
+        <div class="sc-sub">Loading…</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Avg Yield</div>
+        <div class="sc-val a">—</div>
+        <div class="sc-sub">Loading…</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Avg Rainfall</div>
+        <div class="sc-val b">—</div>
+        <div class="sc-sub">Loading…</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Avg Temp</div>
+        <div class="sc-val a">—</div>
+        <div class="sc-sub">Loading…</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Model R²</div>
+        <div class="sc-val g">0.988</div>
+        <div class="sc-sub">XGBoost best</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">-</div>
+        <div class="sc-val g">—</div>
+        <div class="sc-sub">Loading…</div>
+      </div>
+    </div>
+
+    <div class="insight-row">
+      <div class="ib">
+        <div class="ib-icon">🏆</div>
+        <div>
+          <div class="ib-lbl">Best Yielding</div>
+          <div class="ib-val">—</div>
+          <div class="ib-sub">Loading…</div>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ib-icon">🗓️</div>
+        <div>
+          <div class="ib-lbl">Best Season</div>
+          <div class="ib-val">—</div>
+          <div class="ib-sub">Loading…</div>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ib-icon">🪱</div>
+        <div>
+          <div class="ib-lbl">Best Soil</div>
+          <div class="ib-val">—</div>
+          <div class="ib-sub">Loading…</div>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ib-icon">💧</div>
+        <div>
+          <div class="ib-lbl">Best Irrigation</div>
+          <div class="ib-val">—</div>
+          <div class="ib-sub">Loading…</div>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ib-icon">🐛</div>
+        <div>
+          <div class="ib-lbl">Pest Impact</div>
+          <div class="ib-val">—</div>
+          <div class="ib-sub">Loading…</div>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ib-icon">📈</div>
+        <div>
+          <div class="ib-lbl">Yield Trend</div>
+          <div class="ib-val">—</div>
+          <div class="ib-sub">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"></span>Top 10 Crops by Cultivation Frequency</div>
+        </div>
+        <div class="crop-scroll">
+          <canvas id="cropFreqChart"></canvas>
+        </div>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Season Distribution — Share of Records
+          </div>
+        </div>
+        <canvas id="seasonPieChart" height="250"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════ PAGE: CROP ANALYSIS ═══════════ -->
+  <div class="page" id="page-eda">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Crop <span class="accent">Analysis</span></div>
+        <div class="ph-sub">YIELD BY CROP, SEASON, PEST PRESSURE · PLANTING GUIDE HEATMAP</div>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"></span>Median Yield by Crop (T/Ha) — Log Scale</div>
+          <div class="cc-badge">Higher = Better</div>
+        </div>
+        <canvas id="yieldByCropChart" height="280"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>Median Yield by Season</div>
+        </div>
+        <canvas id="yieldBySeasonChart" height="280"></canvas>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>Pest Incidence — Yield Impact</div>
+        </div>
+        <canvas id="pestImpactChart" height="220"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Stacked Pest Mix — Top 8 Crops</div>
+        </div>
+        <canvas id="pestCropChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="cc">
+      <div class="cc-head">
+        <div class="cc-title"><span class="cc-dot" style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>🌾
+          Crop × Season Yield Heatmap — Planting Guide (T/Ha)</div>
+      </div>
+      <div class="hm-scroll" id="cropSeasonHeatmap"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: CONDITIONAL YIELD EXPLORER ═══════════ -->
+  <div class="page" id="page-conditional">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Conditional <span class="accent">Yield</span> Explorer</div>
+        <div class="ph-sub">ADJUST CONDITIONS TO SEE PREDICTED YIELD DISTRIBUTIONS · MODEL-BACKED</div>
+      </div>
+    </div>
+
+    <div class="cye-layout">
+      <div class="cye-controls">
+        <div>
+          <div class="cye-ctrl-label">Crop</div>
+          <select class="fr-sel" id="cye-crop" style="width:100%" onchange="updateConditional()">
+            <option>Rice</option>
+            <option>Jute</option>
+            <option>Wheat</option>
+            <option>Maize</option>
+            <option>Sugarcane</option>
+            <option>Groundnut</option>
+            <option>Arhar/Tur</option>
+            <option>Moong(Green Gram)</option>
+            <option>Urad</option>
+          </select>
+        </div>
+        <div>
+          <div class="cye-ctrl-label">District</div>
+          <select class="fr-sel" id="cye-district" style="width:100%" onchange="updateConditional()">
+          </select>
+        </div>
+        <div>
+          <div class="cye-ctrl-label">Pest Level</div>
+          <select class="fr-sel" id="cye-pest" style="width:100%" onchange="updateConditional()">
+            <option value="Low">🟢 Low</option>
+            <option value="Medium">🟡 Medium</option>
+            <option value="High">🔴 High</option>
+          </select>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="cye-ctrl-label">Rainfall (mm)</div>
+            <div class="range-val" id="cye-rain-v">220mm</div>
+          </div>
+          <input type="range" id="cye-rain" min="50" max="600" value="220"
+            oninput="document.getElementById('cye-rain-v').textContent=this.value+'mm';updateConditional()">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="cye-ctrl-label">Temperature (°C)</div>
+            <div class="range-val" id="cye-temp-v">25°C</div>
+          </div>
+          <input type="range" id="cye-temp" min="18" max="35" value="25"
+            oninput="document.getElementById('cye-temp-v').textContent=this.value+'°C';updateConditional()">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="cye-ctrl-label">Fertilizer (kg/ha)</div>
+            <div class="range-val" id="cye-fert-v">120kg</div>
+          </div>
+          <input type="range" id="cye-fert" min="0" max="300" value="120"
+            oninput="document.getElementById('cye-fert-v').textContent=this.value+'kg';updateConditional()">
+        </div>
+        <div>
+          <div class="cye-ctrl-label">Irrigation</div>
+          <select class="fr-sel" id="cye-irr" style="width:100%" onchange="updateConditional()">
+            <option value="Canal">Canal</option>
+            <option value="Drip">Drip</option>
+            <option value="Rainfed">Rainfed</option>
+          </select>
+        </div>
+        <div>
+          <div class="cye-ctrl-label">Soil Type</div>
+          <select class="fr-sel" id="cye-soil" style="width:100%" onchange="updateConditional()">
+          </select>
+        </div>
+
+        <!-- Predicted yield callout -->
+        <div
+          style="background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:14px;text-align:center;margin-top:4px">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--text3);margin-bottom:4px">
+            EST. YIELD</div>
+          <div id="cye-result"
+            style="font-family:var(--head);font-size:42px;color:var(--leaf);letter-spacing:0.04em;line-height:1">—</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px">Tonne / Hectare</div>
+          <div id="cye-vs"
+            style="font-family:var(--mono);font-size:10px;margin-top:6px;padding:3px 8px;border-radius:2px;display:inline-block">
+          </div>
+          <div id="cye-source-badge"
+            style="font-family:var(--mono);font-size:9px;margin-top:4px;color:var(--text3);letter-spacing:0.05em"></div>
+        </div>
+      </div>
+
+      <div class="cye-charts">
+        <div class="cc">
+          <div class="cc-head">
+            <div class="cc-title"><span class="cc-dot"></span>Yield vs Rainfall — Conditional on Current Settings</div>
+          </div>
+          <canvas id="cyeRainChart" height="180"></canvas>
+        </div>
+        <div class="cc">
+          <div class="cc-head">
+            <div class="cc-title"><span class="cc-dot"
+                style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>Yield vs Fertilizer — Conditional
+              on Current Settings</div>
+          </div>
+          <canvas id="cyeFertChart" height="180"></canvas>
+        </div>
+        <div class="cc">
+          <div class="cc-head">
+            <div class="cc-title"><span class="cc-dot"
+                style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Pest × Irrigation — Yield Matrix
+            </div>
+          </div>
+          <canvas id="cyeMatrixChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: WEATHER & SOIL ═══════════ -->
+  <div class="page" id="page-weather">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Weather, Soil &amp; <span class="accent">Irrigation</span></div>
+        <div class="ph-sub">HOW RAINFALL, TEMPERATURE, SOIL TYPE AND METHOD AFFECT HARVEST</div>
+      </div>
+    </div>
+
+    <div class="g3 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Rainfall vs Yield</div>
+        </div>
+        <canvas id="rainfallChart" height="220"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>Temperature vs Yield</div>
+        </div>
+        <canvas id="tempChart" height="220"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>ET₀ vs Yield</div>
+        </div>
+        <canvas id="et0Chart" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="g3 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>Soil Type — Median Yield</div>
+        </div>
+        <canvas id="soilChart" height="200"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"></span>Irrigation Method — Median Yield</div>
+        </div>
+        <canvas id="irrigChart" height="200"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>Fertilizer Usage — Top 12 Crops (kg/Ha)
+          </div>
+        </div>
+        <canvas id="fertCropChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Soil × Irrigation Yield Matrix</div>
+        </div>
+        <div id="soilIrrHeatmap"></div>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>Fertilizer vs Yield</div>
+        </div>
+        <canvas id="fertYieldChart" height="270"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: TRENDS ═══════════ -->
+  <div class="page" id="page-trends">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Yield <span class="accent">Trends</span></div>
+        <div class="ph-sub">ALL DISTRICTS · ALL CROPS</div>
+      </div>
+    </div>
+
+    <div class="stat-strip" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="sc">
+        <div class="sc-lbl">2004–2008 Avg</div>
+        <div class="sc-val a">2.71</div>
+        <div class="sc-sub">T/Ha median</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">2019–2022 Avg</div>
+        <div class="sc-val g">3.32</div>
+        <div class="sc-sub">T/Ha median</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">19-Year Gain</div>
+        <div class="sc-val g">+22.4%</div>
+        <div class="sc-sub">overall improvement</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Best Year</div>
+        <div class="sc-val g">2021</div>
+        <div class="sc-sub">highest median yield</div>
+      </div>
+    </div>
+
+    <div class="cc mb">
+      <div class="cc-head">
+        <div class="cc-title"><span class="cc-dot"></span>All-Crop Yield Trend with Linear Trendline</div>
+      </div>
+      <canvas id="overallTrendChart" height="180"></canvas>
+    </div>
+
+    <div class="g2 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Individual Crop Trend</div>
+          <select class="fr-sel" id="trendCropSel" onchange="buildSingleCropChart(this.value, TREND_DATA)"
+            style="font-size:10px;padding:4px 8px">
+            <option>Rice</option>
+            <option>Jute</option>
+            <option>Wheat</option>
+            <option>Maize</option>
+            <option>Sugarcane</option>
+            <option>Groundnut</option>
+            <option>Urad</option>
+            <option>Moong(Green Gram)</option>
+          </select>
+        </div>
+        <canvas id="singleCropTrend" height="230"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>Early Decade vs Recent — 8 Crops
+          </div>
+        </div>
+        <canvas id="decadeCompChart" height="250"></canvas>
+      </div>
+    </div>
+
+    <div class="cc">
+      <div class="cc-head">
+        <div class="cc-title"><span class="cc-dot"
+            style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Top 5 Crops — By Volume</div>
+      </div>
+      <canvas id="top5TrendChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: ML MODELS ═══════════ -->
+  <div class="page" id="page-models">
+    <div class="ph">
+      <div>
+        <div class="ph-title">ML Model <span class="accent">Comparison</span></div>
+        <div class="ph-sub">XGBOOST · RANDOM FOREST · GRADIENT BOOSTING · RIDGE · SVR · SAME TIME-SERIES CV ·
+          CROP-NORMALISED TARGETS</div>
+      </div>
+    </div>
+
+    <!-- Model selector tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap" id="modelTabRow">
+      <button class="fr-btn" style="background:rgba(74,124,89,0.18);border-color:rgba(74,124,89,0.5);font-size:11px"
+        onclick="selectModel('XGBoost',this)" id="mtab-XGBoost">🚀 XGBoost</button>
+      <button class="fr-btn" style="font-size:11px" onclick="selectModel('RandomForest',this)" id="mtab-RandomForest">🌲
+        Random Forest</button>
+      <button class="fr-btn" style="font-size:11px" onclick="selectModel('GradientBoosting',this)"
+        id="mtab-GradientBoosting">⚡ Gradient Boosting</button>
+      <button class="fr-btn" style="font-size:11px" onclick="selectModel('Ridge',this)" id="mtab-Ridge">📐 Ridge
+        Regression</button>
+      <button class="fr-btn" style="font-size:11px" onclick="selectModel('SVR',this)" id="mtab-SVR">🔵 SVR</button>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--text3);align-self:center">Train:
+        years 0–14 · Test: 15–17 · Holdout: 18</span>
+    </div>
+
+    <!-- Selected model metric strip -->
+    <div id="modelMetricStrip"
+      style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:18px;border:1px solid var(--border)">
+      <div style="background:var(--s2);padding:14px 18px;text-align:center">
+        <div
+          style="font-family:var(--mono);font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">
+          R² Score</div>
+        <div id="ms-r2" style="font-family:var(--head);font-size:34px;color:var(--leaf);line-height:1">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">variance explained</div>
+      </div>
+      <div style="background:var(--s2);padding:14px 18px;text-align:center">
+        <div
+          style="font-family:var(--mono);font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">
+          RMSE</div>
+        <div id="ms-rmse" style="font-family:var(--head);font-size:34px;color:var(--sky);line-height:1">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">T/Ha root mean sq error</div>
+      </div>
+      <div style="background:var(--s2);padding:14px 18px;text-align:center">
+        <div
+          style="font-family:var(--mono);font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">
+          MAPE</div>
+        <div id="ms-mape" style="font-family:var(--head);font-size:34px;color:var(--amber);line-height:1">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">mean abs % error</div>
+      </div>
+      <div style="background:var(--s2);padding:14px 18px;text-align:center">
+        <div
+          style="font-family:var(--mono);font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">
+          MAE</div>
+        <div id="ms-mae" style="font-family:var(--head);font-size:34px;color:var(--sky);line-height:1">—</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">T/Ha mean abs error</div>
+      </div>
+      <div style="background:var(--s2);padding:14px 18px;text-align:center">
+        <div
+          style="font-family:var(--mono);font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">
+          Split</div>
+        <div id="ms-split"
+          style="font-family:var(--mono);font-size:12px;color:var(--leaf);line-height:1;margin-top:4px">Test</div>
+        <div style="margin-top:6px;display:flex;gap:4px;justify-content:center"><button
+            style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--border2);background:var(--s3);color:var(--leaf);cursor:pointer"
+            id="split-test" onclick="setSplit('test')">Test</button><button
+            style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer"
+            id="split-future" onclick="setSplit('future')">Holdout</button></div>
+      </div>
+    </div>
+
+    <!-- Model R² comparison bar chart -->
+    <div class="cc mb">
+      <div class="cc-head">
+        <div class="cc-title"><span class="cc-dot"
+            style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Model Comparison — R² Score (Test Set,
+          Core Crops)</div>
+        <div class="cc-badge">Higher = Better</div>
+      </div>
+      <canvas id="modelR2Chart" height="120"></canvas>
+    </div>
+
+    <div class="g3 mb">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>MAPE Comparison</div>
+          <div class="cc-badge">Lower = Better</div>
+        </div>
+        <canvas id="modelMapeChart" height="200"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>RMSE Comparison</div>
+          <div class="cc-badge">Lower = Better</div>
+        </div>
+        <canvas id="modelRmseChart" height="200"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"></span>MAE Comparison</div>
+          <div class="cc-badge">Lower = Better</div>
+        </div>
+        <canvas id="modelMaeChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- Test vs Holdout per model table -->
+    <div class="cc mb">
+      <div class="cc-head">
+        <div class="cc-title"><span class="cc-dot"
+            style="background:var(--leaf);box-shadow:0 0 6px var(--leaf)"></span>Full Metrics Table — Test Set vs Future
+          Holdout (Core Crops)</div>
+      </div>
+      <div id="modelMetricsTable" style="overflow-x:auto"></div>
+    </div>
+
+    <!-- XGBoost feature importance (always shown) -->
+    <div class="g2">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>Feature Importance — XGBoost</div>
+        </div>
+        <div id="featImportanceBars" style="margin-bottom:14px"></div>
+        <canvas id="featPieChart" height="180"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Factor Correlations with Yield</div>
+        </div>
+        <div id="corrBars" style="margin-bottom:14px"></div>
+        <canvas id="corrChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: PREDICT ═══════════ -->
+  <div class="page" id="page-predict">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Predict Your <span class="accent">Yield</span></div>
+        <div class="ph-sub">XGBoost MODEL (R²=0.988) · LIVE FROM BACKEND · FALLBACK TO LOCAL SIMULATION</div>
+      </div>
+      <div class="ph-right">
+        <div id="pred-backend-badge"
+          style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:2px;border:1px solid var(--border);color:var(--text3)">
+          BACKEND: CHECKING…</div>
+      </div>
+    </div>
+
+    <div class="predict-wrap">
+      <div class="predict-form">
+        <div class="pf-title">Farm Conditions</div>
+        <div class="pf-section">Location & Crop</div>
+        <div class="pf-row">
+          <div class="pf-field">
+            <div class="pf-label">District</div><select class="pf-sel" id="p-district"></select>
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">Crop</div><select class="pf-sel" id="p-crop" onchange="updateHistChart()">
+              <option value="Rice" selected>Rice</option>
+              <option value="Jute">Jute</option>
+              <option value="Wheat">Wheat</option>
+              <option value="Maize">Maize</option>
+              <option value="Sugarcane">Sugarcane</option>
+              <option value="Groundnut">Groundnut</option>
+              <option value="Arhar/Tur">Arhar/Tur</option>
+              <option value="Moong(Green Gram)">Moong (Green Gram)</option>
+              <option value="Urad">Urad</option>
+              <option value="Cotton(lint)">Cotton (lint)</option>
+            </select>
+          </div>
+        </div>
+        <div class="pf-row">
+          <div class="pf-field">
+            <div class="pf-label">Season</div><select class="pf-sel" id="p-season">
+              <option value="Kharif">Kharif</option>
+              <option value="Rabi">Rabi</option>
+              <option value="Autumn">Autumn</option>
+              <option value="Summer">Summer</option>
+              <option value="Winter">Winter</option>
+              <option value="Whole Year">Whole Year</option>
+            </select>
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">Pest Level</div><select class="pf-sel" id="p-pest">
+              <option value="Low">🟢 Low</option>
+              <option value="Medium">🟡 Medium</option>
+              <option value="High">🔴 High</option>
+            </select>
+          </div>
+        </div>
+        <div class="pf-section">Soil & Inputs</div>
+        <div class="pf-row">
+          <div class="pf-field">
+            <div class="pf-label">Irrigation</div><select class="pf-sel" id="p-irr">
+              <option value="Drip">Drip</option>
+              <option value="Canal">Canal</option>
+              <option value="Rainfed">Rainfed</option>
+            </select>
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">Soil Type</div>
+            <select class="pf-sel" id="p-soil"></select>
+          </div>
+        </div>
+        <div class="pf-row">
+          <div class="pf-field">
+            <div class="pf-label">Fertilizer (kg/Ha)</div><input class="pf-inp" type="number" id="p-fert" value="120"
+              min="0" max="500">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">Rainfall (mm)</div><input class="pf-inp" type="number" id="p-rain" value="220" min="0"
+              max="800">
+          </div>
+        </div>
+        <div class="pf-section">Weather Features (for model)</div>
+        <div class="pf-row">
+          <div class="pf-field">
+            <div class="pf-label">Rainy Days</div><input class="pf-inp" type="number" id="p-raindays" value="85" min="0"
+              max="200">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">ET₀ total (mm)</div><input class="pf-inp" type="number" id="p-et0" value="820" min="0"
+              max="2000">
+          </div>
+        </div>
+        <div class="pf-row">
+          <div class="pf-field">
+            <div class="pf-label">Mean Temp (°C)</div><input class="pf-inp" type="number" id="p-temp" value="25"
+              min="15" max="40" step="0.1">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">Year</div><input class="pf-inp" type="number" id="p-year" value="2024" min="2004"
+              max="2030">
+          </div>
+        </div>
+        <button class="pred-btn" onclick="runPrediction()">PREDICT YIELD</button>
+      </div>
+
+      <div class="result-panel">
+        <div class="result-big" id="resultBox">
+          <div class="result-lbl">Predicted Yield</div>
+          <div class="result-num" id="resultValue">—</div>
+          <div class="result-unit" id="resultUnit">Enter conditions and click Predict</div>
+          <div id="resultConf"
+            style="display:none;margin-top:8px;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--leaf);background:rgba(58,158,82,0.08);padding:3px 10px;border-radius:2px;border:1px solid rgba(58,158,82,0.2);display:inline-block">
+            ✓ R²=0.988 · HIGH CONFIDENCE</div>
+        </div>
+        <div class="advice-box" id="adviceBox">
+          <h4>🌾 Farm Insights</h4>
+          <div id="adviceText"></div>
+        </div>
+        <div class="cc" style="padding:14px">
+          <div class="cc-head">
+            <div class="cc-title"><span class="cc-dot"></span>Predicted vs Historical Average</div>
+          </div>
+          <canvas id="compareChart" height="160"></canvas>
+        </div>
+        <div class="cc" style="padding:14px">
+          <div class="cc-head">
+            <div class="cc-title"><span class="cc-dot"
+                style="background:var(--sky);box-shadow:0 0 6px var(--sky)"></span>Historical Yield — Selected Crop
+            </div>
+          </div>
+          <canvas id="histAvgChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: LIVE ALERTS ═══════════ -->
+  <div class="page" id="page-alerts">
+    <div class="ph">
+      <div>
+        <div class="ph-title">Live <span class="accent">Alerts</span></div>
+        <div class="ph-sub">XGBOOST YIELD ANOMALY DETECTION · FROM predictions.json · RUN generate_alerts.py TO REFRESH
+        </div>
+      </div>
+      <div class="ph-right">
+        <div id="alert-gen-time" style="font-family:var(--mono);font-size:10px;color:var(--text3)">Loading…</div>
+      </div>
+    </div>
+
+    <div class="stat-strip" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="sc">
+        <div class="sc-lbl">Critical Alerts</div>
+        <div class="sc-val r" id="al-crit">—</div>
+        <div class="sc-sub">anomaly ≤ −30%</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Watch Alerts</div>
+        <div class="sc-val a" id="al-watch">—</div>
+        <div class="sc-sub">−20% to −30%</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Districts Flagged</div>
+        <div class="sc-val r" id="al-dist">—</div>
+        <div class="sc-sub">of 8 total</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Total Predictions</div>
+        <div class="sc-val w" id="al-total">—</div>
+        <div class="sc-sub">combos evaluated</div>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <span class="fr-label">Filter:</span>
+      <select class="fr-sel" id="al-f-district">
+        <option value="all">All Districts</option>
+      </select>
+      <select class="fr-sel" id="al-f-season">
+        <option value="all">All Seasons</option>
+        <option>Kharif</option>
+        <option>Rabi</option>
+        <option>Autumn</option>
+        <option>Summer</option>
+        <option>Winter</option>
+        <option>Whole Year</option>
+      </select>
+      <select class="fr-sel" id="al-f-status">
+        <option value="all">All Statuses</option>
+        <option value="critical">Critical</option>
+        <option value="watch">Watch</option>
+        <option value="normal">Normal</option>
+      </select>
+      <select class="fr-sel" id="al-f-crop">
+        <option value="all">All Crops</option>
+      </select>
+      <button class="fr-btn" onclick="applyAlertFilters()">APPLY</button>
+    </div>
+
+    <div class="cc">
+      <div class="alert-table-wrap" style="max-height:330px;overflow-y:auto;">
+        <table class="alert-table">
+          <thead style="position:sticky;top:0;z-index:1;">
+            <tr>
+              <th onclick="sortAlerts('district')" style="background:var(--s2)">District ↕</th>
+              <th onclick="sortAlerts('crop')" style="background:var(--s2)">Crop ↕</th>
+              <th onclick="sortAlerts('season')" style="background:var(--s2)">Season</th>
+              <th onclick="sortAlerts('predicted')" style="background:var(--s2)">Predicted (t/ha) ↕</th>
+              <th onclick="sortAlerts('normal')" style="background:var(--s2)">Normal (t/ha)</th>
+              <th onclick="sortAlerts('anomaly')" style="background:var(--s2)">Anomaly ↕</th>
+              <th onclick="sortAlerts('status')" style="background:var(--s2)">Status</th>
+              <th style="background:var(--s2)">Weather Yr</th>
+            </tr>
+          </thead>
+          <tbody id="alert-tbody">
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="ei">◎</div>Loading predictions.json…
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="g2" style="margin-top:16px">
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--red);box-shadow:0 0 6px var(--red)"></span>Alert Distribution by District</div>
+        </div>
+        <canvas id="alertDistChart" height="220"></canvas>
+      </div>
+      <div class="cc">
+        <div class="cc-head">
+          <div class="cc-title"><span class="cc-dot"
+              style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>Anomaly Distribution — All
+            Predictions</div>
+        </div>
+        <canvas id="alertAnomalyChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /app -->
+
+
+
+  <script>
+    // ── State-aware district population ──────────────────────────────────
+    const _STATE = new URLSearchParams(location.search).get('state')
+      || localStorage.getItem('cropai_state') || 'tripura';
+    const _DISTRICTS = {
+      tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
+      meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills',
+        'North Garo Hills', 'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills',
+        'South West Khasi Hills', 'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'],
+      rajasthan: [
+        "Ajmer",
+        "Alwar",
+        "Banswara",
+        "Baran",
+        "Barmer",
+        "Bharatpur",
+        "Bhilwara",
+        "Bikaner",
+        "Bundi",
+        "Chittorgarh",
+        "Churu",
+        "Dausa",
+        "Dholpur",
+        "Dungarpur",
+        "Hanumangarh",
+        "Jaipur",
+        "Jaisalmer",
+        "Jalore",
+        "Jhalawar",
+        "Jhunjhunu",
+        "Jodhpur",
+        "Karauli",
+        "Kota",
+        "Nagaur",
+        "Pali",
+        "Pratapgarh",
+        "Rajsamand",
+        "Sawai Madhopur",
+        "Sikar",
+        "Sirohi",
+        "Sri Ganganagar",
+        "Tonk",
+        "Udaipur"
+      ]
+    };
+    const _dists = _DISTRICTS[_STATE] || _DISTRICTS.tripura;
+    ['cye-district', 'p-district'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      _dists.forEach((d, i) => {
+        const o = document.createElement('option');
+        o.value = d.toLowerCase().replace(/ /g, '_');
+        o.textContent = d;
+        if (i === _dists.length - 1) o.selected = true;
+        sel.appendChild(o);
+      });
+    });
+    const STATE_SOILS = {
+      tripura: [
+        "Alluvial",
+        "Red Laterite"
+      ],
+      meghalaya: [
+        "Red Laterite",
+        "Sandy Loam",
+      ],
+      rajasthan: [
+        "Desert",
+        "Alluvial",
+        "Black Cotton",
+        "Sandy"
+      ]
+    };
+
+    function populateSoilSelectors() {
+      const soils = STATE_SOILS[STATE] || STATE_SOILS.tripura;
+
+      ["cye-soil", "p-soil"].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+
+        sel.innerHTML = soils
+          .map(soil => `<option value="${soil}">${soil}</option>`)
+          .join("");
+      });
+    }
+  </script>
+  <script src="../js/crop_dashboard.js"></script>
+</body>
+
+</html>
