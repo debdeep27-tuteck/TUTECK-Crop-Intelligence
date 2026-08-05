@@ -1,4 +1,3 @@
-
 """
 disease_backend.py
 
@@ -36,10 +35,7 @@ app = Flask(__name__)
 CORS(app)
 
 PORT = int(os.environ.get("DISEASE_PORT", 5004))
-MODEL_NAME = os.environ.get(
-    "GROQ_VISION_MODEL",
-    "meta-llama/llama-4-scout-17b-16e-instruct"
-)
+MODEL_NAME = os.environ.get("MODEL", "qwen/qwen3.6-27b")
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
 
@@ -362,6 +358,7 @@ Return only valid JSON using the required schema.
             model=MODEL_NAME,
             temperature=0.1,
             max_completion_tokens=1800,
+            reasoning_effort="none",
             messages=[
                 {
                     "role": "system",
@@ -386,12 +383,24 @@ Return only valid JSON using the required schema.
         )
 
         raw = completion.choices[0].message.content
+
+        print("=" * 70)
+        print("[disease] RAW MODEL OUTPUT:")
+        print(raw)
+        print("=" * 70)
+
         result = extract_json_object(raw)
         result = normalize_result(result, state)
 
         return jsonify(result)
 
     except Exception as e:
+        import traceback
+        print("=" * 70)
+        print("[disease] EXCEPTION during /detect:")
+        traceback.print_exc()
+        print("=" * 70)
+
         return jsonify({
             "error": "Disease detection failed",
             "details": str(e),
