@@ -53,7 +53,7 @@ BASE_DIR = Path(__file__).resolve().parent
 EXCEL_FILE = BASE_DIR / "users.xlsx"
 PERMISSIONS_FILE = BASE_DIR / "permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect"]
 
 PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separated string
 
@@ -66,7 +66,7 @@ VALID_ROLES = {"admin", "analyst", "farmer"}
 # editable live from the admin panel (see /api/permissions routes below).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect"],
         "crud": True,
     },
     "analyst": {
@@ -74,7 +74,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         "crud": False,
     },
     "farmer": {
-        "pages": ["/irrigation", "/disease", "/recommend-page"],
+        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect"],
         "crud": False,
     },
 }

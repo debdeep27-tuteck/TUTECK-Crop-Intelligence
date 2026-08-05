@@ -62,6 +62,11 @@ IRRIGATION_PORT = 5001
 # Disease backend; gateway.py forwards /api/disease/* to this port.
 DISEASE_PORT = 5004
 
+# Yield Detect backend (geofenced land yield predictions); gateway.py
+# forwards /api/yield/*, /content/yield-detect, /content/yield-detect-editor,
+# /yield-detect and /yield-detect-editor to this port.
+YIELD_DETECT_PORT = 5008
+
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
 GREEN = "\033[92m"
@@ -183,6 +188,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically")
     parser.add_argument("--no-irrigation", action="store_true", help="Skip irrigation backend")
     parser.add_argument("--no-disease", action="store_true", help="Skip disease detection backend")
+    parser.add_argument("--no-yield-detect", action="store_true", help="Skip yield detect (geofencing) backend")
 
     return parser.parse_args()
 
@@ -255,6 +261,7 @@ def main() -> None:
     backend_script = find_script(base_dir, "backend_2.py")
     irrigation_script = find_script(base_dir, "irrigation_backend2.py")
     disease_script = find_script(base_dir, "disease_backend.py")
+    yield_detect_script = find_script(base_dir, "yield_detect_backend.py")
     gateway_script = find_script(base_dir, "gateway.py")
 
     if not backend_script:
@@ -303,6 +310,20 @@ def main() -> None:
         )
     else:
         log(RED, "disease", "disease_backend.py not found; disease detection will show BACKEND OFFLINE.")
+
+    # 3b) Start yield-detect backend (geofenced land yield predictions).
+    if args.no_yield_detect:
+        log(YELLOW, "yield-detect", "Skipped by --no-yield-detect")
+    elif yield_detect_script:
+        start_if_needed(
+            label="yield-detect",
+            script=yield_detect_script,
+            cmd_args=[],
+            port=YIELD_DETECT_PORT,
+            timeout=args.ready_timeout,
+        )
+    else:
+        log(RED, "yield-detect", "yield_detect_backend.py not found; Yield Detect tab will show BACKEND OFFLINE.")
 
     # 4) Start gateway last, after internal services are up.
     start_if_needed(

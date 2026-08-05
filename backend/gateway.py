@@ -24,6 +24,9 @@ IRR_API_RAJASTHAN  = "http://127.0.0.1:5001"
 # Disease detection — single instance serves both states
 DISEASE_API = "http://127.0.0.1:5004"
 
+# Yield Detect — geofenced land yield predictions (SQLite-backed)
+YIELD_API = "http://127.0.0.1:5008"
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -103,8 +106,17 @@ def admin_page():
 @app.route("/recommend-page")
 @app.route("/alerts")
 @app.route("/disease")
+@app.route("/yield-detect")
 def home():
     return send_from_directory(str(HTML_DIR), "index.html")
+
+
+# Yield Detect's "Add Land" / "Edit Land" screen is a full standalone page
+# (not wrapped in the dashboard shell/iframe) so the Google Map has room to
+# breathe. It's served directly here, the same way /login and /admin are.
+@app.route("/yield-detect-editor")
+def yield_detect_editor_page():
+    return send_from_directory(str(HTML_DIR), "yield_detect_editor.html")
 
 
 # ── INTERNAL CONTENT ROUTES ─────────────────────────────────────────────
@@ -132,6 +144,11 @@ def content_alerts():
 @app.route("/content/disease")
 def content_disease():
     return send_from_directory(str(HTML_DIR), "disease_detection.html")
+
+
+@app.route("/content/yield-detect")
+def content_yield_detect():
+    return send_from_directory(str(HTML_DIR), "yield_detect.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -170,6 +187,7 @@ def forward_request(base_url, path):
       /api/disease/health          -> http://127.0.0.1:5004/health
       /api/disease/supported_crops -> http://127.0.0.1:5004/supported_crops
       /api/disease/detect          -> http://127.0.0.1:5004/detect
+      /api/yield/lands             -> http://127.0.0.1:5008/api/yield/lands
     """
     url = f"{base_url.rstrip('/')}/{path.lstrip('/')}"
 
@@ -203,6 +221,30 @@ def forward_request(base_url, path):
                     headers=headers,
                     timeout=180
                 )
+
+        elif request.method == "PUT":
+            if request.is_json:
+                resp = requests.put(
+                    url,
+                    params=request.args,
+                    json=request.get_json(silent=True),
+                    timeout=180
+                )
+            else:
+                resp = requests.put(
+                    url,
+                    params=request.args,
+                    data=request.get_data(),
+                    headers=headers,
+                    timeout=180
+                )
+
+        elif request.method == "DELETE":
+            resp = requests.delete(
+                url,
+                params=request.args,
+                timeout=30
+            )
 
         else:
             return jsonify({"error": "Method not allowed"}), 405
@@ -267,10 +309,23 @@ def disease_api(path):
     return forward_request(DISEASE_API, path)
 
 
+@app.route("/api/yield/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+def yield_api(path):
+    # yield_detect_backend.py mounts its routes under /api/yield/... itself,
+    # so we forward the full path (unlike /api/crop -> /path, this one keeps
+    # the "yield" segment) — see YIELD_API + forward_request below.
+    return forward_request(YIELD_API, f"api/yield/{path}")
+
+
 # Optional direct checks
 @app.route("/api/disease-health")
 def disease_health_direct():
     return forward_request(DISEASE_API, "health")
+
+
+@app.route("/api/yield-health")
+def yield_health_direct():
+    return forward_request(YIELD_API, "api/yield/health")
 
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────
@@ -290,7 +345,8 @@ def health():
                 "irrigation": IRR_API_MEGHALAYA
             },
             "shared": {
-                "disease": DISEASE_API
+                "disease": DISEASE_API,
+                "yield_detect": YIELD_API
             }
         }
     })
