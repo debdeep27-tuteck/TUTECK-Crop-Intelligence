@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Yield Detect — CropAI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/yield_detect.css">
+</head>
+<body>
+
+  <div class="yd-header">
+    <div>
+      <div class="yd-title">🛰️ Yield Detect — By Land</div>
+      <div class="yd-subtitle" id="yd-subtitle">LOADING…</div>
+    </div>
+    <button class="btn btn-primary" onclick="goAddLand()">＋ Add Land</button>
+  </div>
+
+  <div class="yd-content">
+    <div class="yd-table-wrap">
+      <table class="yd-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>District</th>
+            <th>Crop</th>
+            <th>Area (Ha)</th>
+            <th>Predicted Yield</th>
+            <th>Anomaly</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="lands-tbody">
+          <tr><td colspan="8" class="yd-empty">Loading land records…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Read the active state the same way the shell app does.
+    function getUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      return (params.get('state') || 'tripura').toLowerCase();
+    }
+    const STATE = getUrlState();
+    const STATE_LABEL = STATE.charAt(0).toUpperCase() + STATE.slice(1);
+    document.getElementById('yd-subtitle').textContent = `${STATE_LABEL} · Land-wise yield predictions from geofenced plots`;
+
+    function goAddLand() {
+      window.top.location.href = `/yield-detect-editor?state=${STATE}`;
+    }
+
+    function goEditLand(id) {
+      window.top.location.href = `/yield-detect-editor?state=${STATE}&id=${id}`;
+    }
+
+    function showToast(msg, isError) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.toggle('error', !!isError);
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function fmt(n, digits = 2) {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return Number(n).toFixed(digits);
+    }
+
+    function anomalyPill(anomaly) {
+      if (anomaly === null || anomaly === undefined) return '<span class="yd-pill">—</span>';
+      const cls = anomaly < -10 ? 'bad' : (anomaly < 0 ? 'warn' : '');
+      const sign = anomaly > 0 ? '+' : '';
+      return `<span class="yd-pill ${cls}">${sign}${fmt(anomaly, 1)}%</span>`;
+    }
+
+    async function loadLands() {
+      const tbody = document.getElementById('lands-tbody');
+      try {
+        const res = await fetch(`/api/yield/lands?state=${STATE}`);
+        const lands = await res.json();
+
+        if (!Array.isArray(lands) || lands.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="yd-empty">No lands analyzed yet for ${STATE_LABEL}. Click "＋ Add Land" to geofence your first plot.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = lands.map(land => `
+          <tr>
+            <td><strong>${escapeHtml(land.property_name || '—')}</strong></td>
+            <td>${escapeHtml(land.district || '—')}</td>
+            <td>${escapeHtml(land.crop || '—')}</td>
+            <td>${fmt(land.area_hectare, 2)}</td>
+            <td>${land.predicted_yield !== null && land.predicted_yield !== undefined ? fmt(land.predicted_yield, 3) + ' t/ha' : '—'}</td>
+            <td>${anomalyPill(land.anomaly_pct)}</td>
+            <td>${land.updated_at ? new Date(land.updated_at).toLocaleDateString() : '—'}</td>
+            <td>
+              <div class="row-actions">
+                <button class="btn btn-small" onclick="goEditLand(${land.id})">✎ Edit</button>
+                <button class="btn btn-small btn-danger" onclick="deleteLand(${land.id})">🗑 Delete</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="yd-empty">Could not load land records. Is the yield-detect backend running?</td></tr>`;
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function deleteLand(id) {
+      if (!confirm('Delete this land record? This cannot be undone.')) return;
+      try {
+        const res = await fetch(`/api/yield/lands/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error();
+        showToast('Land record deleted');
+        loadLands();
+      } catch {
+        showToast('Failed to delete land record', true);
+      }
+    }
+
+    loadLands();
+  </script>
+</body>
+</html>

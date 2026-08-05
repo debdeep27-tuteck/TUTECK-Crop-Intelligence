@@ -245,6 +245,14 @@ WEATHER_FEATURES = [
 
 DROP_COLS = [YIELD_COL, "Year", "Yield_raw", "Season"]
 
+# Crop characteristic columns added directly to merged_crop_enriched_features_del.xlsx
+# (Crop_Category, Crop_Water_Need, Crop_Duration_Days). Built once in
+# engineer_features() from the Excel itself so predict_with_live_weather()
+# can reuse the exact same values at inference time, instead of them
+# silently defaulting to 0 via reindex(fill_value=0).
+CROP_CHAR_COLS = ["Crop_Category", "Crop_Water_Need", "Crop_Duration_Days"]
+CROP_LOOKUP = {}
+
 
 def season_date_range(crop_year_str, season):
     import calendar
@@ -335,6 +343,9 @@ def fetch_seasonal_weather(df, cache_path=CACHE_PATH):
 def load_and_join(data_path=DATA_PATH):
     df = pd.read_excel(data_path)
     df.columns = [str(c).strip() for c in df.columns]
+    # Drop stray blank/auto-named columns left over from manual Excel edits
+    # (e.g. "Unnamed: 12", "Unnamed: 13") so they never leak into feat_cols.
+    df = df.loc[:, ~df.columns.str.match(r"^Unnamed")]
 
     if "District_Name" in df.columns:
         df["District_Name"] = df["District_Name"].apply(_clean_district_label)
@@ -391,6 +402,32 @@ def engineer_features(df):
     else:
         df["Fertilizer_kg_per_ha"] = pd.to_numeric(
             df["Fertilizer_kg_per_ha"], errors="coerce").fillna(100.0)
+    # Crop_Category / Crop_Water_Need / Crop_Duration_Days now live directly
+    # in the Excel file. Fall back to neutral defaults if a crop or the
+    # columns themselves are missing, then cache one row per Crop into
+    # CROP_LOOKUP so predict_with_live_weather() can reuse the same values.
+    global CROP_LOOKUP
+    missing_char_cols = [c for c in CROP_CHAR_COLS if c not in df.columns]
+    if missing_char_cols:
+        print(f"WARNING: {missing_char_cols} missing from Excel; defaulting.")
+        if "Crop_Category" not in df.columns:
+            df["Crop_Category"] = "Unknown"
+        if "Crop_Water_Need" not in df.columns:
+            df["Crop_Water_Need"] = "Medium"
+        if "Crop_Duration_Days" not in df.columns:
+            df["Crop_Duration_Days"] = 120
+
+    df["Crop_Category"]      = df["Crop_Category"].fillna("Unknown").astype(str).str.strip()
+    df["Crop_Water_Need"]    = df["Crop_Water_Need"].fillna("Medium").astype(str).str.strip()
+    df["Crop_Duration_Days"] = pd.to_numeric(df["Crop_Duration_Days"], errors="coerce").fillna(120)
+
+    CROP_LOOKUP = (
+        df[["Crop"] + CROP_CHAR_COLS]
+        .drop_duplicates(subset="Crop")
+        .set_index("Crop")
+        .to_dict(orient="index")
+    )
+
     # IMPORTANT: backend_2.py reconstructs Crop_Year using Year + 2004.
     # So Year must be an offset from 2004, not from the dataset minimum year.
     # Examples: 1997-1998 -> -7, 2004-2005 -> 0, 2022-2023 -> 18.
@@ -613,10 +650,20 @@ def predict_with_live_weather(model, feat_cols, sc, crop_stats, df_history,
 
     mu, std = crop_stats.loc[crop, "crop_mean"], crop_stats.loc[crop, "crop_std"]
 
+    # Look up this crop's category/water-need/duration the same way training
+    # saw them (from CROP_LOOKUP, built off the Excel's new columns). Falls
+    # back to neutral defaults for a crop the lookup has never seen.
+    crop_chars = CROP_LOOKUP.get(crop, {
+        "Crop_Category": "Unknown", "Crop_Water_Need": "Medium", "Crop_Duration_Days": 120,
+    })
+
     row = {
         "District_Name": district, "Crop": crop,
         "Area (Hectare)": area_ha, "Fertilizer_kg_per_ha": fertilizer,
         "Pest_Disease_Incidence": pest_map.get(pest_level, 1),
+        "Crop_Category": crop_chars["Crop_Category"],
+        "Crop_Water_Need": crop_chars["Crop_Water_Need"],
+        "Crop_Duration_Days": crop_chars["Crop_Duration_Days"],
         "Yield_Lag1":   (yield_lag1  - mu) / std,
         "Yield_Roll3":  (yield_roll3 - mu) / std,
         "Yield_Trend":   yield_trend       / std,

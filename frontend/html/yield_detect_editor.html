@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Add / Edit Land — Yield Detect</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/yield_detect.css">
+
+    <!-- Leaflet (free, no API key) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+    <!-- Leaflet.draw — rectangle/polygon geofencing tools (free, no API key) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+    <style>
+        /* Push every top-left control (zoom +/-, draw toolbar) down so none of
+     them sit underneath the search box. */
+        .leaflet-top.leaflet-left {
+            margin-top: 68px;
+        }
+
+        .basemap-toggle {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1200;
+            /* must clear Leaflet's own panes/controls (up to z-index:1000) */
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            display: flex;
+        }
+
+        .basemap-toggle button {
+            border: none;
+            background: #fff;
+            padding: 8px 12px;
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            color: var(--text2);
+        }
+
+        .basemap-toggle button.active {
+            background: var(--leaf);
+            color: #fff;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 46px;
+            left: 12px;
+            right: 12px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 1201;
+            display: none;
+        }
+
+        .search-input-wrap {
+            position: relative;
+            width: 75%; /* matches yield_detect.css's .map-search-box input width */
+        }
+
+        #map-search {
+            width: 100%;
+            padding-right: 32px;
+            box-sizing: border-box;
+        }
+
+        #map-search-clear {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: var(--text2);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 6px;
+            display: none;
+        }
+
+        #map-search-clear.show {
+            display: block;
+        }
+
+        #map-search-clear:hover {
+            color: var(--text1, #222);
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 10px 12px;
+            font-size: 12.5px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: #f4f3ef;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="yd-header">
+        <div>
+            <div class="yd-title" id="page-title">📍 Add Land</div>
+            <div class="yd-subtitle">Draw a rectangle over the plot, fill in details, then Analyze</div>
+        </div>
+        <button class="btn" onclick="goBack()">← Back to Yield Detect</button>
+    </div>
+
+    <div class="editor-wrap">
+        <div class="map-panel">
+            <div class="map-search-box">
+                <div class="search-input-wrap">
+                    <input id="map-search" type="text" placeholder="🔍 Search a place to jump the map there…"
+                        autocomplete="off">
+                    <button id="map-search-clear" type="button" onclick="clearSearch()" title="Clear search"
+                        aria-label="Clear search">&times;</button>
+                </div>
+                <div class="search-results" id="search-results"></div>
+            </div>
+            <div class="basemap-toggle">
+                <button id="btn-street" class="active" onclick="setBasemap('street')" type="button">Street</button>
+                <button id="btn-satellite" onclick="setBasemap('satellite')" type="button">Satellite</button>
+                <!-- <button id="btn-mappls" onclick="setBasemap('mappls')" type="button" disabled title="Checking Mappls availability…">Mappls</button> -->
+            </div>
+            <div id="map"></div>
+            <div class="map-hint">Use the ▭ rectangle or ⬠ polygon tool (top-left) to geofence the plot, then drag
+                its corners/vertices to fit.</div>
+            <div class="geofence-check-box" style="margin-top:8px; display:flex; gap:6px; align-items:center;">
+                <input id="gf-lat" type="text" placeholder="Lat" style="width:90px;">
+                <input id="gf-lng" type="text" placeholder="Lng" style="width:90px;">
+                <button type="button" onclick="checkGeofencePoint()">Check point in field</button>
+                <span id="gf-result" style="font-weight:600;"></span>
+            </div>
+        </div>
+
+        <div class="form-panel">
+            <div class="form-card">
+                <h3>Geofence</h3>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Latitude (center)</label>
+                        <input id="f-lat" type="text" readonly placeholder="—">
+                    </div>
+                    <div class="form-field">
+                        <label>Longitude (center)</label>
+                        <input id="f-lng" type="text" readonly placeholder="—">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field full">
+                        <label>Area (Hectare) — auto-computed, editable</label>
+                        <input id="f-area" type="number" step="0.01" placeholder="Draw a rectangle to auto-fill">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field full">
+                        <button class="btn" onclick="clearGeofence()" type="button">✕ Clear Geofence</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h3>Land & Crop Details</h3>
+                <div class="form-row">
+                    <div class="form-field full">
+                        <label>Property Name *</label>
+                        <input id="f-property" type="text" placeholder="e.g. Ramgarh North Plot">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>State</label>
+                        <select id="f-state">
+                            <option value="tripura">Tripura</option>
+                            <option value="meghalaya">Meghalaya</option>
+                            <option value="rajasthan">Rajasthan</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>District</label>
+                        <input id="f-district" type="text" placeholder="e.g. West Tripura">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Crop *</label>
+                        <select id="f-crop">
+                            <option value="">Loading crops…</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Season</label>
+                        <select id="f-season">
+                            <option value="Kharif">Kharif</option>
+                            <option value="Rabi">Rabi</option>
+                            <option value="Summer">Summer</option>
+                            <option value="Whole Year">Whole Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Soil Type <span id="soil-detect-status" style="font-weight:400; color:#6b7280;"></span></label>
+                        <select id="f-soil">
+                            <option value="">— Auto-detect from geofence —</option>
+                            <option>Alluvial</option>
+                            <option>Red Laterite</option>
+                            <option>Sandy</option>
+                            <option>Sandy Loam</option>
+                            <option>Clayey</option>
+                            <option>Black</option>
+                            <option>Desert</option>
+                            <option>Black Cotton</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Irrigation Type</label>
+                        <select id="f-irrigation">
+                            <option>Canal</option>
+                            <option>Drip</option>
+                            <option>Rainfed</option>
+                            <option>Sprinkler</option>
+                            <option>Borewell</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Fertilizer (kg/ha)</label>
+                        <input id="f-fertilizer" type="number" step="1" value="70">
+                    </div>
+                    <div class="form-field">
+                        <label>Pest / Disease Incidence</label>
+                        <select id="f-pest">
+                            <option>Low</option>
+                            <option>Medium</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="analyze-btn" onclick="analyzeLand()" type="button">⚡
+                        Analyze</button>
+                </div>
+            </div>
+
+            <div class="form-card results-card" id="results-card" style="display:none;">
+                <h3>Prediction Results</h3>
+                <div class="result-grid">
+                    <div class="result-stat">
+                        <div class="label">Predicted Yield</div>
+                        <div class="value" id="r-yield">—</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="label">Historical Normal</div>
+                        <div class="value" id="r-normal">—</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="label">Anomaly</div>
+                        <div class="value" id="r-anomaly">—</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="label">Source</div>
+                        <div class="value" id="r-source" style="font-size:14px;">—</div>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top:16px;">
+                    <button class="btn btn-primary" onclick="saveLand()" type="button">💾 Save Land</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- Leaflet + Leaflet.draw (free, no API key) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const landId = params.get('id');
+        const initialState = (params.get('state') || 'tripura').toLowerCase();
+
+        document.getElementById('f-state').value = initialState;
+        if (landId) document.getElementById('page-title').textContent = '📍 Edit Land';
+
+        function goBack() {
+            window.top.location.href = `/yield-detect?state=${document.getElementById('f-state').value}`;
+        }
+
+        function showToast(msg, isError) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.toggle('error', !!isError);
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2600);
+        }
+
+        // ── CROP DROPDOWN (per-state, from the crop backend) ─────────────────
+        async function loadCrops(state) {
+            const sel = document.getElementById('f-crop');
+            sel.innerHTML = '<option value="">Loading crops…</option>';
+            try {
+                const res = await fetch(`/api/yield/valid_crops?state=${state}`);
+                const data = await res.json();
+                const crops = data.crops || [];
+                sel.innerHTML = crops.length
+                    ? crops.map(c => `<option value="${c}">${c}</option>`).join('')
+                    : '<option value="">No crops found</option>';
+            } catch {
+                sel.innerHTML = '<option value="">Could not load crops</option>';
+            }
+        }
+        document.getElementById('f-state').addEventListener('change', (e) => loadCrops(e.target.value));
+
+        // ── MAP (Leaflet + OpenStreetMap — free, no API key) ──────────────────
+        // "rectLayer" holds whichever geofence shape is currently drawn — it can
+        // be either a rectangle OR a free-drawn polygon, both handled the same
+        // way below (center/area/lat-lng all derive from generic Leaflet APIs).
+        let map, drawnItems, drawControl, rectLayer;
+        let mapplsReady = false; // set true once the tile key is fetched and the layer is wired up
+
+        const BASEMAPS = {
+            street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors',
+            }),
+            // Esri World Imagery — free satellite tiles, no API key required.
+            satellite: L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                { maxZoom: 19, maxNativeZoom: 17, attribution: 'Tiles &copy; Esri' }
+            ),
+            // Mappls (MapmyIndia) raster tiles — filled in once /api/yield/mappls_key
+            // returns the client-side tile key (see initMapplsLayer below).
+            mappls: null,
+        };
+
+        // Fetches the referrer-restricted Mappls tile key from the backend (the
+        // OAuth client_secret never leaves the server) and builds the real tile
+        // layer. The "Mappls" toggle button is disabled until this resolves.
+        async function initMapplsLayer() {
+            const btn = document.getElementById('btn-mappls');
+            try {
+                const res = await fetch('/api/yield/mappls_key');
+                const data = await res.json();
+                if (!data.configured || !data.key) {
+                    btn.disabled = true;
+                    btn.title = 'Mappls tile key not configured on the server';
+                    return;
+                }
+                BASEMAPS.mappls = L.tileLayer(
+                    `https://apis.mappls.com/advancedmaps/v1/${data.key}/still_map/{z}/{x}/{y}.png`,
+                    { maxZoom: 18, attribution: '&copy; MapmyIndia' }
+                );
+                mapplsReady = true;
+                btn.disabled = false;
+                btn.title = '';
+            } catch {
+                btn.disabled = true;
+                btn.title = 'Could not reach Mappls tile service';
+            }
+        }
+
+        function initMap() {
+            map = L.map('map', {
+                center: [23.83, 91.28], // Tripura-ish default center
+                zoom: 8,
+                layers: [BASEMAPS.street],
+            });
+
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            drawControl = new L.Control.Draw({
+                position: 'topleft',
+                draw: {
+                    rectangle: {
+                        shapeOptions: { color: '#4a7c59', weight: 2, fillOpacity: 0.25 },
+                    },
+                    polygon: {
+                        shapeOptions: { color: '#4a7c59', weight: 2, fillOpacity: 0.25 },
+                        allowIntersection: false,
+                        showArea: true,
+                    },
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                    polyline: false,
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    remove: true,
+                },
+            });
+            map.addControl(drawControl);
+
+            map.on(L.Draw.Event.CREATED, (e) => {
+                drawnItems.clearLayers(); // only one geofence at a time
+                rectLayer = e.layer;
+                drawnItems.addLayer(rectLayer);
+                currentFenceId = null;
+                updateFieldsFromRectangle();
+            });
+
+            map.on(L.Draw.Event.EDITED, () => { currentFenceId = null; updateFieldsFromRectangle(); });
+            map.on(L.Draw.Event.DELETED, () => {
+                rectLayer = null;
+                currentFenceId = null;
+                clearFieldsOnly();
+            });
+
+            loadExistingLand();
+        }
+
+        function setBasemap(which) {
+            if (which === 'mappls' && !mapplsReady) {
+                showToast('Mappls layer is not available (tile key not configured)', true);
+                return;
+            }
+            Object.values(BASEMAPS).forEach(layer => { if (layer) map.removeLayer(layer); });
+            map.addLayer(BASEMAPS[which]);
+            document.getElementById('btn-street').classList.toggle('active', which === 'street');
+            document.getElementById('btn-satellite').classList.toggle('active', which === 'satellite');
+            document.getElementById('btn-mappls').classList.toggle('active', which === 'mappls');
+        }
+
+        let currentFenceId = null;
+
+        async function ensureGeofenceSaved() {
+            if (!rectLayer) return null;
+            if (currentFenceId) return currentFenceId;
+            const b = rectLayer.getBounds();
+            try {
+                const res = await fetch('/api/yield/geofence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('f-lat').value
+                            ? `field-${Date.now()}`
+                            : `field-${Date.now()}`,
+                        bounds: {
+                            north: b.getNorth(), south: b.getSouth(),
+                            east: b.getEast(), west: b.getWest(),
+                        },
+                    }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                currentFenceId = data.id || data.fence_id || data.suggestedFencelist?.[0]?.id || null;
+                return currentFenceId;
+            } catch (err) {
+                console.error('Geofence save failed:', err);
+                return null;
+            }
+        }
+
+        async function checkGeofencePoint() {
+            const resultEl = document.getElementById('gf-result');
+            if (!rectLayer) {
+                resultEl.textContent = 'Draw a field boundary first.';
+                resultEl.style.color = '#b91c1c';
+                return;
+            }
+            const lat = parseFloat(document.getElementById('gf-lat').value);
+            const lng = parseFloat(document.getElementById('gf-lng').value);
+            if (isNaN(lat) || isNaN(lng)) {
+                resultEl.textContent = 'Enter a valid lat/lng.';
+                resultEl.style.color = '#b91c1c';
+                return;
+            }
+
+            resultEl.textContent = 'Checking…';
+            resultEl.style.color = '#555';
+
+            // Try the real Mappls geofence check via the backend first; fall back
+            // to local bounds math if Mappls isn't configured or unreachable.
+            let inside = null;
+            const fenceId = await ensureGeofenceSaved();
+            if (fenceId) {
+                try {
+                    const res = await fetch('/api/yield/geofence/check', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fence_id: fenceId, latitude: lat, longitude: lng }),
+                    });
+                    const data = await res.json();
+                    if (!data.error && typeof data.contains === 'boolean') {
+                        inside = data.contains;
+                    }
+                } catch (err) {
+                    console.error('Mappls geofence check failed, falling back to local check:', err);
+                }
+            }
+            if (inside === null) {
+                inside = rectLayer.getBounds().contains(L.latLng(lat, lng));
+            }
+
+            resultEl.textContent = inside ? '✅ Inside field' : '❌ Outside field';
+            resultEl.style.color = inside ? '#15803d' : '#b91c1c';
+            if (window._gfMarker) map.removeLayer(window._gfMarker);
+            window._gfMarker = L.circleMarker([lat, lng], {
+                radius: 6, color: inside ? '#15803d' : '#b91c1c', fillOpacity: 0.8,
+            }).addTo(map);
+        }
+
+        function clearGeofence() {
+            if (rectLayer) drawnItems.removeLayer(rectLayer);
+            rectLayer = null;
+            clearFieldsOnly();
+        }
+
+        function clearFieldsOnly() {
+            document.getElementById('f-lat').value = '';
+            document.getElementById('f-lng').value = '';
+            document.getElementById('f-area').value = '';
+        }
+
+        function drawExistingRectangle(bounds) {
+            const b = L.latLngBounds(
+                [bounds.south, bounds.west],
+                [bounds.north, bounds.east]
+            );
+            rectLayer = L.rectangle(b, { color: '#4a7c59', weight: 2, fillOpacity: 0.25 });
+            drawnItems.clearLayers();
+            drawnItems.addLayer(rectLayer);
+            map.fitBounds(b, { maxZoom: 16 });
+            updateFieldsFromRectangle();
+        }
+
+        // Returns the flat ring of vertices for whichever shape is drawn —
+        // rectangle or polygon both expose getLatLngs(), just nested one level
+        // deeper for polygons (an array of rings; we only ever draw one ring).
+        function getShapeVertices(layer) {
+            let latlngs = layer.getLatLngs();
+            while (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+            return latlngs;
+        }
+
+        function updateFieldsFromRectangle() {
+            if (!rectLayer) return;
+            const bounds = rectLayer.getBounds();
+            const center = bounds.getCenter();
+
+            document.getElementById('f-lat').value = center.lat.toFixed(6);
+            document.getElementById('f-lng').value = center.lng.toFixed(6);
+
+            // Geodesic area via Leaflet.draw's built-in helper (accounts for the
+            // earth's curvature, same approach Google's spherical.computeArea uses).
+            // Uses the shape's own vertices, so this works for a rectangle's 4
+            // corners or an arbitrary polygon's vertices alike.
+            const latlngs = getShapeVertices(rectLayer);
+            const areaM2 = L.GeometryUtil.geodesicArea(latlngs);
+            const hectares = areaM2 / 10000;
+            document.getElementById('f-area').value = hectares.toFixed(2);
+
+            scheduleAutoDetectSoil(center.lat, center.lng);
+        }
+
+        // ── SOIL TYPE AUTO-DETECT (SoilGrids, via backend) ──────────────────────
+        // Fires whenever a geofence is drawn/edited (or the state dropdown
+        // changes, since the WRB→Soil_Type mapping is state-specific). Never
+        // overwrites a value the user picked by hand from the dropdown.
+        let soilManuallySet = false;
+        let soilDetectSeq = 0; // guards against a slow lookup landing after a newer one
+        let soilDetectTimer = null; // debounce: only fire once dragging/resizing pauses
+
+        function scheduleAutoDetectSoil(lat, lng) {
+            clearTimeout(soilDetectTimer);
+            soilDetectTimer = setTimeout(() => autoDetectSoil(lat, lng), 400);
+        }
+
+        document.getElementById('f-soil').addEventListener('change', () => {
+            soilManuallySet = true;
+        });
+
+        document.getElementById('f-state').addEventListener('change', () => {
+            if (rectLayer) {
+                const c = rectLayer.getBounds().getCenter();
+                autoDetectSoil(c.lat, c.lng);
+            }
+        });
+
+        async function autoDetectSoil(lat, lng) {
+            if (soilManuallySet) return;
+
+            const statusEl = document.getElementById('soil-detect-status');
+            const soilSelect = document.getElementById('f-soil');
+            const state = document.getElementById('f-state').value;
+            const seq = ++soilDetectSeq;
+
+            statusEl.textContent = '(detecting soil…)';
+            try {
+                const res = await fetch(
+                    `/api/yield/soil_lookup?lat=${lat}&lon=${lng}&state=${encodeURIComponent(state)}`
+                );
+                const data = await res.json();
+                if (seq !== soilDetectSeq) return; // superseded by a newer geofence/state change
+
+                if (data.error) {
+                    statusEl.textContent = '';
+                    return;
+                }
+                if (!data.configured) {
+                    statusEl.textContent = '(auto-detect not available for this state — pick manually)';
+                    return;
+                }
+                if (!data.soil_type) {
+                    statusEl.textContent = '(could not detect soil here — pick manually)';
+                    return;
+                }
+
+                // Set it without treating this as a manual choice.
+                soilSelect.value = data.soil_type;
+                if (soilSelect.value !== data.soil_type) {
+                    // Detected value isn't one of the dropdown's options — add it
+                    // rather than silently dropping it.
+                    const opt = document.createElement('option');
+                    opt.value = data.soil_type;
+                    opt.textContent = data.soil_type;
+                    soilSelect.appendChild(opt);
+                    soilSelect.value = data.soil_type;
+                }
+                statusEl.textContent = `(auto-detected: ${data.soil_type})`;
+            } catch (err) {
+                if (seq !== soilDetectSeq) return;
+                console.error('Soil auto-detect failed:', err);
+                statusEl.textContent = '';
+            }
+        }
+
+        function getBoundsPayload() {
+            if (!rectLayer) return null;
+            const bounds = rectLayer.getBounds();
+            return {
+                north: bounds.getNorth(),
+                east: bounds.getEast(),
+                south: bounds.getSouth(),
+                west: bounds.getWest(),
+            };
+        }
+
+        // ── SEARCH BOX (Mappls geocoder via backend, Nominatim fallback) ───────
+        let searchDebounce;
+        const searchInput = document.getElementById('map-search');
+        const searchResultsEl = document.getElementById('search-results');
+        const searchClearBtn = document.getElementById('map-search-clear');
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounce);
+            const q = searchInput.value.trim();
+            searchClearBtn.classList.toggle('show', q.length > 0);
+            if (q.length < 3) { searchResultsEl.classList.remove('show'); return; }
+            searchDebounce = setTimeout(() => runSearch(q), 400);
+        });
+
+        function clearSearch() {
+            searchInput.value = '';
+            searchClearBtn.classList.remove('show');
+            searchResultsEl.classList.remove('show');
+            searchResultsEl.innerHTML = '';
+            searchInput.focus();
+        }
+
+        async function runSearch(q) {
+            try {
+                const res = await fetch(`/api/yield/geocode/search?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                const results = data.results || [];
+
+                if (!results.length) {
+                    searchResultsEl.innerHTML = '<div class="search-result-item">No results found</div>';
+                    searchResultsEl.classList.add('show');
+                    return;
+                }
+
+                searchResultsEl.innerHTML = results.map((r, i) =>
+                    `<div class="search-result-item" data-i="${i}">${escapeHtml(r.display_name)}</div>`
+                ).join('');
+                searchResultsEl.classList.add('show');
+
+                searchResultsEl.querySelectorAll('.search-result-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const r = results[parseInt(el.dataset.i, 10)];
+                        if (!r) return;
+                        map.setView([parseFloat(r.lat), parseFloat(r.lon)], 15);
+                        searchResultsEl.classList.remove('show');
+                        searchInput.value = r.display_name;
+                        searchClearBtn.classList.add('show');
+                    });
+                });
+            } catch {
+                searchResultsEl.classList.remove('show');
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.map-search-box')) searchResultsEl.classList.remove('show');
+        });
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // ── LOAD EXISTING LAND (edit mode) ────────────────────────────────────
+        let lastAnalysis = null;
+
+        async function loadExistingLand() {
+            if (!landId) return;
+            try {
+                const res = await fetch(`/api/yield/lands/${landId}`);
+                if (!res.ok) throw new Error();
+                const land = await res.json();
+
+                document.getElementById('f-property').value = land.property_name || '';
+                document.getElementById('f-state').value = land.state || 'tripura';
+                document.getElementById('f-district').value = land.district || '';
+                document.getElementById('f-season').value = land.season || 'Kharif';
+                if (land.soil_type) {
+                    document.getElementById('f-soil').value = land.soil_type;
+                    soilManuallySet = true; // saved lands keep their stored soil type; don't auto-overwrite it
+                }
+                if (land.irrigation_type) document.getElementById('f-irrigation').value = land.irrigation_type;
+                document.getElementById('f-fertilizer').value = land.fertilizer_kg_per_ha ?? 70;
+                if (land.pest_incidence) document.getElementById('f-pest').value = land.pest_incidence;
+                document.getElementById('f-area').value = land.area_hectare ?? '';
+                document.getElementById('f-lat').value = land.latitude ?? '';
+                document.getElementById('f-lng').value = land.longitude ?? '';
+
+                await loadCrops(land.state || 'tripura');
+                if (land.crop) document.getElementById('f-crop').value = land.crop;
+
+                if (land.predicted_yield !== null && land.predicted_yield !== undefined) {
+                    showResults({
+                        predicted_yield: land.predicted_yield,
+                        normal_yield: land.normal_yield,
+                        anomaly_pct: land.anomaly_pct,
+                        source: land.source,
+                    });
+                }
+
+                if (land.bounds) {
+                    drawExistingRectangle(land.bounds);
+                } else if (land.latitude && land.longitude) {
+                    map.setView([land.latitude, land.longitude], 15);
+                }
+            } catch {
+                showToast('Could not load existing land record', true);
+            }
+        }
+
+        // ── FORM -> PAYLOAD ────────────────────────────────────────────────────
+        function collectPayload() {
+            return {
+                property_name: document.getElementById('f-property').value.trim(),
+                state: document.getElementById('f-state').value,
+                district: document.getElementById('f-district').value.trim(),
+                crop: document.getElementById('f-crop').value,
+                season: document.getElementById('f-season').value,
+                soil_type: document.getElementById('f-soil').value,
+                irrigation_type: document.getElementById('f-irrigation').value,
+                fertilizer_kg_per_ha: parseFloat(document.getElementById('f-fertilizer').value) || 70,
+                pest_incidence: document.getElementById('f-pest').value,
+                latitude: parseFloat(document.getElementById('f-lat').value) || null,
+                longitude: parseFloat(document.getElementById('f-lng').value) || null,
+                area_hectare: parseFloat(document.getElementById('f-area').value) || null,
+                bounds: getBoundsPayload(),
+            };
+        }
+
+        function showResults(r) {
+            lastAnalysis = r;
+            document.getElementById('results-card').style.display = 'block';
+            document.getElementById('r-yield').textContent = (r.predicted_yield ?? '—') + (r.predicted_yield != null ? ' t/ha' : '');
+            document.getElementById('r-normal').textContent = (r.normal_yield ?? '—') + (r.normal_yield != null ? ' t/ha' : '');
+            const anomaly = r.anomaly_pct;
+            document.getElementById('r-anomaly').textContent = anomaly != null ? `${anomaly > 0 ? '+' : ''}${anomaly}%` : '—';
+            document.getElementById('r-source').textContent = r.source || '—';
+        }
+
+        async function analyzeLand() {
+            const payload = collectPayload();
+            if (!payload.property_name) return showToast('Enter a property name', true);
+            if (!payload.crop) return showToast('Select a crop', true);
+            if (payload.latitude === null || payload.longitude === null) {
+                return showToast('Draw a rectangle on the map to geofence the land first', true);
+            }
+
+            const btn = document.getElementById('analyze-btn');
+            btn.disabled = true;
+            btn.textContent = 'Analyzing…';
+            try {
+                const res = await fetch('/api/yield/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Analysis failed');
+                showResults(data);
+                showToast('Analysis complete');
+            } catch (err) {
+                showToast(err.message || 'Analysis failed', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⚡ Analyze';
+            }
+        }
+
+        async function saveLand() {
+            const payload = collectPayload();
+            if (lastAnalysis) {
+                payload.predicted_yield = lastAnalysis.predicted_yield;
+                payload.normal_yield = lastAnalysis.normal_yield;
+                payload.anomaly_pct = lastAnalysis.anomaly_pct;
+                payload.source = lastAnalysis.source;
+            }
+
+            try {
+                const url = landId ? `/api/yield/lands/${landId}` : '/api/yield/lands';
+                const method = landId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Save failed');
+                showToast('Land saved');
+                setTimeout(() => { window.top.location.href = `/yield-detect?state=${payload.state}`; }, 700);
+            } catch (err) {
+                showToast(err.message || 'Save failed', true);
+            }
+        }
+
+        initMap();
+        initMapplsLayer();
+        loadCrops(initialState);
+    </script>
+</body>
+
+</html>
