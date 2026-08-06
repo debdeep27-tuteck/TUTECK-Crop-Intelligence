@@ -52,14 +52,22 @@ from flask import Blueprint, request, jsonify, g
 BASE_DIR = Path(__file__).resolve().parent
 EXCEL_FILE = BASE_DIR / "users.xlsx"
 PERMISSIONS_FILE = BASE_DIR / "permissions.xlsx"
+USER_PERMISSIONS_FILE = BASE_DIR / "user_permissions.xlsx"
 
 ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect"]
 
 PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separated string
+USER_PERMISSIONS_COLUMNS = ["uid", "pages"]  # per-user page overrides, comma-separated
 
-COLUMNS = ["uid", "email", "password", "role"]  # NOTE: "password" is stored as PLAINTEXT — see warning below
+COLUMNS = ["uid", "email", "password", "role", "status", "state", "district"]  # NOTE: "password" is stored as PLAINTEXT — see warning below
 
-VALID_ROLES = {"admin", "analyst", "farmer"}
+VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin"}
+VALID_STATUSES = {"active", "restricted"}
+
+# Roles that must be tied to a state (state_admin needs just the state;
+# district_admin needs the state AND the district within it).
+STATE_SCOPED_ROLES = {"state_admin", "district_admin"}
+DISTRICT_SCOPED_ROLES = {"district_admin"}
 
 # Default permissions, used only to seed permissions.xlsx the first time it's
 # created. After that, permissions.xlsx is the single source of truth and is
@@ -77,10 +85,18 @@ DEFAULT_ROLE_PERMISSIONS = {
         "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect"],
         "crud": False,
     },
+    "state_admin": {
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect"],
+        "crud": False,
+    },
+    "district_admin": {
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect"],
+        "crud": False,
+    },
 }
 
 _excel_lock = threading.Lock()
-_perm_lock = threading.Lock()
+_perm_lock = threading.RLock()
 
 # token -> {"uid": str, "email": str, "role": str, "created_at": float}
 SESSIONS = {}
@@ -91,11 +107,12 @@ auth_bp = Blueprint("auth_excel", __name__)
 # ── EXCEL STORAGE HELPERS ────────────────────────────────────────────────
 
 def init_excel():
-    """Create users.xlsx (and permissions.xlsx) with the right headers if missing."""
+    """Create users.xlsx (and permissions.xlsx / user_permissions.xlsx) with the right headers if missing."""
     if not EXCEL_FILE.exists():
         df = pd.DataFrame(columns=COLUMNS)
         df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
     init_permissions()
+    init_user_permissions()
 
 
 def _load_df():
@@ -106,7 +123,8 @@ def _load_df():
     # was hand-edited and a column got dropped.
     for col in COLUMNS:
         if col not in df.columns:
-            df[col] = ""
+            df[col] = "active" if col == "status" else ""
+    df["status"] = df["status"].replace("", "active").fillna("active")
     return df[COLUMNS].fillna("")
 
 
@@ -200,9 +218,110 @@ def update_role_permissions(role, pages=None, crud=None):
     return get_role_permissions()[role]
 
 
+# ── PER-USER PERMISSIONS STORAGE (user_permissions.xlsx) ─────────────────
+# Lets an admin grant/revoke individual pages per user (checkbox-per-row in
+# the admin panel), instead of only editing an entire role at once. A new
+# user is seeded with their role's default pages; after that, this file is
+# the source of truth for what that specific user can see. Stored as one
+# row per user:  uid | pages (comma-separated)
+
+def init_user_permissions():
+    """Create user_permissions.xlsx (empty, one row per user) if missing."""
+    if not USER_PERMISSIONS_FILE.exists():
+        df = pd.DataFrame(columns=USER_PERMISSIONS_COLUMNS)
+        df.to_excel(USER_PERMISSIONS_FILE, index=False, engine="openpyxl")
+
+
+def _load_user_permissions_df():
+    if not USER_PERMISSIONS_FILE.exists():
+        init_user_permissions()
+    df = pd.read_excel(USER_PERMISSIONS_FILE, engine="openpyxl", dtype=str)
+    for col in USER_PERMISSIONS_COLUMNS:
+        if col not in df.columns:
+            df[col] = ""
+    return df[USER_PERMISSIONS_COLUMNS].fillna("")
+
+
+def _save_user_permissions_df(df):
+    df.to_excel(USER_PERMISSIONS_FILE, index=False, engine="openpyxl")
+
+
+def get_user_permissions(uid, role=None):
+    """
+    Return {"pages": [...]} for this specific user. If the user has no row
+    yet in user_permissions.xlsx, seed it from their role's default pages
+    (looked up via `role`, or from users.xlsx if not passed).
+    """
+    with _perm_lock:
+        df = _load_user_permissions_df()
+        idx = df.index[df["uid"] == uid]
+
+        if len(idx) == 0:
+            if role is None:
+                user = get_user(uid)
+                role = user["role"] if user else None
+            default_pages = get_role_permissions().get(role, {}).get("pages", [])
+            new_row = {"uid": uid, "pages": ",".join(default_pages)}
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            _save_user_permissions_df(df)
+            return {"pages": default_pages}
+
+        pages = [p.strip() for p in df.loc[idx[0], "pages"].split(",") if p.strip()]
+        return {"pages": pages}
+
+
+def update_user_permissions(uid, pages):
+    """Set the exact list of pages a specific user can access."""
+    bad = [p for p in pages if p not in ALL_PAGES]
+    if bad:
+        raise ValueError(f"Unknown page(s): {bad}. Valid pages are {ALL_PAGES}.")
+
+    with _perm_lock:
+        df = _load_user_permissions_df()
+        idx = df.index[df["uid"] == uid]
+
+        if len(idx) == 0:
+            df = pd.concat(
+                [df, pd.DataFrame([{"uid": uid, "pages": ",".join(pages)}])],
+                ignore_index=True,
+            )
+        else:
+            df.at[idx[0], "pages"] = ",".join(pages)
+
+        _save_user_permissions_df(df)
+
+    return {"pages": pages}
+
+
+def delete_user_permissions(uid):
+    with _perm_lock:
+        df = _load_user_permissions_df()
+        df = df[df["uid"] != uid]
+        _save_user_permissions_df(df)
+
+
 # ── USER OPERATIONS (all go through the Excel file) ─────────────────────
 
-def create_user(email, password, role):
+def _validate_state_district(role, state, district):
+    """Enforce that state_admin/district_admin carry the right location fields,
+    and that other roles don't. Returns the normalized (state, district)."""
+    state = (state or "").strip()
+    district = (district or "").strip()
+
+    if role in STATE_SCOPED_ROLES and not state:
+        raise ValueError(f"'{role}' accounts require a state.")
+    if role in DISTRICT_SCOPED_ROLES and not district:
+        raise ValueError(f"'{role}' accounts require a district.")
+
+    if role not in STATE_SCOPED_ROLES:
+        state = ""
+    if role not in DISTRICT_SCOPED_ROLES:
+        district = ""
+
+    return state, district
+
+
+def create_user(email, password, role, state="", district=""):
     email = email.strip().lower()
     role = role.strip().lower()
 
@@ -210,6 +329,8 @@ def create_user(email, password, role):
         raise ValueError(f"Invalid role '{role}'. Must be one of {sorted(VALID_ROLES)}.")
     if len(password) < 6:
         raise ValueError("Password must be at least 6 characters.")
+
+    state, district = _validate_state_district(role, state, district)
 
     with _excel_lock:
         df = _load_df()
@@ -222,15 +343,21 @@ def create_user(email, password, role):
             "email": email,
             "password": password,
             "role": role,
+            "status": "active",
+            "state": state,
+            "district": district,
         }
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         _save_df(df)
 
-    return {"uid": uid, "email": email, "role": role}
+    # Seed this user's individual page permissions from their role's defaults.
+    get_user_permissions(uid, role=role)
+
+    return {"uid": uid, "email": email, "role": role, "status": "active", "state": state, "district": district}
 
 
 def verify_login(email, password):
-    """Return {'uid','email','role'} on success, or None on bad credentials."""
+    """Return {'uid','email','role','status'} on success, or None on bad credentials."""
     email = email.strip().lower()
     with _excel_lock:
         df = _load_df()
@@ -240,14 +367,22 @@ def verify_login(email, password):
     row = row.iloc[0]
     if row["password"] != password:
         return None
-    return {"uid": row["uid"], "email": row["email"], "role": row["role"]}
+    return {
+        "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
+        "state": row["state"], "district": row["district"],
+    }
 
 
 def list_users():
-    """Return all users WITHOUT password hashes — for the admin panel."""
+    """Return all users WITHOUT password hashes — for the admin panel.
+    Includes each user's current status, state/district scope, and their
+    individual page permissions."""
     with _excel_lock:
         df = _load_df()
-    return df[["uid", "email", "role"]].to_dict(orient="records")
+    users = df[["uid", "email", "role", "status", "state", "district"]].to_dict(orient="records")
+    for user in users:
+        user["pages"] = get_user_permissions(user["uid"], role=user["role"])["pages"]
+    return users
 
 
 def get_user(uid):
@@ -257,10 +392,13 @@ def get_user(uid):
     if row.empty:
         return None
     row = row.iloc[0]
-    return {"uid": row["uid"], "email": row["email"], "role": row["role"]}
+    return {
+        "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
+        "state": row["state"], "district": row["district"],
+    }
 
 
-def update_user(uid, email=None, password=None, role=None):
+def update_user(uid, email=None, password=None, role=None, state=None, district=None):
     with _excel_lock:
         df = _load_df()
         idx = df.index[df["uid"] == uid]
@@ -275,11 +413,20 @@ def update_user(uid, email=None, password=None, role=None):
                 raise ValueError("Another account already uses this email.")
             df.at[i, "email"] = email
 
+        # Figure out the effective role/state/district after this update, so
+        # we can validate the state/district combination against whichever
+        # role ends up in effect (new role if given, else the existing one).
+        effective_role = (role.strip().lower() if role else df.at[i, "role"])
         if role:
-            role = role.strip().lower()
-            if role not in VALID_ROLES:
-                raise ValueError(f"Invalid role '{role}'. Must be one of {sorted(VALID_ROLES)}.")
-            df.at[i, "role"] = role
+            if effective_role not in VALID_ROLES:
+                raise ValueError(f"Invalid role '{effective_role}'. Must be one of {sorted(VALID_ROLES)}.")
+            df.at[i, "role"] = effective_role
+
+        effective_state = state if state is not None else df.at[i, "state"]
+        effective_district = district if district is not None else df.at[i, "district"]
+        norm_state, norm_district = _validate_state_district(effective_role, effective_state, effective_district)
+        df.at[i, "state"] = norm_state
+        df.at[i, "district"] = norm_district
 
         if password:
             if len(password) < 6:
@@ -288,7 +435,10 @@ def update_user(uid, email=None, password=None, role=None):
 
         _save_df(df)
         row = df.loc[i]
-        return {"uid": row["uid"], "email": row["email"], "role": row["role"]}
+        return {
+            "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
+            "state": row["state"], "district": row["district"],
+        }
 
 
 def delete_user(uid):
@@ -301,6 +451,29 @@ def delete_user(uid):
         # Drop any active sessions for this user.
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
+    delete_user_permissions(uid)
+
+
+def set_user_status(uid, status):
+    """Restrict or reactivate a user. Restricting immediately kills their sessions."""
+    status = status.strip().lower()
+    if status not in VALID_STATUSES:
+        raise ValueError(f"Invalid status '{status}'. Must be one of {sorted(VALID_STATUSES)}.")
+
+    with _excel_lock:
+        df = _load_df()
+        idx = df.index[df["uid"] == uid]
+        if len(idx) == 0:
+            raise ValueError("User not found.")
+        df.at[idx[0], "status"] = status
+        _save_df(df)
+        row = df.loc[idx[0]]
+
+    if status == "restricted":
+        for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
+            SESSIONS.pop(tok, None)
+
+    return {"uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"]}
 
 
 # ── SESSIONS ──────────────────────────────────────────────────────────────
@@ -337,6 +510,10 @@ def require_auth(roles=None):
             session = get_current_session()
             if not session:
                 return jsonify({"error": "Not authenticated"}), 401
+            user = get_user(session["uid"])
+            if not user or user.get("status") == "restricted":
+                SESSIONS.pop(_get_token_from_request(), None)
+                return jsonify({"error": "This account has been restricted."}), 403
             if roles and session["role"] not in roles:
                 return jsonify({"error": "Forbidden — insufficient role"}), 403
             g.user = session
@@ -364,7 +541,7 @@ def signup():
         return jsonify({"error": str(e)}), 400
 
     token = issue_session(user["uid"], user["email"], user["role"])
-    return jsonify({"token": token, **user, "permissions": get_role_permissions()[user["role"]]}), 201
+    return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 201
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
@@ -377,15 +554,18 @@ def login():
     if not user:
         return jsonify({"error": "Invalid email or password."}), 401
 
+    if user.get("status") == "restricted":
+        return jsonify({"error": "This account has been restricted. Contact an admin."}), 403
+
     token = issue_session(user["uid"], user["email"], user["role"])
-    return jsonify({"token": token, **user, "permissions": get_role_permissions()[user["role"]]}), 200
+    return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 200
 
 
 @auth_bp.route("/api/auth/me")
 @require_auth()
 def me():
     user = g.user
-    return jsonify({**user, "permissions": get_role_permissions().get(user["role"], {})}), 200
+    return jsonify({**user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 200
 
 
 @auth_bp.route("/api/auth/logout", methods=["POST"])
@@ -411,11 +591,13 @@ def admin_create_user():
     email = str(body.get("email", "")).strip()
     password = str(body.get("password", ""))
     role = str(body.get("role", "")).strip().lower()
+    state = str(body.get("state", "")).strip()
+    district = str(body.get("district", "")).strip()
 
     if "@" not in email or "." not in email:
         return jsonify({"error": "Please enter a valid email address."}), 400
     try:
-        user = create_user(email, password, role)
+        user = create_user(email, password, role, state=state, district=district)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify(user), 201
@@ -440,6 +622,8 @@ def admin_update_user(uid):
             email=body.get("email"),
             password=body.get("password"),
             role=body.get("role"),
+            state=body.get("state"),
+            district=body.get("district"),
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -456,6 +640,67 @@ def admin_delete_user(uid):
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
     return jsonify({"status": "deleted", "uid": uid}), 200
+
+
+@auth_bp.route("/api/users/<uid>/restrict", methods=["POST", "PATCH"])
+@require_auth(roles=["admin"])
+def admin_restrict_user(uid):
+    if g.user["uid"] == uid:
+        return jsonify({"error": "You can't restrict your own account while logged in."}), 400
+
+    body = request.get_json(silent=True) or {}
+    restricted = body.get("restricted")
+
+    user = get_user(uid)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    if restricted is None:
+        # No explicit value given: toggle current status.
+        new_status = "active" if user["status"] == "restricted" else "restricted"
+    else:
+        new_status = "restricted" if restricted else "active"
+
+    try:
+        updated = set_user_status(uid, new_status)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify(updated), 200
+
+
+@auth_bp.route("/api/users/<uid>/permissions", methods=["GET"])
+@require_auth(roles=["admin"])
+def admin_get_user_permissions(uid):
+    user = get_user(uid)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    return jsonify({
+        "uid": uid,
+        **get_user_permissions(uid, role=user["role"]),
+        "all_pages": ALL_PAGES,
+    }), 200
+
+
+@auth_bp.route("/api/users/<uid>/permissions", methods=["PUT", "PATCH"])
+@require_auth(roles=["admin"])
+def admin_update_user_permissions(uid):
+    user = get_user(uid)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    body = request.get_json(silent=True) or {}
+    pages = body.get("pages")
+
+    if not isinstance(pages, list):
+        return jsonify({"error": "'pages' must be a list of page paths."}), 400
+
+    try:
+        updated = update_user_permissions(uid, pages)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({"uid": uid, **updated}), 200
 
 
 @auth_bp.route("/api/roles", methods=["GET"])
