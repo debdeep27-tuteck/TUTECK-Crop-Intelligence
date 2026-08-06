@@ -478,9 +478,13 @@ def set_user_status(uid, status):
 
 # ── SESSIONS ──────────────────────────────────────────────────────────────
 
-def issue_session(uid, email, role):
+def issue_session(uid, email, role, state="", district=""):
     token = uuid.uuid4().hex + uuid.uuid4().hex  # 64 hex chars
-    SESSIONS[token] = {"uid": uid, "email": email, "role": role, "created_at": time.time()}
+    SESSIONS[token] = {
+        "uid": uid, "email": email, "role": role,
+        "state": state or "", "district": district or "",
+        "created_at": time.time(),
+    }
     return token
 
 
@@ -540,7 +544,7 @@ def signup():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    token = issue_session(user["uid"], user["email"], user["role"])
+    token = issue_session(user["uid"], user["email"], user["role"], user.get("state"), user.get("district"))
     return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 201
 
 
@@ -557,7 +561,7 @@ def login():
     if user.get("status") == "restricted":
         return jsonify({"error": "This account has been restricted. Contact an admin."}), 403
 
-    token = issue_session(user["uid"], user["email"], user["role"])
+    token = issue_session(user["uid"], user["email"], user["role"], user.get("state"), user.get("district"))
     return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 200
 
 

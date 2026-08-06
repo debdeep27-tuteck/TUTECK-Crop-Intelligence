@@ -159,13 +159,16 @@ function _getSession() {
   try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
 }
 const _session = _getSession();
-const _isDistrictAdmin = !!(_session && (_session.role || '').toLowerCase() === 'district_admin');
+const _role = (_session && _session.role || '').toLowerCase();
+const _isDistrictAdmin = _role === 'district_admin';
+const _isStateAdmin = _role === 'state_admin';
+const _isStateLocked = _isDistrictAdmin || _isStateAdmin;
 const _assignedDistrict = _isDistrictAdmin ? (_session.district || '') : null;
 
 // ── State-aware district population ──────────────────────────────────
-// district_admin accounts are pinned to their assigned state — ignore any
-// ?state= override or stale localStorage pick for them.
-const _STATE = (_isDistrictAdmin && _session.state)
+// district_admin/state_admin accounts are pinned to their assigned state —
+// ignore any ?state= override or stale localStorage pick for them.
+const _STATE = (_isStateLocked && _session.state)
   ? _session.state.toLowerCase()
   : (new URLSearchParams(location.search).get('state')
      || localStorage.getItem('cropai_state') || 'tripura');
@@ -191,6 +194,8 @@ if (_isDistrictAdmin && _assignedDistrict) {
   _sel.appendChild(o);
   _sel.disabled = true;
 } else {
+  // state_admin (and everyone else) picks freely among districts within
+  // their pinned state — only the state itself is locked, not the district.
   _dists.forEach((d, i) => {
     const o = document.createElement('option');
     o.value = d; o.textContent = d;

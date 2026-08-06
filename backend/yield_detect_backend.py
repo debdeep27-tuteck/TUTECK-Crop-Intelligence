@@ -941,12 +941,14 @@ def update_land(land_id):
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["DELETE"])
-@require_auth(roles=["farmer"])
+@require_auth(roles=["farmer", "admin", "state_admin", "district_admin"])
 def delete_land(land_id):
     db = get_db()
     existing = db.execute("SELECT id, user_email FROM lands WHERE id = ?", (land_id,)).fetchone()
     if not existing:
         return jsonify({"error": "land not found"}), 404
+    # Farmers may only delete their own land record; admin/state_admin/
+    # district_admin can delete any land record.
     if (g.user.get("role") or "").lower() == "farmer" and existing["user_email"] != g.user["email"]:
         return jsonify({"error": "Forbidden — not your land record"}), 403
     db.execute("DELETE FROM lands WHERE id = ?", (land_id,))

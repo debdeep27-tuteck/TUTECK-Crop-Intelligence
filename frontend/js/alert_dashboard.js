@@ -4,12 +4,14 @@ function getSession() {
 }
 const SESSION = getSession();
 const IS_DISTRICT_ADMIN = !!(SESSION && (SESSION.role || '').toLowerCase() === 'district_admin');
+const IS_STATE_ADMIN = !!(SESSION && (SESSION.role || '').toLowerCase() === 'state_admin');
+const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN;
 const ASSIGNED_DISTRICT = IS_DISTRICT_ADMIN ? (SESSION.district || '') : null;
 
 // ── State detection ───────────────────────────────────────────────────────────
-// district_admin accounts are pinned to their assigned state — ignore any
-// ?state= override or stale localStorage pick for them.
-const STATE = (IS_DISTRICT_ADMIN && SESSION.state)
+// district_admin/state_admin accounts are pinned to their assigned state —
+// ignore any ?state= override or stale localStorage pick for them.
+const STATE = (IS_STATE_LOCKED && SESSION.state)
   ? SESSION.state.toLowerCase()
   : (new URLSearchParams(location.search).get('state')
      || localStorage.getItem('cropai_state')

@@ -199,6 +199,15 @@
       border-color: rgba(74, 124, 89, 0.45);
     }
 
+    .gn-state-btn.locked {
+      cursor: default;
+      opacity: 0.75;
+    }
+    .gn-state-btn.locked:hover {
+      background: rgba(74, 124, 89, 0.07);
+      border-color: rgba(74, 124, 89, 0.30);
+    }
+
     .state-caret {
       color: var(--text2);
       font-size: 10px;
@@ -760,13 +769,17 @@
       rajasthan: 'Rajasthan',
     };
 
-    // district_admin accounts are pinned to the single state/district they
-    // were assigned in the admin panel — they don't get to pick a state.
+    // district_admin AND state_admin accounts are pinned to the single
+    // state they were assigned in the admin panel — neither gets to pick
+    // a different state. district_admin is additionally pinned to one
+    // district within that state.
     const IS_DISTRICT_ADMIN = !!(session && (session.role || '').toLowerCase() === 'district_admin');
-    const ASSIGNED_STATE = IS_DISTRICT_ADMIN ? (session.state || '').toLowerCase() : null;
+    const IS_STATE_ADMIN = !!(session && (session.role || '').toLowerCase() === 'state_admin');
+    const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN;
+    const ASSIGNED_STATE = IS_STATE_LOCKED ? (session.state || '').toLowerCase() : null;
 
     function getCurrentState() {
-      if (IS_DISTRICT_ADMIN && ASSIGNED_STATE) {
+      if (IS_STATE_LOCKED && ASSIGNED_STATE) {
         return STATES.includes(ASSIGNED_STATE) ? ASSIGNED_STATE : 'tripura';
       }
       const saved = (localStorage.getItem('cropai_state') || 'tripura').toLowerCase();
@@ -786,7 +799,7 @@
     }
 
     function toggleStateMenu(event) {
-      if (IS_DISTRICT_ADMIN) return; // no picker to open
+      if (IS_STATE_LOCKED) return; // no picker to open
       event.stopPropagation();
       document.getElementById('state-menu').classList.toggle('open');
     }
@@ -796,7 +809,7 @@
     }
 
     function selectState(state) {
-      if (IS_DISTRICT_ADMIN) return; // locked to their assigned state
+      if (IS_STATE_LOCKED) return; // locked to their assigned state
       state = String(state || 'tripura').toLowerCase();
       if (!STATES.includes(state)) state = 'tripura';
       localStorage.setItem('cropai_state', state);
@@ -813,9 +826,17 @@
         option.classList.toggle('active', option.dataset.state === state);
       });
 
-      // Hide the whole picker for district_admin — nothing to switch to.
-      const stateMenu = document.getElementById('state-menu');
-      if (stateMenu) stateMenu.style.display = IS_DISTRICT_ADMIN ? 'none' : '';
+      // Keep the pill visible for district_admin/state_admin so they can
+      // still see which state they're scoped to — just lock it so it
+      // can't be clicked open (toggleStateMenu already blocks this).
+      const switcher = document.getElementById('state-switcher');
+      if (switcher) {
+        switcher.classList.toggle('locked', IS_STATE_LOCKED);
+        switcher.disabled = IS_STATE_LOCKED;
+        switcher.title = IS_STATE_LOCKED ? 'Locked to your assigned state' : '';
+      }
+      const caret = document.querySelector('#state-switcher .state-caret');
+      if (caret) caret.style.display = IS_STATE_LOCKED ? 'none' : '';
     }
 
     function loadCurrentPage() {
