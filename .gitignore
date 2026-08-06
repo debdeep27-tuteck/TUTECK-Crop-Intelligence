@@ -48,6 +48,8 @@ instance/
 # Streamlit
 .streamlit/secrets.toml
 
+#excel
+*.xlsx
 # OS
 .DS_Store
 desktop.ini
