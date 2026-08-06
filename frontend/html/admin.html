@@ -145,6 +145,115 @@
             background: var(--leaf-dark);
         }
 
+        .btn-secondary {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--border2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, .04);
+        }
+
+        .add-user-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 20, 15, .45);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            width: 460px;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 60px);
+            overflow-y: auto;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, .25);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-family: var(--head);
+            font-size: 22px;
+            color: var(--leaf);
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--text2);
+            font-size: 20px;
+            line-height: 1;
+            padding: 4px;
+        }
+
+        .modal-close:hover {
+            color: var(--red);
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+        }
+
+        .field-group {
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            display: block;
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--text2);
+            margin-bottom: 6px;
+        }
+
+        .field-group .input,
+        .field-group .select {
+            width: 100%;
+        }
+
+        .field-hidden {
+            display: none;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px 22px;
+        }
+
+        .modal-footer .btn,
+        .modal-footer .btn-secondary {
+            padding: 0 20px;
+        }
+
         .table-wrap {
             overflow: auto;
         }
@@ -191,6 +300,76 @@
         .delete-btn {
             background: #fbe4e1;
             color: var(--red);
+        }
+
+        .icon-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        .icon-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .icon-btn.restrict-off {
+            color: var(--red);
+        }
+
+        .icon-btn.restrict-off:hover {
+            background: #fbe4e1;
+        }
+
+        .icon-btn.restrict-on {
+            color: var(--leaf);
+        }
+
+        .icon-btn.restrict-on:hover {
+            background: rgba(74, 124, 89, .12);
+        }
+
+        .icon-btn.delete-icon {
+            color: var(--red);
+        }
+
+        .icon-btn.delete-icon:hover {
+            background: #fbe4e1;
+        }
+
+        .icon-btn.edit-icon {
+            color: var(--leaf-dark);
+        }
+
+        .icon-btn.edit-icon:hover {
+            background: rgba(74, 124, 89, .12);
+        }
+
+        .perm-th {
+            text-align: center !important;
+            white-space: nowrap;
+        }
+
+        .perm-td {
+            text-align: center;
+        }
+
+        .perm-td input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--leaf);
+            cursor: pointer;
+        }
+
+        .actions-cell {
+            white-space: nowrap;
         }
 
         .permission-card {
@@ -317,61 +496,97 @@
         <div id="errorBox" class="msg error"></div>
         <div id="successBox" class="msg success"></div>
 
-        <div class="grid">
+        <div class="card">
 
-            <div class="card">
+            <div class="section-title">
+                Users
+            </div>
 
-                <div class="section-title">
-                    Users
+            <div class="add-user-row">
+                <button class="btn" onclick="openUserModal()">
+                    + Add user
+                </button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr id="usersHeadRow">
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th class="perm-th">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="usersBody">
+
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="userModalOverlay" onclick="if(event.target===this) closeUserModal()">
+        <div class="modal-card">
+
+            <div class="modal-header">
+                <div class="modal-title" id="userModalTitle">Add user</div>
+                <button class="modal-close" onclick="closeUserModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="field-group">
+                    <label class="field-label">Email</label>
+                    <input class="input" id="modalEmail" placeholder="name@example.com">
                 </div>
 
-                <div class="form-row">
-                    <input class="input" id="email" placeholder="Email">
-                    <input class="input" id="password" placeholder="Password">
+                <div class="field-group" id="passwordGroup">
+                    <label class="field-label">Password</label>
+                    <input class="input" id="modalPassword" type="password" placeholder="At least 6 characters">
+                </div>
 
-                    <select class="select" id="role">
+                <div class="field-group">
+                    <label class="field-label">Role</label>
+                    <select class="select" id="modalRole" onchange="onModalRoleChange()">
                         <option value="admin">Admin</option>
                         <option value="analyst">Analyst</option>
                         <option value="farmer">Farmer</option>
-                        <option value="state-admin">State Admin</option>
-                        <option value="District-admin">District-Admin</option>
-                        <option value="Central-admin">Central Admin</option>
+                        <option value="state_admin">State Admin</option>
+                        <option value="district_admin">District Admin</option>
                     </select>
-
-                    <button class="btn" onclick="createUser()">
-                        Add User
-                    </button>
                 </div>
 
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
+                <div class="field-group field-hidden" id="stateGroup">
+                    <label class="field-label">State</label>
+                    <select class="select" id="modalState" onchange="onModalStateChange()">
+                        <option value="">Select a state</option>
+                    </select>
+                </div>
 
-                        <tbody id="usersBody">
+                <div class="field-group field-hidden" id="districtGroup">
+                    <label class="field-label">District</label>
+                    <select class="select" id="modalDistrict">
+                        <option value="">Select a district</option>
+                    </select>
+                </div>
 
-                        </tbody>
-
-                    </table>
+                <div class="field-group" id="statusGroup">
+                    <label class="field-label">Status</label>
+                    <select class="select" id="modalStatus">
+                        <option value="active">Active</option>
+                        <option value="restricted">Restricted</option>
+                    </select>
                 </div>
 
             </div>
 
-            <div class="card">
-
-                <div class="section-title">
-                    Role Permissions
-                </div>
-
-                <div id="permissionsContainer">
-
-                </div>
-
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeUserModal()">Cancel</button>
+                <button class="btn" onclick="saveUserModal()">Save user</button>
             </div>
 
         </div>
@@ -425,6 +640,203 @@
             };
         }
 
+        // ── Add/Edit user modal ──────────────────────────────────────────
+
+        // Sample state → district mapping. Extend this with your real data.
+        const STATES_DISTRICTS = {
+            tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
+            meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills',
+                'North Garo Hills', 'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills',
+                'South West Khasi Hills', 'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'],
+            rajasthan: ['Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 'Bundi',
+                'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 'Jaipur', 'Jaisalmer',
+                'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 'Kota', 'Nagaur', 'Pali', 'Pratapgarh',
+                'Rajsamand', 'Sawai Madhopur', 'Sikar', 'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur']
+        };
+
+        let modalMode = "create"; // "create" | "edit"
+        let modalEditingUid = null;
+
+        function populateStateOptions() {
+            const stateSelect = document.getElementById("modalState");
+            stateSelect.innerHTML = `<option value="">Select a state</option>` +
+                Object.keys(STATES_DISTRICTS)
+                    .map(s => `<option value="${s}">${s}</option>`)
+                    .join("");
+        }
+
+        function onModalRoleChange() {
+            const role = document.getElementById("modalRole").value;
+
+            const stateGroup = document.getElementById("stateGroup");
+            const districtGroup = document.getElementById("districtGroup");
+
+            const needsState = role === "state_admin" || role === "district_admin";
+            const needsDistrict = role === "district_admin";
+
+            stateGroup.classList.toggle("field-hidden", !needsState);
+            districtGroup.classList.toggle("field-hidden", !needsDistrict);
+
+            if (!needsState) document.getElementById("modalState").value = "";
+            if (!needsDistrict) document.getElementById("modalDistrict").value = "";
+        }
+
+        function onModalStateChange() {
+            const state = document.getElementById("modalState").value;
+            const districtSelect = document.getElementById("modalDistrict");
+
+            const districts = STATES_DISTRICTS[state] || [];
+            districtSelect.innerHTML = `<option value="">Select a district</option>` +
+                districts.map(d => `<option value="${d}">${d}</option>`).join("");
+        }
+
+        function openUserModal(user) {
+            modalMode = user ? "edit" : "create";
+            modalEditingUid = user ? user.uid : null;
+
+            document.getElementById("userModalTitle").innerText = user ? "Edit user" : "Add user";
+
+            populateStateOptions();
+
+            document.getElementById("modalEmail").value = user ? user.email : "";
+            document.getElementById("modalPassword").value = "";
+            document.getElementById("modalPassword").placeholder =
+                user ? "Leave blank to keep current password" : "At least 6 characters";
+            document.getElementById("modalRole").value = user ? user.role : "admin";
+            document.getElementById("modalStatus").value = user ? user.status : "active";
+
+            // Status only makes sense once the account exists.
+            document.getElementById("statusGroup").classList.toggle("field-hidden", !user);
+
+            onModalRoleChange();
+
+            if (user && user.state) {
+                document.getElementById("modalState").value = user.state;
+                onModalStateChange();
+                if (user.district) document.getElementById("modalDistrict").value = user.district;
+            } else {
+                onModalStateChange();
+            }
+
+            document.getElementById("userModalOverlay").classList.add("show");
+        }
+
+        function closeUserModal() {
+            document.getElementById("userModalOverlay").classList.remove("show");
+        }
+
+        async function saveUserModal() {
+
+            const email = document.getElementById("modalEmail").value.trim();
+            const password = document.getElementById("modalPassword").value;
+            const role = document.getElementById("modalRole").value;
+            const state = document.getElementById("modalState").value;
+            const district = document.getElementById("modalDistrict").value;
+
+            if (!email || (modalMode === "create" && !password)) {
+                showError("Please fill all required fields.");
+                return;
+            }
+
+            if ((role === "state_admin" || role === "district_admin") && !state) {
+                showError("Please select a state for this role.");
+                return;
+            }
+            if (role === "district_admin" && !district) {
+                showError("Please select a district for this role.");
+                return;
+            }
+
+            let res, data;
+
+            if (modalMode === "create") {
+
+                res = await fetch("/api/users", {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: JSON.stringify({ email, password, role, state, district })
+                });
+                data = await res.json();
+
+                if (!res.ok) {
+                    showError(data.error);
+                    return;
+                }
+
+                showSuccess("User created.");
+
+            } else {
+
+                const body = { email, role, state, district };
+                if (password) body.password = password;
+
+                res = await fetch(`/api/users/${modalEditingUid}`, {
+                    method: "PATCH",
+                    headers: authHeaders(),
+                    body: JSON.stringify(body)
+                });
+                data = await res.json();
+
+                if (!res.ok) {
+                    showError(data.error);
+                    return;
+                }
+
+                const statusValue = document.getElementById("modalStatus").value;
+                if (statusValue !== (data.status || "active") && modalEditingUid !== session.uid) {
+                    await fetch(`/api/users/${modalEditingUid}/restrict`, {
+                        method: "PATCH",
+                        headers: authHeaders(),
+                        body: JSON.stringify({ restricted: statusValue === "restricted" })
+                    });
+                }
+
+                showSuccess("User updated.");
+            }
+
+            closeUserModal();
+            loadUsers();
+        }
+
+        // Pages every role can potentially have. Since /api/users now returns
+        // each user's own "pages" list, we derive the full column set from
+        // whatever the backend hands back (falls back to a safe default).
+        const DEFAULT_ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect"];
+        let allPages = DEFAULT_ALL_PAGES;
+
+        function buildUsersHead() {
+
+            const headRow = document.getElementById("usersHeadRow");
+
+            const pageHeaders = allPages
+                .map(page => `<th class="perm-th">${page}</th>`)
+                .join("");
+
+            headRow.innerHTML = `
+<th>Email</th>
+<th>Role</th>
+${pageHeaders}
+<th class="perm-th">Actions</th>
+`;
+        }
+
+        let currentUsers = [];
+
+        function roleLabel(role) {
+            return {
+                admin: "Admin",
+                analyst: "Analyst",
+                farmer: "Farmer",
+                state_admin: "State Admin",
+                district_admin: "District Admin",
+            }[role] || role;
+        }
+
+        function editUser(uid) {
+            const user = currentUsers.find(u => u.uid === uid);
+            if (user) openUserModal(user);
+        }
+
         async function loadUsers() {
 
             const res = await fetch("/api/users", {
@@ -437,6 +849,15 @@
             }
 
             const users = await res.json();
+            currentUsers = users;
+
+            // Union of every page seen across users, keeping the default order first.
+            const seen = new Set(DEFAULT_ALL_PAGES);
+            users.forEach(u => (u.pages || []).forEach(p => seen.add(p)));
+            allPages = DEFAULT_ALL_PAGES.filter(p => seen.has(p))
+                .concat([...seen].filter(p => !DEFAULT_ALL_PAGES.includes(p)));
+
+            buildUsersHead();
 
             const tbody = document.getElementById("usersBody");
 
@@ -444,16 +865,57 @@
 
             users.forEach(user => {
 
+                const userPages = user.pages || [];
+                const isSelf = user.uid === session.uid;
+                const isRestricted = user.status === "restricted";
+
+                const pageCells = allPages.map(page => `
+<td class="perm-td">
+<input type="checkbox"
+data-uid="${user.uid}"
+data-page="${page}"
+${userPages.includes(page) ? "checked" : ""}
+onchange="toggleUserPagePermission(this)"
+title="${page}">
+</td>
+`).join("");
+
                 tbody.innerHTML += `
 <tr>
 <td>${user.email}</td>
 <td>
-<span class="role-badge">${user.role}</span>
+<span class="role-badge">${roleLabel(user.role)}</span>
 </td>
-<td>
-<button class="action-btn delete-btn"
-onclick="deleteUser('${user.uid}')">
-Delete
+${pageCells}
+<td class="actions-cell">
+<button class="icon-btn ${isRestricted ? "restrict-on" : "restrict-off"}"
+title="${isSelf ? "You can't restrict your own account" : (isRestricted ? "Unrestrict user" : "Restrict user")}"
+${isSelf ? "disabled style=\"opacity:.35;cursor:not-allowed;\"" : `onclick="restrictUser('${user.uid}')"`}>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+</svg>
+</button>
+<button class="icon-btn edit-icon"
+title="Edit user"
+onclick="editUser('${user.uid}')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 20h9"/>
+<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+</svg>
+</button>
+<button class="icon-btn delete-icon"
+title="${isSelf ? "You can't delete your own account" : "Delete user"}"
+${isSelf ? "disabled style=\"opacity:.35;cursor:not-allowed;\"" : `onclick="deleteUser('${user.uid}')"`}>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+stroke-linecap="round" stroke-linejoin="round">
+<polyline points="3 6 5 6 21 6"/>
+<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+<path d="M10 11v6"/>
+<path d="M14 11v6"/>
+<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+</svg>
 </button>
 </td>
 </tr>
@@ -462,25 +924,41 @@ Delete
             });
         }
 
-        async function createUser() {
+        async function toggleUserPagePermission(checkbox) {
 
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
-            const role = document.getElementById("role").value;
+            const uid = checkbox.dataset.uid;
+            const page = checkbox.dataset.page;
 
-            if (!email || !password) {
-                showError("Please fill all fields.");
+            // Read current state straight from the row's own checkboxes so we
+            // send the full, correct page list for this one user.
+            const row = checkbox.closest("tr");
+            const pages = [...row.querySelectorAll("input[type=checkbox]")]
+                .filter(cb => cb.checked)
+                .map(cb => cb.dataset.page);
+
+            const res = await fetch(`/api/users/${uid}/permissions`, {
+                method: "PATCH",
+                headers: authHeaders(),
+                body: JSON.stringify({ pages })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error);
+                checkbox.checked = !checkbox.checked;
                 return;
             }
 
-            const res = await fetch("/api/users", {
-                method: "POST",
+            showSuccess(`${page} permission updated.`);
+        }
+
+        async function restrictUser(uid) {
+
+            const res = await fetch(`/api/users/${uid}/restrict`, {
+                method: "PATCH",
                 headers: authHeaders(),
-                body: JSON.stringify({
-                    email,
-                    password,
-                    role
-                })
+                body: JSON.stringify({})  // no "restricted" flag = toggle current state
             });
 
             const data = await res.json();
@@ -490,10 +968,11 @@ Delete
                 return;
             }
 
-            showSuccess("User created.");
-
-            document.getElementById("email").value = "";
-            document.getElementById("password").value = "";
+            showSuccess(
+                data.status === "restricted"
+                    ? `${data.email} has been restricted.`
+                    : `${data.email} has been reactivated.`
+            );
 
             loadUsers();
         }
@@ -519,110 +998,6 @@ Delete
             loadUsers();
         }
 
-        async function loadPermissions() {
-
-            const res = await fetch("/api/permissions", {
-                headers: authHeaders()
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                showError("Unable to load permissions.");
-                return;
-            }
-
-            const container = document.getElementById("permissionsContainer");
-            container.innerHTML = "";
-
-            Object.entries(data.permissions).forEach(([role, cfg]) => {
-
-                const html = `
-
-<div class="permission-card">
-
-<div class="role-title">${role}</div>
-
-<div class="checkbox-list">
-
-${data.all_pages.map(page => `
-
-<label>
-<input type="checkbox"
-data-role="${role}"
-data-page="${page}"
-${cfg.pages.includes(page) ? "checked" : ""}>
-${page}
-</label>
-
-`).join("")}
-
-</div>
-
-<label style="display:block;margin-bottom:12px;">
-<input
-type="checkbox"
-id="crud-${role}"
-${cfg.crud ? "checked" : ""}>
-CRUD Access
-</label>
-
-<button
-class="btn save-btn"
-onclick="saveRole('${role}')">
-Save
-</button>
-
-</div>
-`;
-
-                container.insertAdjacentHTML("beforeend", html);
-
-            });
-        }
-
-        async function saveRole(role) {
-
-            const checkboxes = [
-                ...document.querySelectorAll(
-                    `input[data-role="${role}"]`
-                )
-            ];
-
-            const pages = checkboxes
-                .filter(i => i.checked)
-                .map(i => i.dataset.page);
-
-            const crud = document.getElementById(
-                `crud-${role}`
-            ).checked;
-
-            const res = await fetch(
-                `/api/permissions/${role}`,
-                {
-                    method: "PATCH",
-                    headers: authHeaders(),
-                    body: JSON.stringify({
-                        pages,
-                        crud
-                    })
-                }
-            );
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                showError(data.error);
-                return;
-            }
-
-            showSuccess(
-                role.toUpperCase() + " permissions updated."
-            );
-
-            loadPermissions();
-        }
-
         function logout() {
 
             localStorage.removeItem(
@@ -641,7 +1016,6 @@ Save
             }
 
             await loadUsers();
-            await loadPermissions();
 
         })();
     </script>
