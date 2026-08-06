@@ -831,7 +831,7 @@ def create_land():
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["PUT"])
-@require_auth()
+@require_auth(roles=["farmer"])
 def update_land(land_id):
     db = get_db()
     existing = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
@@ -910,7 +910,7 @@ def update_land(land_id):
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["DELETE"])
-@require_auth()
+@require_auth(roles=["farmer"])
 def delete_land(land_id):
     db = get_db()
     existing = db.execute("SELECT id, user_email FROM lands WHERE id = ?", (land_id,)).fetchone()

@@ -633,14 +633,6 @@
           link.style.display = 'none';
         }
       });
-
-      // Yield Detect is farmer-only, full stop — regardless of what the
-      // permissions sheet says for other roles. Non-farmers never see the
-      // tab; farmers always see it (as long as the page itself is reachable).
-      const yieldDetectLink = document.querySelector('.gn-link[data-target="/yield-detect"]');
-      if (yieldDetectLink) {
-        yieldDetectLink.style.display = (session.role || '').toLowerCase() === 'farmer' ? '' : 'none';
-      }
     }
 
     async function logout() {
@@ -808,16 +800,9 @@
     function loadCurrentPage() {
       let currentPath = window.location.pathname;
 
-      // Yield Detect is farmer-only regardless of the permissions sheet:
-      // block anyone else from landing on it directly, and make sure it's
-      // reachable for farmers even if it's missing from ALLOWED_PAGES.
-      const isFarmer = (session && (session.role || '').toLowerCase() === 'farmer');
-      if (currentPath === '/yield-detect' && !isFarmer) {
-        currentPath = (ALLOWED_PAGES && ALLOWED_PAGES[0]) || '/dashboard';
-        history.replaceState(null, '', currentPath);
-      } else if (session && currentPath !== '/yield-detect') {
-        // If the current path isn't allowed for this role, fall back to the
-        // first page that role IS allowed to see (farmers have no /dashboard).
+      // If the current path isn't allowed for this role, fall back to the
+      // first page that role IS allowed to see (farmers have no /dashboard).
+      if (session) {
         if (!ALLOWED_PAGES.includes(currentPath)) {
           currentPath = ALLOWED_PAGES[0] || '/dashboard';
           history.replaceState(null, '', currentPath);
