@@ -41,6 +41,29 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // Same session pattern as admin.html: cropai_session in localStorage,
+    // holding { token, uid, email, role }.
+    const SESSION_KEY = "cropai_session";
+
+    function getSession() {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    const session = getSession();
+
+    // This tab is farmer-only. Bounce anyone else (or anyone not logged in)
+    // straight back to the dashboard before any land data loads.
+    if (!session || (session.role || '').toLowerCase() !== 'farmer') {
+      window.top.location.href = '/dashboard';
+      throw new Error('Yield Detect is only available to farmer accounts.');
+    }
+
+    function authHeaders(extra) {
+      return Object.assign({ "Authorization": "Bearer " + session.token }, extra || {});
+    }
+
     // Read the active state the same way the shell app does.
     function getUrlState() {
       const params = new URLSearchParams(window.location.search);
@@ -81,7 +104,7 @@
     async function loadLands() {
       const tbody = document.getElementById('lands-tbody');
       try {
-        const res = await fetch(`/api/yield/lands?state=${STATE}`);
+        const res = await fetch(`/api/yield/lands?state=${STATE}`, { headers: authHeaders() });
         const lands = await res.json();
 
         if (!Array.isArray(lands) || lands.length === 0) {
@@ -118,7 +141,7 @@
     async function deleteLand(id) {
       if (!confirm('Delete this land record? This cannot be undone.')) return;
       try {
-        const res = await fetch(`/api/yield/lands/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/yield/lands/${id}`, { method: 'DELETE', headers: authHeaders() });
         if (!res.ok) throw new Error();
         showToast('Land record deleted');
         loadLands();

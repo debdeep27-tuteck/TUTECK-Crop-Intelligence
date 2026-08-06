@@ -53,6 +53,7 @@ from pathlib import Path
 import requests
 from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
+from functools import wraps
 import logging
 
 logger = logging.getLogger("yield_detect")
@@ -67,6 +68,14 @@ CSS_DIR = FRONTEND_DIR / "css"
 JS_DIR = FRONTEND_DIR / "js"
 
 DB_PATH = BASE_DIR / "yield_lands.db"
+
+# ── SHARED AUTH: validate tokens against the gateway's live session store ────
+# auth_excel.py keeps sessions in an in-memory dict inside the gateway
+# process (port 8085 by default) — there is no separate users/sessions DB
+# file this backend (a different process, port 5008) can read directly.
+# So instead we just ask the gateway to verify the token for us via its
+# existing /api/auth/me route, the same way any other client would.
+GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
 
 # Must match CROP_BACKENDS in main.py / gateway.py
 STATE_BACKEND_PORTS = {
@@ -408,6 +417,59 @@ def mappls_auth_header() -> dict | None:
     return {"Authorization": f"Bearer {token}"}
 
 
+# ── AUTH: verify session token against the gateway's /api/auth/me ────────────
+# Mirrors the "Authorization: Bearer <session.token>" pattern admin.html and
+# index.html use. Every /api/yield/lands* route below requires a valid
+# session, and farmers are restricted to their own records.
+
+def verify_token(token: str) -> dict | None:
+    """
+    Asks the gateway process to resolve a bearer token to a user, since the
+    actual session store (auth_excel.py's in-memory SESSIONS dict) lives
+    inside that process, not here. Returns {"uid","email","role"} or None
+    if the token is missing/invalid/expired, or the gateway is unreachable.
+    """
+    if not token:
+        return None
+    try:
+        resp = requests.get(
+            f"{GATEWAY_INTERNAL_URL}/api/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=5,
+        )
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if not data.get("email"):
+            return None
+        return {"uid": data.get("uid"), "email": data.get("email"), "role": data.get("role")}
+    except requests.exceptions.RequestException as exc:
+        logger.warning("Could not verify token against gateway (%s): %s", GATEWAY_INTERNAL_URL, exc)
+        return None
+
+
+def require_auth(roles: list[str] | None = None):
+    """
+    Route decorator: requires a valid 'Authorization: Bearer <token>' header.
+    Sets g.user = {"uid","email","role"}. If `roles` is given, the caller's
+    role must be in that list (case-insensitive) or the request gets 403.
+    """
+    def decorator(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            auth_header = request.headers.get("Authorization", "")
+            token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
+            user = verify_token(token)
+            if not user:
+                return jsonify({"error": "Unauthorized — missing or invalid session token"}), 401
+            if roles and (user.get("role") or "").lower() not in [r.lower() for r in roles]:
+                return jsonify({"error": "Forbidden — this action requires role: " + ", ".join(roles)}), 403
+            g.user = user
+            return fn(*args, **kwargs)
+        return wrapped
+    return decorator
+
+
 # ── DB HELPERS ────────────────────────────────────────────────────────────────
 
 SCHEMA = """
@@ -416,6 +478,7 @@ CREATE TABLE IF NOT EXISTS lands (
     property_name       TEXT NOT NULL,
     state               TEXT NOT NULL,
     district            TEXT,
+    user_email          TEXT,
     crop                TEXT,
     soil_type           TEXT,
     irrigation_type     TEXT,
@@ -461,6 +524,12 @@ def close_db(_exc=None):
 def init_db():
     conn = sqlite3.connect(str(DB_PATH))
     conn.executescript(SCHEMA)
+    # Migration for pre-existing DBs created before user_email existed
+    # (CREATE TABLE IF NOT EXISTS won't add columns to an already-existing
+    # table).
+    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(lands)")}
+    if "user_email" not in existing_cols:
+        conn.execute("ALTER TABLE lands ADD COLUMN user_email TEXT")
     conn.commit()
     conn.close()
 
@@ -549,6 +618,15 @@ def build_predict_payload(body: dict) -> dict:
 
 @app.route("/content/yield-detect", methods=["GET"])
 def serve_yield_detect_page():
+    # NOTE: this is a plain page navigation (window.top.location.href /
+    # iframe src) so there's no Authorization header to check here — the
+    # cropai_session lives in localStorage, not a cookie. Enforcement for
+    # this page happens two ways instead: (1) client-side in the page's own
+    # <script>, which checks the session role and bounces non-farmers
+    # straight back out, and (2) every /api/yield/* call the page makes is
+    # still hard-enforced server-side via @require_auth above. If you'd
+    # rather have real page-level enforcement, switch session storage to an
+    # HttpOnly cookie and this route can use @require_auth(roles=["farmer"]).
     return send_from_directory(str(HTML_DIR), "yield_detect.html")
 
 
@@ -644,28 +722,41 @@ def analyze():
 # ── API: LANDS CRUD ─────────────────────────────────────────────────────────────
 
 @app.route("/api/yield/lands", methods=["GET"])
+@require_auth()
 def list_lands():
     state = request.args.get("state")
     db = get_db()
+
+    clauses, params = [], []
     if state:
-        rows = db.execute(
-            "SELECT * FROM lands WHERE state = ? ORDER BY updated_at DESC", (state,)
-        ).fetchall()
-    else:
-        rows = db.execute("SELECT * FROM lands ORDER BY updated_at DESC").fetchall()
+        clauses.append("state = ?")
+        params.append(state)
+    # Farmers only ever see their own lands; other roles (admin, analyst,
+    # state/district/central-admin) see everything (optionally filtered by
+    # ?state=).
+    if (g.user.get("role") or "").lower() == "farmer":
+        clauses.append("user_email = ?")
+        params.append(g.user["email"])
+
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    rows = db.execute(f"SELECT * FROM lands {where} ORDER BY updated_at DESC", params).fetchall()
     return jsonify([row_to_dict(r) for r in rows])
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["GET"])
+@require_auth()
 def get_land(land_id):
     db = get_db()
     row = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
     if not row:
         return jsonify({"error": "land not found"}), 404
+    if (g.user.get("role") or "").lower() == "farmer" and row["user_email"] != g.user["email"]:
+        return jsonify({"error": "Forbidden — not your land record"}), 403
     return jsonify(row_to_dict(row))
 
 
 @app.route("/api/yield/lands", methods=["POST"])
+@require_auth(roles=["farmer"])
 def create_land():
     body = request.get_json(force=True) or {}
 
@@ -705,16 +796,17 @@ def create_land():
     cur = db.execute(
         """
         INSERT INTO lands (
-            property_name, state, district, crop, soil_type, irrigation_type,
+            property_name, state, district, user_email, crop, soil_type, irrigation_type,
             fertilizer_kg_per_ha, pest_incidence, season, latitude, longitude,
             area_hectare, bounds_json, predicted_yield, normal_yield, anomaly_pct,
             source, created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
             body.get("property_name"),
             state,
             body.get("district"),
+            g.user["email"],
             body.get("crop"),
             soil_type,
             body.get("irrigation_type"),
@@ -739,11 +831,14 @@ def create_land():
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["PUT"])
+@require_auth()
 def update_land(land_id):
     db = get_db()
     existing = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
     if not existing:
         return jsonify({"error": "land not found"}), 404
+    if (g.user.get("role") or "").lower() == "farmer" and existing["user_email"] != g.user["email"]:
+        return jsonify({"error": "Forbidden — not your land record"}), 403
 
     body = request.get_json(force=True) or {}
     merged = {**row_to_dict(existing), **{k: v for k, v in body.items() if v is not None}}
@@ -815,11 +910,14 @@ def update_land(land_id):
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["DELETE"])
+@require_auth()
 def delete_land(land_id):
     db = get_db()
-    existing = db.execute("SELECT id FROM lands WHERE id = ?", (land_id,)).fetchone()
+    existing = db.execute("SELECT id, user_email FROM lands WHERE id = ?", (land_id,)).fetchone()
     if not existing:
         return jsonify({"error": "land not found"}), 404
+    if (g.user.get("role") or "").lower() == "farmer" and existing["user_email"] != g.user["email"]:
+        return jsonify({"error": "Forbidden — not your land record"}), 403
     db.execute("DELETE FROM lands WHERE id = ?", (land_id,))
     db.commit()
     return jsonify({"deleted": land_id})

@@ -301,6 +301,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
     <script>
+        // Same session pattern as admin.html / yield_detect.html.
+        const SESSION_KEY = "cropai_session";
+        function getSession() {
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (!raw) return null;
+            try { return JSON.parse(raw); } catch { return null; }
+        }
+        const session = getSession();
+        if (!session || (session.role || '').toLowerCase() !== 'farmer') {
+            window.top.location.href = '/dashboard';
+            throw new Error('Yield Detect is only available to farmer accounts.');
+        }
+        function authHeaders(extra) {
+            return Object.assign({ "Authorization": "Bearer " + session.token }, extra || {});
+        }
+
         const params = new URLSearchParams(window.location.search);
         const landId = params.get('id');
         const initialState = (params.get('state') || 'tripura').toLowerCase();
@@ -731,7 +747,7 @@
         async function loadExistingLand() {
             if (!landId) return;
             try {
-                const res = await fetch(`/api/yield/lands/${landId}`);
+                const res = await fetch(`/api/yield/lands/${landId}`, { headers: authHeaders() });
                 if (!res.ok) throw new Error();
                 const land = await res.json();
 
@@ -844,7 +860,7 @@
                 const method = landId ? 'PUT' : 'POST';
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: authHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(payload),
                 });
                 const data = await res.json();

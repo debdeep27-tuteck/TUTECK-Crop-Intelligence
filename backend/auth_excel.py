@@ -59,7 +59,7 @@ PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separ
 
 COLUMNS = ["uid", "email", "password", "role"]  # NOTE: "password" is stored as PLAINTEXT — see warning below
 
-VALID_ROLES = {"admin", "analyst", "farmer"}
+VALID_ROLES = {"admin", "analyst", "farmer", "state-admin", "district-admin", "central-admin",}
 
 # Default permissions, used only to seed permissions.xlsx the first time it's
 # created. After that, permissions.xlsx is the single source of truth and is
@@ -76,6 +76,18 @@ DEFAULT_ROLE_PERMISSIONS = {
     "farmer": {
         "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect"],
         "crud": False,
+    },
+    "state-admin": {
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease"],
+        "crud": True,
+    },
+    "District-admin": {
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease"],
+        "crud": True,
+    },
+    "Central-admin": {
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease"],
+        "crud": True,
     },
 }
 

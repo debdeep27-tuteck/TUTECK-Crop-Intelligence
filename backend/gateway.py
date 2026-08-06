@@ -198,10 +198,18 @@ def forward_request(base_url, path):
         if request.content_type:
             headers["Content-Type"] = request.content_type
 
+        # Forward the caller's auth token so backend services (e.g.
+        # yield_detect_backend.py) can verify who's making the request —
+        # previously this was dropped entirely, so every proxied request
+        # looked anonymous and got 401'd by anything requiring auth.
+        if request.headers.get("Authorization"):
+            headers["Authorization"] = request.headers["Authorization"]
+
         if request.method == "GET":
             resp = requests.get(
                 url,
                 params=request.args,
+                headers=headers,
                 timeout=30
             )
 
@@ -211,6 +219,7 @@ def forward_request(base_url, path):
                     url,
                     params=request.args,
                     json=request.get_json(silent=True),
+                    headers=headers,
                     timeout=180
                 )
             else:
@@ -228,6 +237,7 @@ def forward_request(base_url, path):
                     url,
                     params=request.args,
                     json=request.get_json(silent=True),
+                    headers=headers,
                     timeout=180
                 )
             else:
@@ -243,6 +253,7 @@ def forward_request(base_url, path):
             resp = requests.delete(
                 url,
                 params=request.args,
+                headers=headers,
                 timeout=30
             )
 

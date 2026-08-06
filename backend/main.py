@@ -321,6 +321,10 @@ def main() -> None:
             cmd_args=[],
             port=YIELD_DETECT_PORT,
             timeout=args.ready_timeout,
+            # yield_detect_backend.py has no session store of its own — it
+            # verifies bearer tokens by calling the gateway's /api/auth/me,
+            # so it needs to know where the gateway actually ended up.
+            env_extra={"GATEWAY_INTERNAL_URL": f"http://127.0.0.1:{args.gateway_port}"},
         )
     else:
         log(RED, "yield-detect", "yield_detect_backend.py not found; Yield Detect tab will show BACKEND OFFLINE.")
