@@ -1,7 +1,18 @@
+// ── Session / role scoping ──────────────────────────────────────────────────
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
+}
+const SESSION = getSession();
+const IS_DISTRICT_ADMIN = !!(SESSION && (SESSION.role || '').toLowerCase() === 'district_admin');
+
 // ── State detection ───────────────────────────────────────────────────────────
-const STATE = new URLSearchParams(location.search).get('state')
-           || localStorage.getItem('cropai_state')
-           || 'tripura';
+// district_admin accounts are pinned to their assigned state — ignore any
+// ?state= override or stale localStorage pick for them.
+const STATE = (IS_DISTRICT_ADMIN && SESSION.state)
+  ? SESSION.state.toLowerCase()
+  : (new URLSearchParams(location.search).get('state')
+     || localStorage.getItem('cropai_state')
+     || 'tripura');
 
 const API_BASE = "/api/irrigation";
 

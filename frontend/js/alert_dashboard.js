@@ -1,7 +1,19 @@
+// ── Session / role scoping ──────────────────────────────────────────────────
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
+}
+const SESSION = getSession();
+const IS_DISTRICT_ADMIN = !!(SESSION && (SESSION.role || '').toLowerCase() === 'district_admin');
+const ASSIGNED_DISTRICT = IS_DISTRICT_ADMIN ? (SESSION.district || '') : null;
+
 // ── State detection ───────────────────────────────────────────────────────────
-const STATE = new URLSearchParams(location.search).get('state')
-           || localStorage.getItem('cropai_state')
-           || 'tripura';
+// district_admin accounts are pinned to their assigned state — ignore any
+// ?state= override or stale localStorage pick for them.
+const STATE = (IS_DISTRICT_ADMIN && SESSION.state)
+  ? SESSION.state.toLowerCase()
+  : (new URLSearchParams(location.search).get('state')
+     || localStorage.getItem('cropai_state')
+     || 'tripura');
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let ALL_DATA = [];
@@ -20,6 +32,13 @@ async function loadData() {
     const json = await resp.json();
 
     ALL_DATA = json.predictions || [];
+
+    // district_admin only ever sees their assigned district's rows — never
+    // other districts in the state, and no way to switch via the filter.
+    if (IS_DISTRICT_ADMIN && ASSIGNED_DISTRICT) {
+      ALL_DATA = ALL_DATA.filter(r => r.district === ASSIGNED_DISTRICT);
+    }
+
     META = {
       generated_at: json.generated_at,
       run_date: json.run_date,
@@ -33,6 +52,13 @@ async function loadData() {
     const fCrop = document.getElementById('f-crop');
     districts.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; fDist.appendChild(o); });
     crops.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; fCrop.appendChild(o); });
+
+    // Lock the district filter to their assigned district — no "All
+    // districts" escape hatch, no picking a different one.
+    if (IS_DISTRICT_ADMIN && ASSIGNED_DISTRICT) {
+      fDist.value = ASSIGNED_DISTRICT;
+      fDist.disabled = true;
+    }
 
     // Header
     const genAt = new Date(META.generated_at);

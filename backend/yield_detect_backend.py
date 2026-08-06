@@ -426,8 +426,9 @@ def verify_token(token: str) -> dict | None:
     """
     Asks the gateway process to resolve a bearer token to a user, since the
     actual session store (auth_excel.py's in-memory SESSIONS dict) lives
-    inside that process, not here. Returns {"uid","email","role"} or None
-    if the token is missing/invalid/expired, or the gateway is unreachable.
+    inside that process, not here. Returns
+    {"uid","email","role","state","district"} or None if the token is
+    missing/invalid/expired, or the gateway is unreachable.
     """
     if not token:
         return None
@@ -442,7 +443,13 @@ def verify_token(token: str) -> dict | None:
         data = resp.json()
         if not data.get("email"):
             return None
-        return {"uid": data.get("uid"), "email": data.get("email"), "role": data.get("role")}
+        return {
+            "uid": data.get("uid"),
+            "email": data.get("email"),
+            "role": data.get("role"),
+            "state": data.get("state") or "",
+            "district": data.get("district") or "",
+        }
     except requests.exceptions.RequestException as exc:
         logger.warning("Could not verify token against gateway (%s): %s", GATEWAY_INTERNAL_URL, exc)
         return None
@@ -726,17 +733,31 @@ def analyze():
 def list_lands():
     state = request.args.get("state")
     db = get_db()
+    role = (g.user.get("role") or "").lower()
 
     clauses, params = [], []
     if state:
         clauses.append("state = ?")
         params.append(state)
-    # Farmers only ever see their own lands; other roles (admin, analyst,
-    # state/district/central-admin) see everything (optionally filtered by
-    # ?state=).
-    if (g.user.get("role") or "").lower() == "farmer":
+
+    # Farmers only ever see their own lands. district_admin is scoped to
+    # their assigned district; state_admin is scoped to their assigned
+    # state (regardless of ?state=, since that's their whole jurisdiction).
+    # admin/analyst see everything (optionally filtered by ?state=).
+    if role == "farmer":
         clauses.append("user_email = ?")
         params.append(g.user["email"])
+    elif role == "district_admin":
+        if g.user.get("district"):
+            clauses.append("district = ?")
+            params.append(g.user["district"])
+        if g.user.get("state"):
+            clauses.append("state = ?")
+            params.append(g.user["state"])
+    elif role == "state_admin":
+        if g.user.get("state"):
+            clauses.append("state = ?")
+            params.append(g.user["state"])
 
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     rows = db.execute(f"SELECT * FROM lands {where} ORDER BY updated_at DESC", params).fetchall()
@@ -750,8 +771,18 @@ def get_land(land_id):
     row = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
     if not row:
         return jsonify({"error": "land not found"}), 404
-    if (g.user.get("role") or "").lower() == "farmer" and row["user_email"] != g.user["email"]:
+
+    role = (g.user.get("role") or "").lower()
+    if role == "farmer" and row["user_email"] != g.user["email"]:
         return jsonify({"error": "Forbidden — not your land record"}), 403
+    if role == "district_admin":
+        if g.user.get("district") and row["district"] != g.user["district"]:
+            return jsonify({"error": "Forbidden — outside your assigned district"}), 403
+        if g.user.get("state") and row["state"] != g.user["state"]:
+            return jsonify({"error": "Forbidden — outside your assigned state"}), 403
+    if role == "state_admin" and g.user.get("state") and row["state"] != g.user["state"]:
+        return jsonify({"error": "Forbidden — outside your assigned state"}), 403
+
     return jsonify(row_to_dict(row))
 
 

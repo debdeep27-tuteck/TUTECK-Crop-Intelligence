@@ -170,6 +170,16 @@ const _logo = document.getElementById('state-header-logo');
 if (_logo) _logo.textContent = `${_stateName.toUpperCase()} · EWAS`;
 const _dl = document.getElementById('state-data-label');
 if (_dl) _dl.textContent = _stateName;
+
+// District admins are pinned to their assigned district — reflect it in
+// the header so it's clear this view isn't state-wide.
+try {
+  const _session = JSON.parse(localStorage.getItem('cropai_session'));
+  if (_session && (_session.role || '').toLowerCase() === 'district_admin' && _session.district) {
+    const _logoEl = document.getElementById('state-header-logo');
+    if (_logoEl) _logoEl.textContent = `${_stateName.toUpperCase()} · ${_session.district.toUpperCase()} · EWAS`;
+  }
+} catch {}
 </script>
 <script src="../js/alert_dashboard.js"></script>
 </body>

@@ -157,9 +157,21 @@
 </div>
 
 <script>
+// ── Session / role scoping ──────────────────────────────────────────────
+function _getSession() {
+  try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
+}
+const _session = _getSession();
+const _isDistrictAdmin = !!(_session && (_session.role || '').toLowerCase() === 'district_admin');
+const _assignedDistrict = _isDistrictAdmin ? (_session.district || '') : null;
+
 // ── State-aware district population ──────────────────────────────────
-const _STATE = new URLSearchParams(location.search).get('state')
-            || localStorage.getItem('cropai_state') || 'tripura';
+// district_admin accounts are pinned to their assigned state — ignore any
+// ?state= override or stale localStorage pick for them.
+const _STATE = (_isDistrictAdmin && _session.state)
+  ? _session.state.toLowerCase()
+  : (new URLSearchParams(location.search).get('state')
+     || localStorage.getItem('cropai_state') || 'tripura');
 const _DISTRICTS = {
   tripura:  ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
   meghalaya:['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills',
@@ -235,11 +247,21 @@ function buildChips(containerId, values) {
   });
 }
 const _sel = document.getElementById('district');
-_dists.forEach(d => {
+if (_isDistrictAdmin && _assignedDistrict) {
+  // Only their assigned district is selectable — lock it, no dropdown of
+  // other districts in the state.
   const o = document.createElement('option');
-  o.value = d; o.textContent = d;
+  o.value = _assignedDistrict; o.textContent = _assignedDistrict;
   _sel.appendChild(o);
-});
+  _sel.value = _assignedDistrict;
+  _sel.disabled = true;
+} else {
+  _dists.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    _sel.appendChild(o);
+  });
+}
 buildChips(
   'soil-chips',
   _SOILS[_STATE] || _SOILS.tripura

@@ -154,9 +154,21 @@
 </div>
 
 <script>
+// ── Session / role scoping ──────────────────────────────────────────────
+function _getSession() {
+  try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
+}
+const _session = _getSession();
+const _isDistrictAdmin = !!(_session && (_session.role || '').toLowerCase() === 'district_admin');
+const _assignedDistrict = _isDistrictAdmin ? (_session.district || '') : null;
+
 // ── State-aware district population ──────────────────────────────────
-const _STATE = new URLSearchParams(location.search).get('state')
-            || localStorage.getItem('cropai_state') || 'tripura';
+// district_admin accounts are pinned to their assigned state — ignore any
+// ?state= override or stale localStorage pick for them.
+const _STATE = (_isDistrictAdmin && _session.state)
+  ? _session.state.toLowerCase()
+  : (new URLSearchParams(location.search).get('state')
+     || localStorage.getItem('cropai_state') || 'tripura');
 const _DISTRICTS = {
   tripura:  ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
   meghalaya:['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills',
@@ -170,12 +182,22 @@ const _DISTRICTS = {
 const _stateName = _STATE.charAt(0).toUpperCase() + _STATE.slice(1);
 const _dists = _DISTRICTS[_STATE] || _DISTRICTS.tripura;
 const _sel = document.getElementById('district');
-_dists.forEach((d, i) => {
+if (_isDistrictAdmin && _assignedDistrict) {
+  // Only their assigned district is selectable — lock it, no dropdown of
+  // other districts in the state.
   const o = document.createElement('option');
-  o.value = d; o.textContent = d;
-  if (i === _dists.length - 1) o.selected = true;
+  o.value = _assignedDistrict; o.textContent = _assignedDistrict;
+  o.selected = true;
   _sel.appendChild(o);
-});
+  _sel.disabled = true;
+} else {
+  _dists.forEach((d, i) => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    if (i === _dists.length - 1) o.selected = true;
+    _sel.appendChild(o);
+  });
+}
 const _sub = document.getElementById('state-header-sub');
 if (_sub) _sub.textContent = `${_stateName} · AI Irrigation Advisor`;
 </script>

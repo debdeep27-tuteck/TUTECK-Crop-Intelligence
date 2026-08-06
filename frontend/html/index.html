@@ -760,17 +760,33 @@
       rajasthan: 'Rajasthan',
     };
 
+    // district_admin accounts are pinned to the single state/district they
+    // were assigned in the admin panel — they don't get to pick a state.
+    const IS_DISTRICT_ADMIN = !!(session && (session.role || '').toLowerCase() === 'district_admin');
+    const ASSIGNED_STATE = IS_DISTRICT_ADMIN ? (session.state || '').toLowerCase() : null;
+
     function getCurrentState() {
+      if (IS_DISTRICT_ADMIN && ASSIGNED_STATE) {
+        return STATES.includes(ASSIGNED_STATE) ? ASSIGNED_STATE : 'tripura';
+      }
       const saved = (localStorage.getItem('cropai_state') || 'tripura').toLowerCase();
       return STATES.includes(saved) ? saved : 'tripura';
     }
 
     function stateParam() {
       const state = getCurrentState();
-      return `?state=${encodeURIComponent(state)}`;
+      let param = `?state=${encodeURIComponent(state)}`;
+      // Let content pages (dashboard, yield-detect, etc.) scope their own
+      // queries to this district without each one re-deriving it from the
+      // session — the page's own script still needs to honour it.
+      if (IS_DISTRICT_ADMIN && session.district) {
+        param += `&district=${encodeURIComponent(session.district)}`;
+      }
+      return param;
     }
 
     function toggleStateMenu(event) {
+      if (IS_DISTRICT_ADMIN) return; // no picker to open
       event.stopPropagation();
       document.getElementById('state-menu').classList.toggle('open');
     }
@@ -780,6 +796,7 @@
     }
 
     function selectState(state) {
+      if (IS_DISTRICT_ADMIN) return; // locked to their assigned state
       state = String(state || 'tripura').toLowerCase();
       if (!STATES.includes(state)) state = 'tripura';
       localStorage.setItem('cropai_state', state);
@@ -795,6 +812,10 @@
       document.querySelectorAll('.state-option').forEach(option => {
         option.classList.toggle('active', option.dataset.state === state);
       });
+
+      // Hide the whole picker for district_admin — nothing to switch to.
+      const stateMenu = document.getElementById('state-menu');
+      if (stateMenu) stateMenu.style.display = IS_DISTRICT_ADMIN ? 'none' : '';
     }
 
     function loadCurrentPage() {
