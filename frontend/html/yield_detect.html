@@ -53,13 +53,17 @@
 
     const session = getSession();
 
-    // Everyone with a valid session can view Yield Detect; only farmers get
-    // the ability to add/edit/delete land records.
+    // Everyone with a valid session can view Yield Detect. Farmers get full
+    // add/edit/delete on their own land records; admin/state_admin/
+    // district_admin can additionally delete any land record (moderation),
+    // but can't add or edit one (that stays farmer-only).
     if (!session) {
       window.top.location.href = '/dashboard';
       throw new Error('Not logged in.');
     }
-    const IS_FARMER = (session.role || '').toLowerCase() === 'farmer';
+    const ROLE = (session.role || '').toLowerCase();
+    const IS_FARMER = ROLE === 'farmer';
+    const CAN_DELETE = IS_FARMER || ['admin', 'state_admin', 'district_admin'].includes(ROLE);
     const addBtn = document.getElementById('add-land-btn');
     if (addBtn) addBtn.style.display = IS_FARMER ? '' : 'none';
 
@@ -126,10 +130,8 @@
             <td>${land.updated_at ? new Date(land.updated_at).toLocaleDateString() : '—'}</td>
             <td>
               <div class="row-actions">
-                ${IS_FARMER ? `
-                <button class="btn btn-small" onclick="goEditLand(${land.id})">✎ Edit</button>
-                <button class="btn btn-small btn-danger" onclick="deleteLand(${land.id})">🗑 Delete</button>
-                ` : ''}
+                ${IS_FARMER ? `<button class="btn btn-small" onclick="goEditLand(${land.id})">✎ Edit</button>` : ''}
+                ${CAN_DELETE ? `<button class="btn btn-small btn-danger" onclick="deleteLand(${land.id})">🗑 Delete</button>` : ''}
               </div>
             </td>
           </tr>
