@@ -595,6 +595,20 @@ def call_valid_crops(state: str) -> list:
         return []
 
 
+def call_valid_districts(state: str) -> list:
+    port = state_port(state)
+    url = f"http://127.0.0.1:{port}/valid_districts"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list):
+            return data
+        return data.get("valid_districts", [])
+    except requests.exceptions.RequestException:
+        return []
+
+
 def build_predict_payload(body: dict) -> dict:
     """
     Map a land record / form body to the fields backend_2.py's /predict
@@ -613,6 +627,7 @@ def build_predict_payload(body: dict) -> dict:
     return {
         "crop": body.get("crop", ""),
         "district": body.get("district", "Dhalai"),
+        "Season": body.get("season", "Kharif"),
         "Soil_Type": soil_type or "Alluvial",
         "Irrigation_Type": body.get("irrigation_type", "Canal"),
         "Area (Hectare)": float(body.get("area_hectare") or 0) or 500,
@@ -665,6 +680,18 @@ def health():
 def valid_crops():
     state = request.args.get("state", DEFAULT_STATE)
     return jsonify({"state": state, "crops": call_valid_crops(state)})
+
+
+# ── API: VALID DISTRICTS (proxy, for populating the editor's district dropdown) ─
+# District_Name is a one-hot trained feature — a district string typed into
+# free text that doesn't exactly match a trained value gets silently
+# dropped to the baseline district at prediction time. This exposes the
+# real trained list so the frontend can offer a constrained dropdown.
+
+@app.route("/api/yield/valid_districts", methods=["GET"])
+def valid_districts():
+    state = request.args.get("state", DEFAULT_STATE)
+    return jsonify({"state": state, "districts": call_valid_districts(state)})
 
 
 # ── API: SOIL TYPE LOOKUP (SoilGrids, by geofence lat/lng) ────────────────────

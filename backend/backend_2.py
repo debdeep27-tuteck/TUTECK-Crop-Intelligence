@@ -412,13 +412,98 @@ else:
 
 print(f"  Profiles built for {len(PROFILES)} crops\n")
 
+# ── VALID DISTRICTS (for the frontend's district dropdown) ───────────────────
+# District_Name is one-hot encoded at training time (drop_first=True), so a
+# district string that doesn't exactly match one of these values silently
+# falls back to the dropped/reference district at inference. Expose the
+# real trained list so the frontend can offer a dropdown instead of free text.
+if "District_Name" in df_history.columns:
+    valid_districts = sorted(df_history["District_Name"].dropna().astype(str).str.strip().unique().tolist())
+elif _full_df is not None and "District_Name" in _full_df.columns:
+    valid_districts = sorted(_full_df["District_Name"].dropna().astype(str).str.strip().unique().tolist())
+else:
+    valid_districts = []
+
+print(f"  Valid districts: {valid_districts}\n")
+
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 
 def gaussian(val, mean, std):
     return float(np.exp(-0.5 * ((val - mean) / std) ** 2))
 
 
-def predict_yield_for_crop(crop, district, user_inputs):
+def get_lag_features(crop, district, mu, std):
+    """
+    Mirrors what the training scripts' predict_with_live_weather() computed:
+    Yield_Lag1 / Yield_Roll3 / Yield_Trend from the last 3 historical rows
+    for this exact (District_Name, Crop) combination in df_history, each
+    normalized the same way training normalized the target (z-score using
+    this crop's mu/std). Falls back to 0.0 (i.e. "at the crop's mean, no
+    trend") when there isn't enough history for this district+crop yet —
+    same neutral fallback the old hardcoded-0.0 behavior gave everyone, but
+    now only used when there's genuinely no history to compute from.
+    """
+    if "District_Name" not in df_history.columns or "Crop" not in df_history.columns:
+        return 0.0, 0.0, 0.0
+    hist = df_history[
+        (df_history["District_Name"].astype(str).str.strip().str.lower() == str(district).strip().lower())
+        & (df_history["Crop"] == crop)
+    ]
+    if "Year" in hist.columns:
+        hist = hist.sort_values("Year")
+    if len(hist) < 3 or YIELD_COL not in hist.columns:
+        return 0.0, 0.0, 0.0
+
+    last3 = hist[YIELD_COL].values[-3:]
+    yield_lag1  = float(last3[-1])
+    yield_roll3 = float(np.mean(last3))
+    try:
+        yield_trend = float(np.polyfit(range(3), last3, 1)[0])
+    except (TypeError, ValueError):
+        yield_trend = 0.0
+
+    if not std:
+        return 0.0, 0.0, 0.0
+    return (yield_lag1 - mu) / std, (yield_roll3 - mu) / std, yield_trend / std
+
+
+def get_climatology_weather(district, season):
+    """
+    Best-effort weather features for a request that doesn't supply live
+    weather: averages historical weather_* columns in _full_df for this
+    district+season (climatology). Falls back to a district-only average,
+    then to nothing (caller fills 0.0) if neither is available. This
+    replaces silently sending 0.0 for every weather feature on every
+    request, which made rain/temp/etc. have zero effect on the prediction
+    regardless of season or location.
+    """
+    if _full_df is None:
+        return {}
+    df = _full_df
+    out = {}
+
+    scoped = df
+    if "District_Name" in df.columns and district:
+        scoped = scoped[scoped["District_Name"].astype(str).str.strip().str.lower() == str(district).strip().lower()]
+    if "Season" in df.columns and season:
+        season_scoped = scoped[scoped["Season"].astype(str).str.strip().str.lower() == str(season).strip().lower()]
+        if len(season_scoped) > 0:
+            scoped = season_scoped
+
+    for feat in WEATHER_FEATURES:
+        if feat not in df.columns:
+            continue
+        vals = pd.to_numeric(scoped.get(feat), errors="coerce").dropna() if feat in scoped.columns else pd.Series(dtype=float)
+        if len(vals) == 0:
+            # Fall back to the district-independent, season-independent mean
+            # for this state so we still return something rather than 0.0.
+            vals = pd.to_numeric(df[feat], errors="coerce").dropna()
+        if len(vals) > 0:
+            out[feat] = float(vals.mean())
+    return out
+
+
+def predict_yield_for_crop(crop, district, user_inputs, season=None):
     """
     Run XGBoost prediction for a specific crop.
     Returns (predicted_yield, source) where source is 'model' or 'hist_avg'.
@@ -431,7 +516,9 @@ def predict_yield_for_crop(crop, district, user_inputs):
                    Yield_Lag1, Yield_Roll3, Yield_Trend,
                    weather_temp_mean, weather_rain_total, weather_rain_days,
                    weather_et0_total, weather_solarrad_total
-      NOTE: Season is dropped before training — NOT a model feature.
+      NOTE: Season is dropped before training — NOT a direct model feature.
+            It's still useful here because it selects which climatology
+            weather window get_climatology_weather() averages over.
             Soil baseline is Alluvial (drop_first), Red Laterite is encoded.
             Irrigation baseline is Canal (drop_first), Drip/Rainfed encoded.
     """
@@ -441,6 +528,22 @@ def predict_yield_for_crop(crop, district, user_inputs):
 
     mu  = crop_stats.loc[crop, "crop_mean"]
     std = crop_stats.loc[crop, "crop_std"]
+
+    lag1, roll3, trend = get_lag_features(crop, district, mu, std)
+
+    # Weather: use whatever the caller explicitly supplied; fill in
+    # anything missing from district+season climatology instead of 0.0.
+    climatology = get_climatology_weather(district, season)
+    weather_row = {}
+    for feat in WEATHER_FEATURES:
+        supplied = user_inputs.get(feat)
+        if supplied is not None:
+            try:
+                weather_row[feat] = float(supplied)
+                continue
+            except (TypeError, ValueError):
+                pass
+        weather_row[feat] = climatology.get(feat, 0.0)
 
     row = {
         "District_Name":          district,
@@ -452,10 +555,10 @@ def predict_yield_for_crop(crop, district, user_inputs):
         "Pest_Disease_Incidence": normalize_pest_value(
             user_inputs.get("Pest_Disease_Incidence", "Low"), default=0
         ),
-        "Yield_Lag1":  0.0,
-        "Yield_Roll3": 0.0,
-        "Yield_Trend": 0.0,
-        **{feat: user_inputs.get(feat, 0.0) for feat in WEATHER_FEATURES},
+        "Yield_Lag1":  lag1,
+        "Yield_Roll3": roll3,
+        "Yield_Trend": trend,
+        **weather_row,
     }
 
     X = pd.get_dummies(pd.DataFrame([row]), drop_first=True)
@@ -751,8 +854,9 @@ def predict():
     data     = request.get_json()
     crop     = data.get("crop", "")
     district = data.get("district", "Dhalai")
+    season   = data.get("Season") or data.get("season")
 
-    pred, source = predict_yield_for_crop(crop, district, data)
+    pred, source = predict_yield_for_crop(crop, district, data, season=season)
 
     # Compute anomaly vs crop historical normal
     normal = crop_stats.loc[crop, "crop_mean"] if crop in valid_crops else pred
@@ -794,6 +898,7 @@ def recommend():
     data     = request.get_json()
     district = data.get("district", "Dhalai")
     top_n    = int(data.get("top_n", 7))
+    season   = data.get("Season") or data.get("season")
 
     # Score all crops
     results = []
@@ -801,7 +906,7 @@ def recommend():
 
     for crop in all_crops:
         suit, season_fit = compute_suitability(crop, data)
-        pred, source     = predict_yield_for_crop(crop, district, data)
+        pred, source     = predict_yield_for_crop(crop, district, data, season=season)
 
         # Normal yield for anomaly
         if crop in valid_crops:
@@ -841,6 +946,19 @@ def recommend():
 @app.route("/valid_crops", methods=["GET"])
 def get_valid_crops():
     return jsonify({"valid_crops": valid_crops})
+
+
+@app.route("/api/crop/valid_districts", methods=["GET"])
+@app.route("/valid_districts", methods=["GET"])
+def get_valid_districts():
+    """
+    The real list of District_Name values this state's model was trained
+    on. A district string that doesn't exactly match one of these gets
+    dropped to the reference/baseline district at prediction time (see
+    predict_yield_for_crop) — the frontend should use this list to build a
+    dropdown instead of a free-text field.
+    """
+    return jsonify({"valid_districts": valid_districts})
 
 
 @app.route("/model_info", methods=["GET"])
@@ -947,8 +1065,25 @@ def _compute_stats():
     """
     Computes EDA statistics from df_history for the dashboard.
     All chart data that was previously hardcoded in the frontend.
+
+    Query param: district (optional). When present and not "all", every
+    chart below is computed on the subset of rows for that district only,
+    so a district admin (e.g. Ajmer) sees analysis scoped to their district
+    while a state admin (no district param, or district=all) keeps seeing
+    the full state-wide breakdown exactly as before.
     """
     df = _full_df.copy() if _full_df is not None else df_history.copy()
+
+    district_param = (request.args.get("district") or "").strip()
+    if district_param and district_param.lower() != "all" and "District_Name" in df.columns:
+        _mask = df["District_Name"].astype(str).str.strip().str.lower() == district_param.lower()
+        if _mask.any():
+            df = df[_mask]
+        else:
+            logger.warning(
+                "/stats: district=%r not found in District_Name values for state=%s; "
+                "falling back to full state dataset", district_param, STATE,
+            )
 
     # ── defensive validation ──────────────────────────────────────────────
     # /stats must never 500 due to malformed/missing data. Guard the two
@@ -1133,6 +1268,14 @@ def crop_scatter():
 
     src = _full_df if _full_df is not None else df_history
     sub = src[src["Crop"] == crop] if "Crop" in src.columns else src
+
+    # Same district scoping as /stats — district admins get scatter data
+    # confined to their own district, state admins get the full picture.
+    district_param = (request.args.get("district") or "").strip()
+    if district_param and district_param.lower() != "all" and "District_Name" in sub.columns:
+        _mask = sub["District_Name"].astype(str).str.strip().str.lower() == district_param.lower()
+        if _mask.any():
+            sub = sub[_mask]
 
     def scatter_pts(col):
         if col not in sub.columns:

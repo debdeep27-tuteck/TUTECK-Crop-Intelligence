@@ -201,7 +201,9 @@
                     </div>
                     <div class="form-field">
                         <label>District</label>
-                        <input id="f-district" type="text" placeholder="e.g. West Tripura">
+                        <select id="f-district">
+                            <option value="">Loading districts…</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
@@ -352,6 +354,31 @@
             }
         }
         document.getElementById('f-state').addEventListener('change', (e) => loadCrops(e.target.value));
+
+        // ── DISTRICT DROPDOWN (per-state, from the crop backend) ──────────────
+        // District_Name is a one-hot trained feature — a district string that
+        // doesn't exactly match one of the model's trained values silently
+        // falls back to the reference district at prediction time. So this
+        // pulls the *real* trained district list instead of leaving it free
+        // text, the same way loadCrops() pulls the real trained crop list.
+        async function loadDistricts(state, preselect) {
+            const sel = document.getElementById('f-district');
+            sel.innerHTML = '<option value="">Loading districts…</option>';
+            try {
+                const res = await fetch(`/api/yield/valid_districts?state=${state}`);
+                const data = await res.json();
+                const districts = data.districts || [];
+                sel.innerHTML = districts.length
+                    ? districts.map(d => `<option value="${d}">${d}</option>`).join('')
+                    : '<option value="">No districts found</option>';
+                if (preselect && districts.includes(preselect)) {
+                    sel.value = preselect;
+                }
+            } catch {
+                sel.innerHTML = '<option value="">Could not load districts</option>';
+            }
+        }
+        document.getElementById('f-state').addEventListener('change', (e) => loadDistricts(e.target.value));
 
         // ── MAP (Leaflet + OpenStreetMap — free, no API key) ──────────────────
         // "rectLayer" holds whichever geofence shape is currently drawn — it can
@@ -753,7 +780,6 @@
 
                 document.getElementById('f-property').value = land.property_name || '';
                 document.getElementById('f-state').value = land.state || 'tripura';
-                document.getElementById('f-district').value = land.district || '';
                 document.getElementById('f-season').value = land.season || 'Kharif';
                 if (land.soil_type) {
                     document.getElementById('f-soil').value = land.soil_type;
@@ -768,6 +794,7 @@
 
                 await loadCrops(land.state || 'tripura');
                 if (land.crop) document.getElementById('f-crop').value = land.crop;
+                await loadDistricts(land.state || 'tripura', land.district || '');
 
                 if (land.predicted_yield !== null && land.predicted_yield !== undefined) {
                     showResults({
@@ -875,6 +902,7 @@
         initMap();
         initMapplsLayer();
         loadCrops(initialState);
+        loadDistricts(initialState);
     </script>
 </body>
 

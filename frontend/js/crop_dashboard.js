@@ -6,8 +6,28 @@
 // The dashboard is served by the gateway on :8085. All crop APIs must go
 // through /api/crop so the gateway can route Tripura -> :5000 and
 // Meghalaya -> :5002.
+// ── Logged-in admin scope (from the real auth system, login.html / auth_excel.py) ──
+// login.html stores the session as JSON under 'cropai_session':
+//   { token, email, role, state, district, loggedInAt }
+// role is 'state_admin' or 'district_admin' (or 'admin'/'analyst'/'farmer').
+// Only 'district_admin' carries a non-empty district and gets scoped.
+function _readSession() {
+  try {
+    const raw = localStorage.getItem('cropai_session');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+const SESSION = _readSession();
+const AUTH_TOKEN = SESSION?.token || '';
+const ADMIN_ROLE = (SESSION?.role || 'state_admin').toLowerCase().trim();
+const ADMIN_DISTRICT = ADMIN_ROLE === 'district_admin' ? (SESSION?.district || '').trim() : '';
+const IS_DISTRICT_ADMIN = ADMIN_ROLE === 'district_admin' && !!ADMIN_DISTRICT;
+
 const STATE = (
   new URLSearchParams(window.location.search).get('state') ||
+  (SESSION?.state || '') ||
   localStorage.getItem('cropai_state') ||
   'tripura'
 ).toLowerCase().trim();
@@ -19,16 +39,31 @@ function apiUrl(path, params = {}) {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   const url = new URL(`${BACKEND}${cleanPath}`, window.location.origin);
   url.searchParams.set('state', STATE);
+  // District admins are scoped server-side too: every /stats-family call
+  // gets ?district=<their district> automatically so charts/medians/etc.
+  // are computed only from their district's rows. State (and other) admins
+  // send no district param and keep seeing the full state, same as before.
+  if (IS_DISTRICT_ADMIN && (cleanPath === '/stats' || cleanPath.startsWith('/stats/'))) {
+    url.searchParams.set('district', ADMIN_DISTRICT);
+  }
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
   });
   return url.toString();
 }
 
+// Every request carries the session's bearer token (if logged in) so a
+// gateway/backend that checks auth can identify + re-verify the caller
+// server-side, instead of trusting client-supplied district/role alone.
+function _authHeaders(existing = {}) {
+  return AUTH_TOKEN ? { ...existing, Authorization: `Bearer ${AUTH_TOKEN}` } : existing;
+}
+
 async function fetchJson(path, { timeout = 8000, params = {}, options = {} } = {}) {
   const url = apiUrl(path, params);
+  const opts = { ...options, headers: _authHeaders(options.headers || {}) };
   try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(timeout), ...options });
+    const resp = await fetch(url, { signal: AbortSignal.timeout(timeout), ...opts });
     if (!resp.ok) {
       const body = await resp.text().catch(() => '');
       LAST_API_ERROR = `${resp.status} ${resp.statusText} → ${url}${body ? ' :: ' + body.slice(0, 250) : ''}`;
@@ -245,6 +280,14 @@ async function buildOverview() {
       meghalaya: '2008→2022',
       rajasthan: '1997→2022'
     }[STATE] || '';
+    document.querySelectorAll('.scope-badge').forEach(el => el.remove());
+    if (IS_DISTRICT_ADMIN) {
+      const badge = document.createElement('div');
+      badge.className = 'scope-badge';
+      badge.style.cssText = 'margin-bottom:10px;font-size:11px;letter-spacing:.04em;color:var(--text3)';
+      badge.textContent = `SCOPE: ${ADMIN_DISTRICT.toUpperCase()} DISTRICT`;
+      document.querySelector('#page-overview .stat-strip')?.insertAdjacentElement('beforebegin', badge);
+    }
     document.querySelector('#page-overview .stat-strip').innerHTML = `
       <div class="sc"><div class="sc-lbl">Records</div><div class="sc-val g">${sm.n_records.toLocaleString()}</div><div class="sc-sub">District×Year×Crop</div></div>
       <div class="sc"><div class="sc-lbl">Crops</div><div class="sc-val b">${sm.n_crops}</div><div class="sc-sub">${sm.n_seasons} seasons · ${sm.n_districts} districts</div></div>
@@ -470,7 +513,7 @@ function calcYield(crop, pest, rain, temp, fert, irr, soil) {
 async function fetchPrediction(crop, district, pest, rain, raindays, et0, temp, fert, irr, soil) {
   try {
     const r = await fetch(apiUrl('/predict'), {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: _authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         crop, district, state: STATE,
         Pest_Disease_Incidence: pest, Irrigation_Type: irr, Soil_Type: soil,
@@ -494,7 +537,7 @@ let CYE_SCATTER = {};  // per-crop scatter cache from /stats/crop_scatter
 async function fetchCropScatter(crop) {
   if (CYE_SCATTER[crop]) return CYE_SCATTER[crop];
   try {
-    const r = await fetch(apiUrl('/stats/crop_scatter', { crop: crop }), { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(apiUrl('/stats/crop_scatter', { crop: crop }), { headers: _authHeaders(), signal: AbortSignal.timeout(6000) });
     if (r.ok) { CYE_SCATTER[crop] = await r.json(); return CYE_SCATTER[crop]; }
   } catch { }
   return null;
@@ -1433,7 +1476,7 @@ async function runPrediction() {
   if (backendOnline) {
     try {
       const res = await fetch(apiUrl('/predict'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: _authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           crop, district, state: STATE, Season: season, Pest_Disease_Incidence: pest,
           Irrigation_Type: irr, Soil_Type: soil, Fertilizer_kg_per_ha: fert,
@@ -1501,10 +1544,21 @@ let ALL_ALERTS = [], FILTERED_ALERTS = [], ALERT_SORT = 'anomaly', ALERT_ASC = t
 
 async function buildAlerts() {
   try {
-    const resp = await fetch(`/predictions.json?state=${encodeURIComponent(STATE)}`);
+    const resp = await fetch(`/predictions.json?state=${encodeURIComponent(STATE)}`, { headers: _authHeaders() });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const json = await resp.json();
-    ALL_ALERTS = json.predictions || [];
+    let predictions = json.predictions || [];
+
+    // District admins only ever see their own district's alerts — scope the
+    // raw feed itself, not just the filter dropdown, so counts/charts/CSV
+    // exports downstream can't leak other districts' data.
+    if (IS_DISTRICT_ADMIN) {
+      predictions = predictions.filter(
+        r => (r.district || '').toLowerCase().trim() === ADMIN_DISTRICT.toLowerCase()
+      );
+    }
+
+    ALL_ALERTS = predictions;
     FILTERED_ALERTS = [...ALL_ALERTS];
 
     const genAt = new Date(json.generated_at || '');
@@ -1520,6 +1574,17 @@ async function buildAlerts() {
     const fd = document.getElementById('al-f-district'), fc = document.getElementById('al-f-crop');
     dists.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; fd.appendChild(o); });
     crops.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; fc.appendChild(o); });
+
+    // Lock the district filter to the admin's own district and hide the
+    // "All Districts" escape hatch, so they can't accidentally (or
+    // deliberately) browse other districts from this same UI.
+    if (IS_DISTRICT_ADMIN && fd) {
+      fd.value = dists[0] || ADMIN_DISTRICT;
+      fd.disabled = true;
+      fd.title = `Locked to ${ADMIN_DISTRICT} (district admin)`;
+      const allOpt = fd.querySelector('option[value="all"]');
+      if (allOpt) allOpt.remove();
+    }
 
     renderAlertTable();
     buildAlertCharts();

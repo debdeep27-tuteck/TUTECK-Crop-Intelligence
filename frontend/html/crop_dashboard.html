@@ -856,8 +856,10 @@
 
   <script>
     // ── State-aware district population ──────────────────────────────────
+    let _session = null;
+    try { _session = JSON.parse(localStorage.getItem('cropai_session') || 'null'); } catch { }
     const _STATE = new URLSearchParams(location.search).get('state')
-      || localStorage.getItem('cropai_state') || 'tripura';
+      || (_session && _session.state) || localStorage.getItem('cropai_state') || 'tripura';
     const _DISTRICTS = {
       tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
       meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills',
@@ -900,6 +902,15 @@
       ]
     };
     const _dists = _DISTRICTS[_STATE] || _DISTRICTS.tripura;
+
+    // ── Logged-in admin scope, from the real auth system (login.html) ──────
+    // A district_admin's district selectors are pre-set and locked so they
+    // can only ever view/predict for their own district; any other role
+    // (state_admin, admin, analyst, farmer) keeps full access, unchanged.
+    const _ROLE = (_session?.role || 'state_admin').toLowerCase().trim();
+    const _ADMIN_DISTRICT = _ROLE === 'district_admin' ? (_session?.district || '').trim() : '';
+    const _IS_DISTRICT_ADMIN = _ROLE === 'district_admin' && !!_ADMIN_DISTRICT;
+
     ['cye-district', 'p-district'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
@@ -910,6 +921,16 @@
         if (i === _dists.length - 1) o.selected = true;
         sel.appendChild(o);
       });
+      if (_IS_DISTRICT_ADMIN) {
+        const match = [...sel.options].find(
+          o => o.textContent.toLowerCase() === _ADMIN_DISTRICT.toLowerCase()
+        );
+        if (match) {
+          sel.value = match.value;
+          sel.disabled = true;
+          sel.title = `Locked to ${_ADMIN_DISTRICT} (district admin)`;
+        }
+      }
     });
     const STATE_SOILS = {
       tripura: [

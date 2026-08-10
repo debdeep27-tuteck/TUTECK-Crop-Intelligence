@@ -83,7 +83,7 @@ DATA_DIR = {
 # auth_excel.py. That module also exposes /api/auth/* and /api/users/*
 # routes as a Blueprint, so we just register it here.
 
-from auth_excel import auth_bp, init_excel
+from auth_excel import auth_bp, init_excel, get_current_session
 
 init_excel()                    # creates users.xlsx next to this file if missing
 app.register_blueprint(auth_bp) # mounts /api/auth/... and /api/users/...
@@ -172,16 +172,58 @@ def serve_static(filename):
 
 @app.route("/predictions.json")
 def serve_predictions():
-    state = request.args.get("state", "tripura").lower()
+    """
+    Serves the alerts feed for the dashboard's Alerts tab.
+
+    Same server-side scoping as /api/crop: a logged-in state_admin/
+    district_admin gets their own session's state (ignoring ?state= from
+    the client), and a district_admin additionally gets the JSON response
+    filtered down to just their district before it's sent — so the raw
+    file is never exposed to them, not even via devtools network tab.
+    Unscoped roles / logged-out requests behave exactly as before.
+    """
+    session = get_current_session()
+    forced_state = None
+    forced_district = None
+
+    if session:
+        role = (session.get("role") or "").lower().strip()
+        if role in ("state_admin", "district_admin"):
+            forced_state = (session.get("state") or "").lower().strip() or None
+        if role == "district_admin":
+            forced_district = (session.get("district") or "").strip() or None
+
+    state = forced_state or request.args.get("state", "tripura").lower()
     data_dir = DATA_DIR.get(state, DATA_DIR["tripura"])
-    return send_from_directory(str(data_dir), "predictions.json")
+
+    if not forced_district:
+        return send_from_directory(str(data_dir), "predictions.json")
+
+    predictions_file = data_dir / "predictions.json"
+    if not predictions_file.exists():
+        return jsonify({"error": "predictions.json not found", "state": state}), 404
+
+    import json
+    with open(predictions_file, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+
+    payload["predictions"] = [
+        r for r in payload.get("predictions", [])
+        if str(r.get("district", "")).strip().lower() == forced_district.lower()
+    ]
+    return jsonify(payload)
 
 
 # ── PROXY HELPER ────────────────────────────────────────────────────────
 
-def forward_request(base_url, path):
+def forward_request(base_url, path, override_params=None, override_json=None):
     """
     Forward gateway request to backend service.
+
+    override_params / override_json let a route force specific query-string
+    or JSON-body values (e.g. district scoping for a district_admin) that
+    win over whatever the client actually sent — this is how server-side
+    enforcement happens, since the client's own values can't be trusted.
 
     Examples:
       /api/disease/health          -> http://127.0.0.1:5004/health
@@ -205,27 +247,34 @@ def forward_request(base_url, path):
         if request.headers.get("Authorization"):
             headers["Authorization"] = request.headers["Authorization"]
 
+        params = request.args.to_dict(flat=True)
+        if override_params:
+            params.update(override_params)
+
         if request.method == "GET":
             resp = requests.get(
                 url,
-                params=request.args,
+                params=params,
                 headers=headers,
                 timeout=30
             )
 
         elif request.method == "POST":
             if request.is_json:
+                body = request.get_json(silent=True) or {}
+                if override_json:
+                    body.update(override_json)
                 resp = requests.post(
                     url,
-                    params=request.args,
-                    json=request.get_json(silent=True),
+                    params=params,
+                    json=body,
                     headers=headers,
                     timeout=180
                 )
             else:
                 resp = requests.post(
                     url,
-                    params=request.args,
+                    params=params,
                     data=request.get_data(),
                     headers=headers,
                     timeout=180
@@ -233,17 +282,20 @@ def forward_request(base_url, path):
 
         elif request.method == "PUT":
             if request.is_json:
+                body = request.get_json(silent=True) or {}
+                if override_json:
+                    body.update(override_json)
                 resp = requests.put(
                     url,
-                    params=request.args,
-                    json=request.get_json(silent=True),
+                    params=params,
+                    json=body,
                     headers=headers,
                     timeout=180
                 )
             else:
                 resp = requests.put(
                     url,
-                    params=request.args,
+                    params=params,
                     data=request.get_data(),
                     headers=headers,
                     timeout=180
@@ -252,7 +304,7 @@ def forward_request(base_url, path):
         elif request.method == "DELETE":
             resp = requests.delete(
                 url,
-                params=request.args,
+                params=params,
                 headers=headers,
                 timeout=30
             )
@@ -307,7 +359,48 @@ def forward_request(base_url, path):
 
 @app.route("/api/crop/<path:path>", methods=["GET", "POST"])
 def crop_api(path):
-    return forward_request(get_crop_api(), path)
+    """
+    Enforces district/state scoping server-side using the caller's verified
+    session (from auth_excel's SESSIONS store, looked up via their bearer
+    token) rather than trusting whatever ?state=/district the client sent.
+
+      - state_admin / district_admin: their session's own `state` always
+        wins over the client-supplied state, so they can never point their
+        dashboard at another state's backend by editing the URL.
+      - district_admin additionally has their session's `district` forced
+        into both the query params (GET, e.g. /stats) and the JSON body
+        (POST, e.g. /predict), overriding any district the client sent —
+        this is what actually closes the "remove district= in devtools"
+        gap, since the override happens after the request leaves the
+        browser and can't be edited by the caller.
+      - Anyone not logged in (no/invalid token), or logged in as a role
+        without a state/district scope (admin, analyst, farmer), is
+        forwarded exactly as before — unscoped, full access.
+    """
+    session = get_current_session()
+    override_params = {}
+    override_json = {}
+    forced_state = None
+
+    if session:
+        role = (session.get("role") or "").lower().strip()
+        if role in ("state_admin", "district_admin"):
+            forced_state = (session.get("state") or "").lower().strip() or None
+        if role == "district_admin":
+            district = (session.get("district") or "").strip()
+            if district:
+                override_params["district"] = district
+                override_json["district"] = district
+
+    state = forced_state or get_state()
+    base_url = CROP_APIS.get(state, CROP_API_TRIPURA)
+
+    return forward_request(
+        base_url,
+        path,
+        override_params=override_params or None,
+        override_json=override_json or None,
+    )
 
 
 @app.route("/api/irrigation/<path:path>", methods=["GET", "POST"])

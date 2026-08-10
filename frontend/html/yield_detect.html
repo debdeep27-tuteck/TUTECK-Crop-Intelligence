@@ -5,6 +5,63 @@
 <title>Yield Detect — CropAI</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/yield_detect.css">
+<style>
+  /* Summary stat cards — matches the EWAS "CRITICAL ALERTS / WATCH ALERTS…"
+     card row styling: cream card, mono uppercase label, big bold number,
+     small muted subtitle underneath. Self-contained so it renders correctly
+     even if yield_detect.css doesn't define these classes yet. */
+  .yd-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1px solid #d8d3c4;
+    border-radius: 4px;
+    margin: 0 0 18px;
+    background: #faf8f2;
+  }
+  .yd-stat-card {
+    padding: 18px 22px;
+    border-right: 1px solid #d8d3c4;
+  }
+  .yd-stat-card:last-child {
+    border-right: none;
+  }
+  .yd-stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #8a8470;
+    margin-bottom: 8px;
+  }
+  .yd-stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 34px;
+    line-height: 1;
+    color: #2c2a20;
+  }
+  .yd-stat-value.alert {
+    color: #b3402a;
+  }
+  .yd-stat-sub {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    color: #9b9580;
+    margin-top: 6px;
+  }
+  @media (max-width: 760px) {
+    .yd-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .yd-stat-card:nth-child(2) {
+      border-right: none;
+    }
+    .yd-stat-card:nth-child(3),
+    .yd-stat-card:nth-child(4) {
+      border-top: 1px solid #d8d3c4;
+    }
+  }
+</style>
 </head>
 <body>
 
@@ -17,6 +74,30 @@
   </div>
 
   <div class="yd-content">
+
+    <div class="yd-stats" id="yd-stats">
+      <div class="yd-stat-card">
+        <div class="yd-stat-label">Lands Detected</div>
+        <div class="yd-stat-value" id="stat-lands">—</div>
+        <div class="yd-stat-sub" id="stat-lands-sub">&nbsp;</div>
+      </div>
+      <div class="yd-stat-card">
+        <div class="yd-stat-label">Distinct Farmers</div>
+        <div class="yd-stat-value" id="stat-farmers">—</div>
+        <div class="yd-stat-sub" id="stat-farmers-sub">&nbsp;</div>
+      </div>
+      <div class="yd-stat-card">
+        <div class="yd-stat-label">Crop Types</div>
+        <div class="yd-stat-value" id="stat-crops">—</div>
+        <div class="yd-stat-sub" id="stat-crops-sub">&nbsp;</div>
+      </div>
+      <div class="yd-stat-card">
+        <div class="yd-stat-label">Anomaly Alerts</div>
+        <div class="yd-stat-value" id="stat-anomalies">—</div>
+        <div class="yd-stat-sub" id="stat-anomalies-sub">&nbsp;</div>
+      </div>
+    </div>
+
     <div class="yd-table-wrap">
       <table class="yd-table">
         <thead>
@@ -108,6 +189,35 @@
       return `<span class="yd-pill ${cls}">${sign}${fmt(anomaly, 1)}%</span>`;
     }
 
+    // Anomaly threshold for flagging a land as an "alert" here mirrors the
+    // EWAS Watch/Critical banding: anything at or below -10% predicted vs.
+    // normal yield counts as an anomaly worth surfacing.
+    const ANOMALY_ALERT_THRESHOLD = -10;
+
+    function updateStats(lands) {
+      const total = lands.length;
+
+      const farmerSet = new Set(lands.map(l => l.user_email).filter(Boolean));
+      const cropSet = new Set(lands.map(l => l.crop).filter(Boolean));
+      const anomalies = lands.filter(l =>
+        l.anomaly_pct !== null && l.anomaly_pct !== undefined && l.anomaly_pct <= ANOMALY_ALERT_THRESHOLD
+      );
+
+      document.getElementById('stat-lands').textContent = total;
+      document.getElementById('stat-lands-sub').textContent = `across ${STATE_LABEL}`;
+
+      document.getElementById('stat-farmers').textContent = farmerSet.size;
+      document.getElementById('stat-farmers-sub').textContent = 'unique growers';
+
+      document.getElementById('stat-crops').textContent = cropSet.size;
+      document.getElementById('stat-crops-sub').textContent = 'distinct crops';
+
+      const anomalyEl = document.getElementById('stat-anomalies');
+      anomalyEl.textContent = anomalies.length;
+      anomalyEl.classList.toggle('alert', anomalies.length > 0);
+      document.getElementById('stat-anomalies-sub').textContent = `anomaly ≤ ${ANOMALY_ALERT_THRESHOLD}%`;
+    }
+
     async function loadLands() {
       const tbody = document.getElementById('lands-tbody');
       try {
@@ -115,9 +225,12 @@
         const lands = await res.json();
 
         if (!Array.isArray(lands) || lands.length === 0) {
+          updateStats([]);
           tbody.innerHTML = `<tr><td colspan="8" class="yd-empty">No lands analyzed yet for ${STATE_LABEL}. Click "＋ Add Land" to geofence your first plot.</td></tr>`;
           return;
         }
+
+        updateStats(lands);
 
         tbody.innerHTML = lands.map(land => `
           <tr>
