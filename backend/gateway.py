@@ -27,6 +27,9 @@ DISEASE_API = "http://127.0.0.1:5004"
 # Yield Detect — geofenced land yield predictions (SQLite-backed)
 YIELD_API = "http://127.0.0.1:5008"
 
+# Auction — farmer crop listings / bidding (SQLite-backed, unused_crops table)
+AUCTION_API = "http://127.0.0.1:5009"
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -107,6 +110,7 @@ def admin_page():
 @app.route("/alerts")
 @app.route("/disease")
 @app.route("/yield-detect")
+@app.route("/auction")
 def home():
     return send_from_directory(str(HTML_DIR), "index.html")
 
@@ -149,6 +153,11 @@ def content_disease():
 @app.route("/content/yield-detect")
 def content_yield_detect():
     return send_from_directory(str(HTML_DIR), "yield_detect.html")
+
+
+@app.route("/content/auction")
+def content_auction():
+    return send_from_directory(str(HTML_DIR), "auction_farmer.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -421,6 +430,23 @@ def yield_api(path):
     return forward_request(YIELD_API, f"api/yield/{path}")
 
 
+@app.route("/api/unused-crops", methods=["GET", "POST"])
+@app.route("/api/unused-crops/<path:path>", methods=["GET", "PATCH", "DELETE", "POST"])
+def auction_crops_api(path=""):
+    # auction_backend.py mounts its own routes under /api/unused-crops/...,
+    # same convention as /api/yield above — forward the full path so
+    # /api/unused-crops/<id>/sell reaches the backend unchanged.
+    full_path = f"api/unused-crops/{path}".rstrip("/") if path else "api/unused-crops"
+    return forward_request(AUCTION_API, full_path)
+
+
+@app.route("/api/bids", methods=["GET", "POST"])
+@app.route("/api/bids/<path:path>", methods=["GET", "PATCH"])
+def auction_bids_api(path=""):
+    full_path = f"api/bids/{path}".rstrip("/") if path else "api/bids"
+    return forward_request(AUCTION_API, full_path)
+
+
 # Optional direct checks
 @app.route("/api/disease-health")
 def disease_health_direct():
@@ -430,6 +456,11 @@ def disease_health_direct():
 @app.route("/api/yield-health")
 def yield_health_direct():
     return forward_request(YIELD_API, "api/yield/health")
+
+
+@app.route("/api/auction-health")
+def auction_health_direct():
+    return forward_request(AUCTION_API, "health")
 
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────
@@ -450,7 +481,8 @@ def health():
             },
             "shared": {
                 "disease": DISEASE_API,
-                "yield_detect": YIELD_API
+                "yield_detect": YIELD_API,
+                "auction": AUCTION_API
             }
         }
     })
