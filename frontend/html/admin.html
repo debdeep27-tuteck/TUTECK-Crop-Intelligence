@@ -155,6 +155,16 @@
             background: rgba(0, 0, 0, .04);
         }
 
+        .icon-btn:disabled {
+            filter: blur(0.1px);
+            opacity: .3;
+            cursor: not-allowed;
+        }
+
+        .icon-btn:disabled:hover {
+            filter: blur(0.1px);
+        }
+
         .add-user-row {
             display: flex;
             justify-content: flex-end;
@@ -633,6 +643,35 @@
             throw new Error();
         }
 
+        // This backend's session object only carries { token, email, role,
+        // state, district, loggedInAt } — no uid/id field. So identity is
+        // matched by email (case-insensitive). id fields are still checked
+        // first in case the backend adds one later.
+        function isSelfUser(user) {
+            if (!user) return false;
+
+            const sessionIdCandidates = [
+                session.uid, session.id, session._id, session.userId, session.user_id
+            ].filter(v => v !== undefined && v !== null);
+
+            const userIdCandidates = [
+                user.uid, user.id, user._id, user.userId, user.user_id
+            ].filter(v => v !== undefined && v !== null);
+
+            const idMatch = sessionIdCandidates.length && userIdCandidates.length &&
+                sessionIdCandidates.some(sid =>
+                    userIdCandidates.some(uid => String(sid) === String(uid))
+                );
+
+            if (idMatch) return true;
+
+            if (session.email && user.email) {
+                return String(session.email).trim().toLowerCase() === String(user.email).trim().toLowerCase();
+            }
+
+            return false;
+        }
+
         function authHeaders() {
             return {
                 "Content-Type": "application/json",
@@ -783,7 +822,8 @@
                 }
 
                 const statusValue = document.getElementById("modalStatus").value;
-                if (statusValue !== (data.status || "active") && modalEditingUid !== session.uid) {
+                const editingUser = currentUsers.find(u => u.uid === modalEditingUid);
+                if (statusValue !== (data.status || "active") && !isSelfUser(editingUser)) {
                     await fetch(`/api/users/${modalEditingUid}/restrict`, {
                         method: "PATCH",
                         headers: authHeaders(),
@@ -866,7 +906,7 @@ ${pageHeaders}
             users.forEach(user => {
 
                 const userPages = user.pages || [];
-                const isSelf = user.uid === session.uid;
+                const isSelf = isSelfUser(user);
                 const isRestricted = user.status === "restricted";
 
                 const pageCells = allPages.map(page => `
@@ -890,7 +930,7 @@ ${pageCells}
 <td class="actions-cell">
 <button class="icon-btn ${isRestricted ? "restrict-on" : "restrict-off"}"
 title="${isSelf ? "You can't restrict your own account" : (isRestricted ? "Unrestrict user" : "Restrict user")}"
-${isSelf ? "disabled style=\"opacity:.35;cursor:not-allowed;\"" : `onclick="restrictUser('${user.uid}')"`}>
+${isSelf ? "disabled" : `onclick="restrictUser('${user.uid}')"`}>
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
 stroke-linecap="round" stroke-linejoin="round">
 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -907,7 +947,7 @@ stroke-linecap="round" stroke-linejoin="round">
 </button>
 <button class="icon-btn delete-icon"
 title="${isSelf ? "You can't delete your own account" : "Delete user"}"
-${isSelf ? "disabled style=\"opacity:.35;cursor:not-allowed;\"" : `onclick="deleteUser('${user.uid}')"`}>
+${isSelf ? "disabled" : `onclick="deleteUser('${user.uid}')"`}>
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
 stroke-linecap="round" stroke-linejoin="round">
 <polyline points="3 6 5 6 21 6"/>
@@ -955,6 +995,12 @@ stroke-linecap="round" stroke-linejoin="round">
 
         async function restrictUser(uid) {
 
+            const targetUser = currentUsers.find(u => u.uid === uid);
+            if (isSelfUser(targetUser)) {
+                showError("You can't restrict your own account.");
+                return;
+            }
+
             const res = await fetch(`/api/users/${uid}/restrict`, {
                 method: "PATCH",
                 headers: authHeaders(),
@@ -978,6 +1024,12 @@ stroke-linecap="round" stroke-linejoin="round">
         }
 
         async function deleteUser(uid) {
+
+            const targetUser = currentUsers.find(u => u.uid === uid);
+            if (isSelfUser(targetUser)) {
+                showError("You can't delete your own account.");
+                return;
+            }
 
             if (!confirm("Delete this user?"))
                 return;
