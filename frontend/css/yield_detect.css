@@ -1,16 +1,25 @@
 :root {
-  --bg: #f7f5f0;
-  --border: #e0ddd5;
-  --border2: #c8c4b8;
-  --leaf: #4a7c59;
-  --text: #1a1a18;
-  --text2: #33332e;
-  --text3: #8e8e0c;
-  --amber: #c9922a;
-  --sky: #0ea5e9;
-  --danger: #c0392b;
-  --mono: 'DM Mono', monospace;
-  --head: 'DM Serif Display', serif;
+  --bg:       #f1f5f9;
+  --s1:       #ffffff;
+  --s2:       #f8fafc;
+  --s3:       #f1f5f9;
+  --border:   #e2e8f0;
+  --border2:  #cbd5e1;
+  --leaf:     #059669;
+  --leaf2:    #10b981;
+  --leaf-dim: #047857;
+  --amber:    #d97706;
+  --amber2:   #f59e0b;
+  --red:      #dc2626;
+  --red2:     #ef4444;
+  --sky:      #0284c7;
+  --sky2:     #38bdf8;
+  --text:     #0f172a;
+  --text2:    #1e293b;
+  --text3:    #64748b;
+  --mono:     'DM Mono', monospace;
+  --head:     'DM Serif Display', serif;
+  --body:     'Outfit', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -48,7 +57,7 @@ body {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 10px 16px;
   border: 1px solid var(--border2);
   background: #fff;
@@ -78,7 +87,7 @@ body {
 .yd-table-wrap {
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
@@ -143,7 +152,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
 .map-panel {
   position: relative;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   background: #eee;
 }
@@ -162,7 +171,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
   width: 75%;
   padding: 10px 12px;
   font-size: 13px;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid var(--border2);
   box-shadow: 0 4px 14px rgba(0,0,0,0.12);
   font-family: 'Outfit', sans-serif;
@@ -174,7 +183,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
   left: 12px;
   background: rgba(255,255,255,0.95);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-family: var(--mono);
   font-size: 10px;
   color: var(--text3);
@@ -189,7 +198,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
 .form-card {
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 18px 20px;
   margin-bottom: 16px;
 }
@@ -223,7 +232,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
 .form-field select {
   padding: 9px 10px;
   border: 1px solid var(--border2);
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 13px;
   font-family: 'Outfit', sans-serif;
   background: #fff;
@@ -248,7 +257,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
 .result-stat {
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 12px;
 }
 
@@ -274,7 +283,7 @@ table.yd-table { width: 100%; border-collapse: collapse; }
   background: var(--text);
   color: #fff;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 13px;
   font-family: var(--mono);
   z-index: 999;

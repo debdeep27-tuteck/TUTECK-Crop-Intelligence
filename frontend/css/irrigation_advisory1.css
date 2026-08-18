@@ -1,32 +1,25 @@
 :root {
-  --ink:        #0f1a0f;
-  --ink2:       #126112;
-  --ink3:       #09c109;
-  --mist:       #f0f4ef;
-  --mist2:      #e2ebe0;
-  --mist3:      #c8d9c4;
-  --leaf:       #10641e;
-  --leaf-dim:   #1a4e22;
-  --leaf-glow:  #21c43c;
-  --sky:        #2563a8;
-  --sky-light:  #dbeafe;
-  --amber:      #b45309;
-  --amber-light:#fef3c7;
-  --red:        #b91c1c;
-  --red-light:  #fee2e2;
-  --gold:       #92400e;
-  --gold-light: #fde68a;
-  --card:       #ffffff;
-  --border:     #d4dfd2;
-  --border2:    #b8cdb5;
-  --shadow:     0 2px 12px rgba(15,26,15,.07);
-  --shadow-lg:  0 8px 32px rgba(15,26,15,.12);
-  --mono:       'Space Mono', monospace;
-  --sans:       'Syne', sans-serif;
-  --serif:      'Literata', serif;
-  --head:       'Syne', sans-serif;
-  --text2:      var(--ink2);
-  --text3:      var(--ink3);
+  --bg:       #f1f5f9;
+  --s1:       #ffffff;
+  --s2:       #f8fafc;
+  --s3:       #f1f5f9;
+  --border:   #e2e8f0;
+  --border2:  #cbd5e1;
+  --leaf:     #059669;
+  --leaf2:    #10b981;
+  --leaf-dim: #047857;
+  --amber:    #d97706;
+  --amber2:   #f59e0b;
+  --red:      #dc2626;
+  --red2:     #ef4444;
+  --sky:      #0284c7;
+  --sky2:     #38bdf8;
+  --text:     #0f172a;
+  --text2:    #1e293b;
+  --text3:    #64748b;
+  --mono:     'DM Mono', monospace;
+  --head:     'DM Serif Display', serif;
+  --body:     'Outfit', sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -221,7 +214,7 @@ select, input[type="date"], input[type="number"] {
   width: 100%;
   padding: 9px 12px;
   border: 1px solid var(--border2);
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--mist);
   color: var(--ink);
   font-family: var(--sans);
@@ -282,7 +275,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
   background: var(--leaf);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   font-family: var(--sans);
   font-size: 14px;
   font-weight: 700;
@@ -373,7 +366,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
 /* Top banner */
 .advice-banner {
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 18px 22px;
   margin-bottom: 28px;
   display: flex;
@@ -409,7 +402,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 .stat-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 16px 18px;
   box-shadow: var(--shadow);
 }
@@ -447,7 +440,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 .chart-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 20px;
   box-shadow: var(--shadow);
 }
@@ -466,7 +459,7 @@ svg.moisture-chart { width: 100%; height: 100%; overflow: visible; }
 .stage-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 20px;
   box-shadow: var(--shadow);
 }
@@ -531,7 +524,7 @@ svg.moisture-chart { width: 100%; height: 100%; overflow: visible; }
 .sched-row {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 14px 18px;
   display: grid;
   grid-template-columns: 130px 1fr auto auto auto;
@@ -604,7 +597,7 @@ svg.moisture-chart { width: 100%; height: 100%; overflow: visible; }
   margin-top: 24px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: var(--shadow);
 }
@@ -649,7 +642,7 @@ svg.moisture-chart { width: 100%; height: 100%; overflow: visible; }
 .error-box {
   background: var(--red-light);
   border: 1px solid #fca5a5;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 16px 20px;
   color: var(--red);
   font-size: 13px;

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CropAI — Intelligence Suite</title>
+  <title>CropAI &#8212; Intelligence Suite</title>
   <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
   <link
@@ -20,89 +20,306 @@
     }
 
     :root {
-      --bg: #f7f5f0;
-      --border: #e0ddd5;
-      --border2: #c8c4b8;
-      --leaf: #4a7c59;
-      --text: #1a1a18;
-      --text2: #33332e;
-      --text3: #8e8e0c;
-      --amber: #c9922a;
-      --sky: #0ea5e9;
+      --bg: #f1f5f9;
+      --border: #e2e8f0;
+      --border2: #cbd5e1;
+      --leaf: #059669;
+      --leaf-dark: #047857;
+      --text: #0f172a;
+      --text2: #1e293b;
+      --text3: #64748b;
+      --amber: #d97706;
+      --sky: #0284c7;
       --mono: 'DM Mono', monospace;
       --head: 'DM Serif Display', serif;
+      --sidebar-width: 240px;
+      --sidebar-collapsed-width: 68px;
+      --header-height: 60px;
     }
 
-    html,
     body {
       height: 100%;
       background: var(--bg);
       font-family: 'Outfit', sans-serif;
+      overflow: hidden;
     }
 
-    /* NAVBAR */
-    .global-nav {
-      position: sticky;
-      top: 0;
-      z-index: 300;
-      background: rgba(247, 242, 229, 0.97);
-      backdrop-filter: blur(16px);
+    /* â”€â”€ APP SHELL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    .app-layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #ffffff;
+      border-right: 1px solid var(--border);
+      box-shadow: 1px 0 2px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 400;
+      flex-shrink: 0;
+      overflow: hidden;
+      box-shadow: 2px 0 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .sidebar.collapsed {
+      width: var(--sidebar-collapsed-width);
+    }
+
+    /* Sidebar brand row */
+    .sidebar-header {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
       border-bottom: 1px solid var(--border);
-      height: 52px;
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
+      gap: 10px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      background: var(--bg);
     }
 
-    /* BRAND (LOGO AREA) */
-    .gn-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-right: 32px;
+    .sidebar.collapsed .sidebar-header {
+      padding: 0;
+      justify-content: center;
     }
 
     .brand-logo {
       height: 32px;
       width: auto;
       object-fit: contain;
+      flex-shrink: 0;
     }
 
-    /* MENU LINKS */
-    .gn-links {
+    .sidebar-brand-text {
       display: flex;
-      align-items: center;
-      gap: 2px;
-      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.2s, width 0.28s;
     }
+
+    .sidebar.collapsed .sidebar-brand-text {
+      opacity: 0;
+      width: 0;
+    }
+
+    .brand-name {
+      font-family: var(--head);
+      font-size: 16px;
+      color: var(--leaf);
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    /* Nav links */
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 14px 10px;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .sidebar-nav::-webkit-scrollbar { width: 3px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: var(--bg); }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
     .gn-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text3);
-      padding: 6px 14px;
-      border-radius: 3px;
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: var(--text2);
+      padding: 10px 12px;
+      border-radius: 8px;
       text-decoration: none;
+      transition: all 0.18s ease;
+      white-space: nowrap;
       border: 1px solid transparent;
-      transition: all 0.15s;
-      cursor: pointer;
+      position: relative;
+    }
+
+    .sidebar.collapsed .gn-link {
+      padding: 10px 0;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .gn-link .nav-icon {
+      font-size: 17px;
+      flex-shrink: 0;
+      width: 22px;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .gn-link .nav-label {
+      transition: opacity 0.18s, width 0.28s;
+      overflow: hidden;
       white-space: nowrap;
     }
 
+    .sidebar.collapsed .gn-link .nav-label {
+      opacity: 0;
+      width: 0;
+    }
+
     .gn-link:hover {
-      color: var(--text2);
-      border-color: var(--border2);
+      background: rgba(74, 124, 89, 0.07);
+      color: var(--leaf);
+      border-color: rgba(74, 124, 89, 0.12);
     }
 
     .gn-link.active {
-      color: var(--leaf);
-      border-color: rgba(58, 158, 82, 0.35);
-      background: rgba(58, 158, 82, 0.07);
+      background: rgba(74, 124, 89, 0.11);
+      color: var(--leaf-dark);
+      border-color: rgba(74, 124, 89, 0.22);
+      font-weight: 600;
     }
 
-    /* RIGHT SIDE */
+    .gn-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 4px;
+      bottom: 4px;
+      width: 3px;
+      background: var(--leaf);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .sidebar.collapsed .gn-link.active::before {
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 0 3px 3px 0;
+    }
+
+    /* Sidebar section divider */
+    .nav-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 6px;
+    }
+
+    /* Sidebar footer */
+    .sidebar-footer {
+      padding: 10px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer-text {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--border2);
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+      padding: 4px;
+      transition: opacity 0.2s;
+    }
+
+    .sidebar.collapsed .sidebar-footer-text { opacity: 0; }
+
+    /* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── TOP HEADER ────────────────────────────────────────────────── */
+    .top-header {
+      height: var(--header-height);
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 300;
+      flex-shrink: 0;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Hamburger toggle */
+    .toggle-sidebar-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      transition: all 0.18s;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .toggle-sidebar-btn:hover {
+      background: rgba(74, 124, 89, 0.06);
+      border-color: rgba(74, 124, 89, 0.25);
+      color: var(--leaf);
+    }
+
+    .ham-line {
+      width: 16px;
+      height: 1.5px;
+      background: currentColor;
+      border-radius: 2px;
+      transition: all 0.18s;
+    }
+
+    /* Page breadcrumb */
+    .header-breadcrumb {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-breadcrumb .sep {
+      opacity: 0.4;
+    }
+
+    /* Right controls */
     .gn-right {
       display: flex;
       align-items: center;
@@ -110,32 +327,15 @@
       margin-left: auto;
     }
 
-    .gn-pill {
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-family: var(--mono);
       font-size: 9px;
-      letter-spacing: 0.12em;
-      color: var(--sky);
-      background: rgba(14, 165, 233, 0.08);
-      border: 1px solid rgba(14, 165, 233, 0.2);
-      padding: 3px 9px;
-      border-radius: 2px;
-      white-space: nowrap;
-    }
-
-    .gn-pill.online {
+      letter-spacing: 0.1em;
       color: var(--leaf);
-      background: rgba(74, 124, 89, 0.08);
-      border-color: rgba(74, 124, 89, 0.25);
-    }
-
-    .gn-pill.offline {
-      color: var(--text3);
-    }
-
-    .gn-pill.amber {
-      color: var(--amber);
-      background: rgba(217, 119, 6, 0.08);
-      border-color: rgba(217, 119, 6, 0.2);
+      text-transform: uppercase;
     }
 
     .live-dot {
@@ -147,25 +347,42 @@
     }
 
     @keyframes blink {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: .25
-      }
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 124, 89, 0.4); }
+      50% { opacity: 0.4; box-shadow: 0 0 0 4px rgba(74, 124, 89, 0); }
     }
 
-    /* CONTENT */
-    .page-frame {
-      width: 100%;
-      height: calc(100vh - 52px);
-      border: none;
+    /* Pills */
+    .gn-pill {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 5px;
+      white-space: nowrap;
+      font-weight: 500;
+      border: 1px solid;
     }
 
-    /* NAV STATE DROPDOWN - NO POPUP */
+    .gn-pill.online {
+      color: var(--leaf);
+      background: rgba(74, 124, 89, 0.07);
+      border-color: rgba(74, 124, 89, 0.2);
+    }
+
+    .gn-pill.offline {
+      color: #888;
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.1);
+    }
+
+    .gn-pill.amber {
+      color: var(--amber);
+      background: rgba(217, 119, 6, 0.07);
+      border-color: rgba(217, 119, 6, 0.2);
+    }
+
+    /* â”€â”€ STATE SWITCHER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .state-menu {
       position: relative;
       display: inline-flex;
@@ -173,21 +390,21 @@
     }
 
     .gn-state-btn {
-      min-width: 128px;
-      height: 28px;
+      min-width: 120px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.12em;
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--leaf);
-      background: rgba(74, 124, 89, 0.07);
-      border: 1px solid rgba(74, 124, 89, 0.30);
+      background: rgba(74, 124, 89, 0.06);
+      border: 1px solid rgba(74, 124, 89, 0.25);
       padding: 4px 10px;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.15s;
       white-space: nowrap;
@@ -195,23 +412,23 @@
 
     .gn-state-btn:hover,
     .state-menu.open .gn-state-btn {
-      background: rgba(74, 124, 89, 0.14);
-      border-color: rgba(74, 124, 89, 0.45);
+      background: rgba(74, 124, 89, 0.12);
+      border-color: rgba(74, 124, 89, 0.4);
     }
 
     .gn-state-btn.locked {
       cursor: default;
       opacity: 0.75;
     }
+
     .gn-state-btn.locked:hover {
-      background: rgba(74, 124, 89, 0.07);
-      border-color: rgba(74, 124, 89, 0.30);
+      background: rgba(74, 124, 89, 0.06);
+      border-color: rgba(74, 124, 89, 0.25);
     }
 
     .state-caret {
       color: var(--text2);
-      font-size: 10px;
-      line-height: 1;
+      font-size: 9px;
       transition: transform 0.15s;
     }
 
@@ -223,12 +440,12 @@
       position: absolute;
       right: 0;
       top: calc(100% + 8px);
-      width: 184px;
-      background: rgba(255, 255, 255, 0.96);
+      width: 176px;
+      background: #fff;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
-      padding: 7px;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+      padding: 6px;
       display: none;
       z-index: 500;
     }
@@ -241,10 +458,10 @@
       content: "";
       position: absolute;
       top: -7px;
-      right: 22px;
-      width: 14px;
-      height: 14px;
-      background: rgba(255, 255, 255, 0.96);
+      right: 18px;
+      width: 12px;
+      height: 12px;
+      background: #fff;
       border-left: 1px solid var(--border);
       border-top: 1px solid var(--border);
       transform: rotate(45deg);
@@ -253,28 +470,29 @@
     .state-option {
       width: 100%;
       border: none;
-      background: transparent;
+      background: var(--bg);
       color: var(--text2);
-      border-radius: 5px;
-      padding: 9px 10px;
+      border-radius: 6px;
+      padding: 8px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.12em;
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       cursor: pointer;
       text-align: left;
+      transition: all 0.12s;
     }
 
     .state-option:hover {
-      background: rgba(74, 124, 89, 0.07);
+      background: rgba(74, 124, 89, 0.06);
       color: var(--leaf);
     }
 
     .state-option.active {
-      background: rgba(74, 124, 89, 0.13);
+      background: rgba(74, 124, 89, 0.1);
       color: var(--leaf);
     }
 
@@ -288,7 +506,7 @@
       opacity: 1;
     }
 
-    /* PROFILE AVATAR + DROPDOWN */
+    /* â”€â”€ PROFILE WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .profile-menu {
       position: relative;
       display: inline-flex;
@@ -296,16 +514,15 @@
     }
 
     .profile-avatar {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: var(--leaf);
+      background: linear-gradient(135deg, var(--leaf) 0%, var(--leaf-dark) 100%);
       color: #fff;
-      border: 1px solid rgba(74, 124, 89, 0.4);
+      border: 2px solid rgba(74, 124, 89, 0.2);
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
-      letter-spacing: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -319,24 +536,23 @@
     }
 
     .profile-avatar:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
     }
 
     .profile-dropdown {
       position: absolute;
       right: 0;
-      top: calc(100% + 8px);
-      width: 168px;
-      background: rgba(255, 255, 255, 0.97);
+      top: calc(100% + 10px);
+      width: 172px;
+      background: #fff;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
       padding: 6px;
       display: none;
       z-index: 500;
     }
 
-    /* Shows on hover of the whole menu, OR when explicitly opened via click */
     .profile-menu:hover .profile-dropdown,
     .profile-menu.open .profile-dropdown {
       display: block;
@@ -347,9 +563,9 @@
       position: absolute;
       top: -7px;
       right: 10px;
-      width: 14px;
-      height: 14px;
-      background: rgba(255, 255, 255, 0.97);
+      width: 12px;
+      height: 12px;
+      background: #fff;
       border-left: 1px solid var(--border);
       border-top: 1px solid var(--border);
       transform: rotate(45deg);
@@ -358,19 +574,20 @@
     .profile-dropdown-item {
       width: 100%;
       border: none;
-      background: transparent;
+      background: var(--bg);
       color: var(--text2);
-      border-radius: 5px;
+      border-radius: 6px;
       padding: 9px 10px;
       display: flex;
       align-items: center;
       gap: 8px;
       font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.1em;
+      font-size: 9.5px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       cursor: pointer;
       text-align: left;
+      transition: all 0.12s;
     }
 
     .profile-dropdown-item:hover {
@@ -379,19 +596,20 @@
     }
 
     .profile-dropdown-item.danger:hover {
-      background: rgba(192, 57, 43, 0.08);
+      background: rgba(192, 57, 43, 0.07);
       color: #c0392b;
     }
 
-    /* PROFILE CARD (shown on clicking "Profile") */
+    /* â”€â”€ PROFILE CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .profile-card-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.3);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 900;
+      backdrop-filter: blur(4px);
     }
 
     .profile-card-overlay.show {
@@ -402,8 +620,8 @@
       width: 260px;
       background: #fff;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+      border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
       padding: 28px 24px 22px;
       text-align: center;
       position: relative;
@@ -414,7 +632,7 @@
       top: 10px;
       right: 12px;
       border: none;
-      background: transparent;
+      background: var(--bg);
       color: var(--text3);
       font-size: 16px;
       cursor: pointer;
@@ -430,7 +648,7 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: var(--leaf);
+      background: linear-gradient(135deg, var(--leaf) 0%, var(--leaf-dark) 100%);
       color: #fff;
       font-family: var(--mono);
       font-size: 22px;
@@ -471,133 +689,179 @@
       border-radius: 20px;
     }
 
+    /* â”€â”€ IFRAME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    .page-frame {
+      width: 100%;
+      height: calc(100vh - var(--header-height));
+      border: none;
+      background: var(--bg);
+    }
+
+    /* â”€â”€ RESPONSIVE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     @media (max-width: 980px) {
-      .global-nav {
-        padding: 0 12px;
-        gap: 8px;
+      .sidebar {
+        position: absolute;
+        height: 100%;
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       }
-
-      .gn-brand {
-        margin-right: 10px;
+      .sidebar.collapsed {
+        transform: translateX(calc(-1 * var(--sidebar-width)));
+        width: var(--sidebar-width);
       }
-
-      .gn-link {
-        padding: 6px 8px;
-        font-size: 9px;
-      }
-
-      .gn-right {
-        gap: 7px;
-      }
-
-      .gn-pill {
-        display: none;
-      }
-
-      .gn-state-btn {
-        min-width: 112px;
-      }
-    }
-
-    .crop-title {
-      font-family: var(--head);
-      font-size: 18px;
-      color: var(--leaf);
-      letter-spacing: 0.5px;
-      margin-left: 0px;
-      margin-right: 50px;
-    }
-
-    .gn-links {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      flex: 1;
-      margin-left: 3px;
+      .top-header { padding: 0 14px; }
+      .gn-pill { display: none; }
+      .live-indicator span { display: none; }
+      .header-breadcrumb { display: none; }
     }
   </style>
 </head>
 
 <body>
-  <nav class="global-nav">
-    <div class="gn-brand">
-      <img src="/static/tuteck_logo.png" alt="Logo" class="brand-logo">
-    </div>
-    <div class="crop-title">Crop Intelligence</div>
+  <div class="app-layout">
 
-    <div class="gn-links">
-      <a class="gn-link" data-target="/dashboard" data-content="/content/dashboard" href="#">📊 Dashboard</a>
-      <a class="gn-link" data-target="/irrigation" data-content="/content/irrigation" href="#">💧 Irrigation</a>
-      <a class="gn-link" data-target="/recommend-page" data-content="/content/recommender" href="#">🌱 Recommender</a>
-      <a class="gn-link" data-target="/alerts" data-content="/content/alerts" href="#">⚠️ Alerts (EWAS)</a>
-      <a class="gn-link" data-target="/disease" data-content="/content/disease" href="#">🔬 Disease Detection</a>
-      <a class="gn-link" data-target="/yield-detect" data-content="/content/yield-detect" href="#">🛰️ Yield Detect</a>
-      <a class="gn-link" data-target="/auction" data-content="/content/auction" href="#"> 📈 Auction</a>
-    </div>
-
-    <div class="gn-right">
-      <div class="live-dot"></div>
-
-      <div class="state-menu" id="state-menu">
-        <button class="gn-state-btn" id="state-switcher" type="button" onclick="toggleStateMenu(event)">
-          <span id="state-label">🌏 Tripura</span>
-          <span class="state-caret">⌃</span>
-        </button>
-        <div class="state-dropdown" id="state-dropdown">
-          <button class="state-option" type="button" data-state="tripura" onclick="selectState('tripura')">
-            <span>Tripura</span>
-            <span class="state-check">✓</span>
-          </button>
-          <button class="state-option" type="button" data-state="meghalaya" onclick="selectState('meghalaya')">
-            <span>Meghalaya</span>
-            <span class="state-check">✓</span>
-          </button>
-          <button class="state-option" type="button" data-state="rajasthan" onclick="selectState('rajasthan')">
-            <span>Rajasthan</span>
-            <span class="state-check">✓</span>
-          </button>
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SIDEBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="/static/tuteck_logo.png" alt="TuTeck Logo" class="brand-logo">
+        <div class="sidebar-brand-text">
+          <div class="brand-name">Crop Intelligence</div>
+          <div class="brand-sub">AI-Powered Platform</div>
         </div>
       </div>
 
-      <div class="gn-pill offline" id="backend-status">BACKEND OFFLINE</div>
-      <div class="gn-pill amber" id="alerts-status">ALERTS —</div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <a class="gn-link" data-target="/dashboard" data-content="/content/dashboard" href="#" title="Dashboard">
+          <span class="nav-icon">&#128202;</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a class="gn-link" data-target="/irrigation" data-content="/content/irrigation" href="#" title="Irrigation">
+          <span class="nav-icon">&#128167;</span>
+          <span class="nav-label">Irrigation</span>
+        </a>
+        <a class="gn-link" data-target="/recommend-page" data-content="/content/recommender" href="#" title="Recommender">
+          <span class="nav-icon">&#127807;</span>
+          <span class="nav-label">Recommender</span>
+        </a>
+        <a class="gn-link" data-target="/alerts" data-content="/content/alerts" href="#" title="Alerts">
+          <span class="nav-icon">&#9888;</span>
+          <span class="nav-label">Alerts (EWAS)</span>
+        </a>
 
-      <div class="profile-menu" id="profile-menu">
-        <button class="profile-avatar" id="profile-avatar" type="button" onclick="toggleProfileMenu(event)">?</button>
-        <div class="profile-dropdown" id="profile-dropdown">
+        <div class="nav-divider"></div>
 
-          <button class="profile-dropdown-item" type="button" onclick="openProfileCard(event)">
-            👤 Profile
+        <a class="gn-link" data-target="/disease" data-content="/content/disease" href="#" title="Disease Detection">
+          <span class="nav-icon">&#128300;</span>
+          <span class="nav-label">Disease Detection</span>
+        </a>
+        <a class="gn-link" data-target="/yield-detect" data-content="/content/yield-detect" href="#" title="Yield Detect">
+          <span class="nav-icon">&#128752;</span>
+          <span class="nav-label">Yield Detect</span>
+        </a>
+        <a class="gn-link" data-target="/auction" data-content="/content/auction" href="#" title="Auction">
+          <span class="nav-icon">&#128200;</span>
+          <span class="nav-label">Auction</span>
+        </a>
+        <a class="gn-link" data-target="/cold-storage" data-content="/content/cold-storage" href="#" title="Cold Storage">
+          <span class="nav-icon">&#10052;</span>
+          <span class="nav-label">Cold Storage</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-text">TuTeck &copy; 2026</div>
+      </div>
+    </aside>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <main class="main-content">
+
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="toggle-sidebar-btn" id="toggle-sidebar" onclick="toggleSidebar()" title="Toggle Sidebar">
+            <div class="ham-line"></div>
+            <div class="ham-line"></div>
+            <div class="ham-line"></div>
           </button>
+          <div class="header-breadcrumb">
+            <span>Crop Intelligence</span>
+            <span class="sep">/</span>
+            <span id="breadcrumb-page">Dashboard</span>
+          </div>
+        </div>
 
-          <button id="admin-panel-btn" class="profile-dropdown-item" type="button" onclick="goToAdmin()"
-            style="display:none;">
-            ⚙️ Admin Panel
-          </button>
+        <div class="gn-right">
+          <div class="live-indicator">
+            <div class="live-dot"></div>
+            <span>Live</span>
+          </div>
 
-          <button class="profile-dropdown-item danger" type="button" onclick="logout()">
-            ⎋ Logout
-          </button>
+          <!-- State Switcher -->
+          <div class="state-menu" id="state-menu">
+            <button class="gn-state-btn" id="state-switcher" type="button" onclick="toggleStateMenu(event)">
+              <span id="state-label">Tripura</span>
+              <span class="state-caret">&#9650;</span>
+            </button>
+            <div class="state-dropdown" id="state-dropdown">
+              <button class="state-option" type="button" data-state="tripura" onclick="selectState('tripura')">
+                <span>Tripura</span>
+                <span class="state-check">&#10003;</span>
+              </button>
+              <button class="state-option" type="button" data-state="meghalaya" onclick="selectState('meghalaya')">
+                <span>Meghalaya</span>
+                <span class="state-check">&#10003;</span>
+              </button>
+              <button class="state-option" type="button" data-state="rajasthan" onclick="selectState('rajasthan')">
+                <span>Rajasthan</span>
+                <span class="state-check">&#10003;</span>
+              </button>
+            </div>
+          </div>
 
+          <div class="gn-pill offline" id="backend-status">BACKEND OFFLINE</div>
+          <div class="gn-pill amber" id="alerts-status">ALERTS &#8212;</div>
+
+          <!-- Profile -->
+          <div class="profile-menu" id="profile-menu">
+            <button class="profile-avatar" id="profile-avatar" type="button" onclick="toggleProfileMenu(event)">?</button>
+            <div class="profile-dropdown" id="profile-dropdown">
+              <button class="profile-dropdown-item" type="button" onclick="openProfileCard(event)">
+                &#128100; Profile
+              </button>
+              <button id="admin-panel-btn" class="profile-dropdown-item" type="button" onclick="goToAdmin()"
+                style="display:none;">
+                &#9881; Admin Panel
+              </button>
+              <button class="profile-dropdown-item danger" type="button" onclick="logout()">
+                &#9243; Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Profile Card Overlay -->
+      <div class="profile-card-overlay" id="profile-card-overlay" onclick="closeProfileCardOnOverlay(event)">
+        <div class="profile-card">
+          <button class="profile-card-close" type="button" onclick="closeProfileCard()">&#10005;</button>
+          <div class="profile-card-avatar" id="profile-card-avatar">?</div>
+          <div class="profile-card-name" id="profile-card-name">&#8212;</div>
+          <div class="profile-card-email" id="profile-card-email">&#8212;</div>
+          <div class="profile-card-role" id="profile-card-role">&#8212;</div>
         </div>
       </div>
-    </div>
-  </nav>
 
-  <div class="profile-card-overlay" id="profile-card-overlay" onclick="closeProfileCardOnOverlay(event)">
-    <div class="profile-card">
-      <button class="profile-card-close" type="button" onclick="closeProfileCard()">✕</button>
-      <div class="profile-card-avatar" id="profile-card-avatar">?</div>
-      <div class="profile-card-name" id="profile-card-name">—</div>
-      <div class="profile-card-email" id="profile-card-email">—</div>
-      <div class="profile-card-role" id="profile-card-role">—</div>
-    </div>
+      <iframe class="page-frame" id="page-frame" src="/content/dashboard"></iframe>
+    </main>
   </div>
 
-  <iframe class="page-frame" id="page-frame" src="/content/dashboard"></iframe>
-
   <script>
-    // ── AUTH GUARD ───────────────────────────────────────────────────────
+    // â”€â”€ SIDEBAR TOGGLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    // â”€â”€ AUTH GUARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const SESSION_KEY = 'cropai_session';
 
     function getSession() {
@@ -609,12 +873,12 @@
     if (!session || !session.token) {
       window.location.href = '/login';
     }
+
     function goToAdmin() {
       window.location.href = "/admin";
     }
-    // Live permission set for this session — fetched from the backend below
-    // (which reads permissions.xlsx), NOT hardcoded, so admin changes to a
-    // role's allowed pages take effect immediately on next login/page load.
+
+    // Live permission set for this session - fetched from the backend below
     let ALLOWED_PAGES = [];
 
     async function fetchMyPermissions() {
@@ -623,7 +887,6 @@
           headers: { 'Authorization': 'Bearer ' + session.token },
         });
         if (res.status === 401) {
-          // Session token is invalid/expired — force a fresh login.
           localStorage.removeItem(SESSION_KEY);
           window.location.href = '/login';
           return [];
@@ -631,7 +894,6 @@
         const data = await res.json();
         return (data.permissions && data.permissions.pages) || [];
       } catch {
-        // Backend unreachable — fail closed (no pages) rather than trusting stale data.
         return [];
       }
     }
@@ -659,14 +921,11 @@
       window.location.href = '/login';
     }
 
-    // ── PROFILE WIDGET ─────────────────────────────────────────────────────
-    // Username is derived from the email (the part before "@"), truncated
-    // if it's long, since we don't collect a separate display name at signup.
-
+    // â”€â”€ PROFILE WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function usernameFromEmail(email) {
       if (!email) return 'User';
       const local = email.split('@')[0];
-      return local.length > 18 ? local.slice(0, 18) + '…' : local;
+      return local.length > 18 ? local.slice(0, 18) + '...' : local;
     }
 
     function initialsFromEmail(email) {
@@ -690,7 +949,6 @@
       document.getElementById('profile-card-role').textContent = role;
 
       const adminBtn = document.getElementById('admin-panel-btn');
-
       if (session.role === 'admin') {
         adminBtn.style.display = 'flex';
       } else {
@@ -718,7 +976,6 @@
     }
 
     function closeProfileCardOnOverlay(event) {
-      // Only close if the click landed on the dark backdrop, not the card itself.
       if (event.target.id === 'profile-card-overlay') closeProfileCard();
     }
 
@@ -737,9 +994,21 @@
 
     applyProfileInfo();
 
+    // â”€â”€ ROUTING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const links = document.querySelectorAll('.gn-link');
     const frame = document.getElementById('page-frame');
     const routeMap = {};
+
+    const pageTitles = {
+      '/dashboard': 'Dashboard',
+      '/irrigation': 'Irrigation',
+      '/recommend-page': 'Recommender',
+      '/alerts': 'Alerts',
+      '/disease': 'Disease Detection',
+      '/yield-detect': 'Yield Detect',
+      '/auction': 'Auction',
+      '/cold-storage': 'Cold Storage',
+    };
 
     links.forEach(link => {
       routeMap[link.dataset.target] = link.dataset.content;
@@ -749,6 +1018,8 @@
       links.forEach(link => {
         link.classList.toggle('active', link.dataset.target === path);
       });
+      const bc = document.getElementById('breadcrumb-page');
+      if (bc) bc.textContent = pageTitles[path] || 'Dashboard';
     }
 
     links.forEach(link => {
@@ -762,7 +1033,7 @@
       });
     });
 
-    // ── STATE MANAGEMENT ──────────────────────────────────────────────────
+    // â”€â”€ STATE MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const STATES = ['tripura', 'meghalaya', 'rajasthan'];
     const STATE_LABELS = {
       tripura: 'Tripura',
@@ -770,10 +1041,6 @@
       rajasthan: 'Rajasthan',
     };
 
-    // district_admin AND state_admin accounts are pinned to the single
-    // state they were assigned in the admin panel — neither gets to pick
-    // a different state. district_admin is additionally pinned to one
-    // district within that state.
     const IS_DISTRICT_ADMIN = !!(session && (session.role || '').toLowerCase() === 'district_admin');
     const IS_STATE_ADMIN = !!(session && (session.role || '').toLowerCase() === 'state_admin');
     const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN;
@@ -790,9 +1057,6 @@
     function stateParam() {
       const state = getCurrentState();
       let param = `?state=${encodeURIComponent(state)}`;
-      // Let content pages (dashboard, yield-detect, etc.) scope their own
-      // queries to this district without each one re-deriving it from the
-      // session — the page's own script still needs to honour it.
       if (IS_DISTRICT_ADMIN && session.district) {
         param += `&district=${encodeURIComponent(session.district)}`;
       }
@@ -800,7 +1064,7 @@
     }
 
     function toggleStateMenu(event) {
-      if (IS_STATE_LOCKED) return; // no picker to open
+      if (IS_STATE_LOCKED) return;
       event.stopPropagation();
       document.getElementById('state-menu').classList.toggle('open');
     }
@@ -810,7 +1074,7 @@
     }
 
     function selectState(state) {
-      if (IS_STATE_LOCKED) return; // locked to their assigned state
+      if (IS_STATE_LOCKED) return;
       state = String(state || 'tripura').toLowerCase();
       if (!STATES.includes(state)) state = 'tripura';
       localStorage.setItem('cropai_state', state);
@@ -820,16 +1084,13 @@
     }
 
     function updateStatePill(state) {
-      const label = state.charAt(0).toUpperCase() + state.slice(1);
-      document.getElementById('state-label').textContent = '🌏 ' + label;
+      const label = STATE_LABELS[state] || (state.charAt(0).toUpperCase() + state.slice(1));
+      document.getElementById('state-label').textContent = label;
 
       document.querySelectorAll('.state-option').forEach(option => {
         option.classList.toggle('active', option.dataset.state === state);
       });
 
-      // Keep the pill visible for district_admin/state_admin so they can
-      // still see which state they're scoped to — just lock it so it
-      // can't be clicked open (toggleStateMenu already blocks this).
       const switcher = document.getElementById('state-switcher');
       if (switcher) {
         switcher.classList.toggle('locked', IS_STATE_LOCKED);
@@ -843,8 +1104,6 @@
     function loadCurrentPage() {
       let currentPath = window.location.pathname;
 
-      // If the current path isn't allowed for this role, fall back to the
-      // first page that role IS allowed to see (farmers have no /dashboard).
       if (session) {
         if (!ALLOWED_PAGES.includes(currentPath)) {
           currentPath = ALLOWED_PAGES[0] || '/dashboard';
@@ -857,17 +1116,15 @@
       setActive(routeMap[currentPath] ? currentPath : '/dashboard');
     }
 
-    // Close dropdown when clicking outside or pressing Escape
     window.addEventListener('click', closeStateMenu);
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeStateMenu();
     });
 
-    // Prevent dropdown clicks from bubbling to window
     const stateDropdown = document.getElementById('state-dropdown');
     stateDropdown.addEventListener('click', (event) => event.stopPropagation());
 
-    // ── BOOT ─────────────────────────────────────────────────────────────
+    // â”€â”€ BOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     (async function boot() {
       const savedState = getCurrentState();
       localStorage.setItem('cropai_state', savedState);
@@ -879,7 +1136,7 @@
       loadCurrentPage();
     })();
 
-    // ── BACKEND HEALTH CHECK ──────────────────────────────────────────────
+    // â”€â”€ BACKEND HEALTH CHECK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function checkBackend() {
       const pill = document.getElementById('backend-status');
       try {

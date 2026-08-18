@@ -1,15 +1,26 @@
 :root {
-    --bg:#f7f5f0; --surface:#ffffff; --surface2:#f0ede8;
-    --border:#e0ddd5; --border2:#c8c4b8;
-    --green:#4a7c59; --green-dim:#3d6b4a;
-    --amber:#c9922a; --amber-dim:#a07820;
-    --red:#c0392b; --red-dim:#922b21; --red-bright:#c0392b;
-    --text:#1a1a18; --text2:#6b6b5e; --text3:#a8a89a;
-    --mono:'DM Mono',monospace; --sans:'Outfit',sans-serif;
-    --leaf: var(--green);
-    --head: 'DM Serif Display', serif;
-    --sky: #0ea5e9;
-  }
+  --bg:       #f1f5f9;
+  --s1:       #ffffff;
+  --s2:       #f8fafc;
+  --s3:       #f1f5f9;
+  --border:   #e2e8f0;
+  --border2:  #cbd5e1;
+  --leaf:     #059669;
+  --leaf2:    #10b981;
+  --leaf-dim: #047857;
+  --amber:    #d97706;
+  --amber2:   #f59e0b;
+  --red:      #dc2626;
+  --red2:     #ef4444;
+  --sky:      #0284c7;
+  --sky2:     #38bdf8;
+  --text:     #0f172a;
+  --text2:    #1e293b;
+  --text3:    #64748b;
+  --mono:     'DM Mono', monospace;
+  --head:     'DM Serif Display', serif;
+  --body:     'Outfit', sans-serif;
+}
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px;line-height:1.5}
 
