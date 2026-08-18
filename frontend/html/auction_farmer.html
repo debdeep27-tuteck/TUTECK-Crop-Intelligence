@@ -13,201 +13,222 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-        --bg: #f7f5f0;
-        --border: #e0ddd5;
-        --border2: #c8c4b8;
-        --leaf: #378c50;
-        --leaf-dark: #2c6b3e;
-        --leaf-pale: rgba(55, 140, 80, .1);
-        --ink: #1a1a18;
-        --ink2: #4a4a42;
-        --ink3: #8a8678;
-        --gold: #b8842e;
-        --gold-dark: #8f6421;
-        --gold-pale: rgba(184, 132, 46, .13);
-        --red: #b23a2e;
-        --red-pale: #fbe4e1;
-        --panel: #16281c;
-        --panel2: #1e3626;
+        --bg: #f6f4ee;
+        --surface: #ffffff;
+        --border: #e4e0d5;
+        --border2: #cfc9b8;
+        --leaf: #3c9457;
+        --leaf-dark: #276b40;
+        --leaf-darker: #1e5432;
+        --leaf-pale: rgba(60, 148, 87, .1);
+        --leaf-pale2: rgba(60, 148, 87, .16);
+        --ink: #1c1f19;
+        --ink2: #4c5044;
+        --ink3: #8b8a78;
+        --gold: #c08f34;
+        --gold-dark: #93691f;
+        --gold-pale: rgba(192, 143, 52, .13);
+        --red: #b7402f;
+        --red-pale: #fbe6e2;
+        --panel: #142218;
+        --panel2: #1d3323;
+        --shadow-sm: 0 1px 2px rgba(20, 30, 20, .05), 0 1px 1px rgba(20, 30, 20, .04);
+        --shadow-md: 0 6px 16px rgba(20, 34, 22, .07), 0 2px 5px rgba(20, 34, 22, .05);
+        --shadow-lg: 0 22px 48px rgba(14, 24, 16, .14), 0 6px 16px rgba(14, 24, 16, .08);
+        --ease: cubic-bezier(.22, .8, .32, 1);
         --mono: 'DM Mono', monospace;
         --head: 'DM Serif Display', serif;
         --body: 'Outfit', sans-serif;
     }
 
-    html, body { height: 100%; background: var(--bg); font-family: var(--body); color: var(--ink); }
-
-    body {
-        display: grid;
-        grid-template-columns: 340px 1fr;
-        min-height: 100vh;
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
     }
+
+    ::selection { background: var(--leaf-pale2); color: var(--leaf-darker); }
+    :focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; border-radius: 2px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    html, body { height: 100%; background: var(--bg); font-family: var(--body); color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+    body { display: grid; grid-template-columns: 336px 1fr; height: 100vh; overflow: hidden; }
 
     /* ───────────────────────── SIDEBAR ───────────────────────── */
 
     .sidebar {
-        background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+        position: relative;
+        background:
+            radial-gradient(560px 320px at 100% 0%, rgba(255,255,255,.05), transparent 60%),
+            linear-gradient(175deg, var(--panel) 0%, var(--leaf-darker) 100%);
         color: #ecf3ec;
-        padding: 28px 22px;
+        padding: 26px 20px 18px;
         display: flex;
         flex-direction: column;
-        gap: 22px;
-        position: sticky;
-        top: 0;
+        gap: 20px;
         height: 100vh;
-        overflow-y: auto;
+        overflow: hidden;
+        border-right: 1px solid rgba(0,0,0,.15);
     }
 
-    .brand {
+    .sidebar-top {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        padding-bottom: 18px;
-        border-bottom: 1px solid rgba(255,255,255,.1);
-    }
-
-    .brand-mark {
-        font-family: var(--head);
-        font-size: 24px;
-        color: #d9e8dc;
-        letter-spacing: .01em;
-    }
-
-    .brand-sub {
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-        color: #8fae95;
-    }
-
-    .farmer-chip {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: rgba(255,255,255,.05);
-        border: 1px solid rgba(255,255,255,.08);
-        border-radius: 10px;
-        padding: 10px 12px;
-    }
-
-    .farmer-avatar {
-        width: 34px; height: 34px;
-        border-radius: 50%;
-        background: var(--gold);
-        display: flex; align-items: center; justify-content: center;
-        font-family: var(--mono); font-weight: 600; color: #241a08;
+        gap: 20px;
         flex-shrink: 0;
     }
 
+    .listings-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.09); }
+    .brand-icon {
+        width: 32px; height: 30px; border-radius: 8px; flex-shrink: 0;
+        /* background: linear-gradient(155deg, var(--leaf) 0%, var(--leaf-darker) 100%); */
+        display: flex; align-items: center; justify-content: center;
+        /* box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 3px 8px rgba(0,0,0,.25); */
+    }
+    .brand-icon svg { width: 16px; height: 16px; color: #eaf5ec; }
+    .brand-text { display: flex; flex-direction: column; gap: 1px; }
+    .brand-mark { font-family: var(--head); font-size: 21px; color: #e8f0e5; letter-spacing: .01em; line-height: 1.1; }
+    .brand-sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: #7fa088; }
+    .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: calc(contain, cover);
+            border-radius: 6px;
+        }
+
+    .farmer-chip {
+        display: flex; align-items: center; gap: 10px;
+        background: rgba(255,255,255,.045);
+        border: 1px solid rgba(255,255,255,.09);
+        border-radius: 10px; padding: 10px 12px;
+        transition: background .18s var(--ease), border-color .18s var(--ease);
+    }
+    .farmer-chip:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); }
+    .farmer-avatar {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: linear-gradient(150deg, #d1a04a, var(--gold-dark));
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--mono); font-weight: 600; font-size: 13px; color: #241a08;
+        flex-shrink: 0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.3);
+    }
     .farmer-meta { line-height: 1.3; overflow: hidden; }
-    .farmer-name { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .farmer-role { font-family: var(--mono); font-size: 10px; color: #9db89f; text-transform: uppercase; letter-spacing: .06em; }
+    .farmer-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .farmer-role { font-family: var(--mono); font-size: 9.5px; color: #8fae95; text-transform: uppercase; letter-spacing: .07em; }
 
     .add-btn {
-        width: 100%;
-        height: 46px;
-        border: none;
-        border-radius: 9px;
-        background: var(--gold);
+        width: 100%; height: 46px; border: none; border-radius: 8px;
+        background: linear-gradient(155deg, var(--leaf), var(--leaf));
         color: #241a08;
-        font-family: var(--mono);
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: .02em;
+        font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
         cursor: pointer;
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        transition: .15s;
+        transition: transform .15s var(--ease), box-shadow .15s var(--ease), filter .15s var(--ease);
+        box-shadow: var(--shadow-sm);
     }
-    .add-btn:hover { background: #c99539; }
+    .add-btn:hover { filter: brightness(1.06); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .add-btn:active { transform: translateY(0); }
     .add-btn svg { width: 16px; height: 16px; }
-    .add-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .add-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
     .sidebar-section-title {
-        font-family: var(--mono);
-        font-size: 10.5px;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-        color: #8fae95;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 4px;
+        font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
+        color: #7fa088; display: flex; align-items: center; justify-content: space-between; margin-top: 2px;
+        flex-shrink: 0;
     }
-
-    .count-pill {
-        background: rgba(255,255,255,.08);
-        border-radius: 20px;
-        padding: 1px 8px;
-        font-size: 10px;
-        color: #d9e8dc;
-    }
+    .count-pill { background: rgba(255,255,255,.08); border-radius: 20px; padding: 1px 9px; font-size: 10px; color: #d9e8dc; font-family: var(--mono); }
 
     .listings-scroll {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        flex: 1;
+        gap: 10px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        margin: 0 -6px;
+        padding: 2px 6px 4px;
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%);
     }
+    .listings-scroll::-webkit-scrollbar { display: none; }
+
+    .sidebar-footer {
+        flex-shrink: 0;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255,255,255,.09);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .sidebar-footer-stats { display: flex; gap: 18px; }
+    .sidebar-footer-stat { display: flex; flex-direction: column; gap: 2px; }
+    .sidebar-footer-stat .val { font-family: var(--head); font-size: 18px; color: #eef3ea; line-height: 1; }
+    .sidebar-footer-stat .lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--bg); }
+    .sidebar-footer-tag { font-family: var(--mono); font-size: 9px; letter-spacing: .07em; color: #6f8f78; }
 
     /* Crop ticket card — perforated "lot tag" motif */
     .crop-ticket {
         position: relative;
-        background: #ffffff0d;
-        border: 1px solid rgba(255,255,255,.12);
-        border-radius: 10px;
-        padding: 13px 14px 12px;
+        background: rgba(255,255,255,.035);
+        border: 1px solid rgba(255,255,255,.1);
+        border-left: 3px solid rgba(255,255,255,.16);
+        border-radius: 6px;
+        padding: 12px 13px 11px;
         cursor: pointer;
-        transition: .15s;
+        transition: border-color .16s var(--ease), background .16s var(--ease), transform .16s var(--ease);
+        animation: fadeUp .32s var(--ease) both;
     }
-    .crop-ticket:hover {
-        border-color: rgba(184,132,46,.55);
-        background: rgba(184,132,46,.08);
-    }
-
-    .crop-ticket::before, .crop-ticket::after {
-        content: "";
-        position: absolute;
-        width: 12px; height: 12px;
-        background: var(--panel2);
-        border-radius: 50%;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-    .crop-ticket::before { left: -6px; }
-    .crop-ticket::after { right: -6px; }
+    .crop-ticket:hover { border-left-color: var(--gold); background: rgba(192,143,52,.09); transform: translateX(1px); }
 
     .ticket-top {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         margin-bottom: 8px;
+        gap: 8px;
     }
 
     .ticket-crop {
         font-family: var(--head);
-        font-size: 17px;
+        font-size: 15.5px;
         color: #eef3ea;
+        line-height: 1.15;
     }
 
     .ticket-loc {
         font-family: var(--mono);
-        font-size: 10px;
-        color: #9db89f;
-        margin-top: 2px;
+        font-size: 9.5px;
+        color: #8fae95;
+        margin-top: 3px;
     }
 
     .status-tag {
         font-family: var(--mono);
-        font-size: 9.5px;
-        letter-spacing: .05em;
+        font-size: 9px;
+        letter-spacing: .06em;
         text-transform: uppercase;
         padding: 3px 8px;
         border-radius: 20px;
         white-space: nowrap;
+        border: 1px solid transparent;
+        flex-shrink: 0;
     }
-    .status-tag.open { background: var(--leaf-pale); color: #8ee0a3; }
-    .status-tag.partial { background: rgba(184,132,46,.18); color: #f0c374; }
-    .status-tag.sold { background: rgba(255,255,255,.08); color: #9d9d94; }
+    .status-tag.open { background: var(--leaf-pale2); color: #90e2a6; border-color: rgba(142,224,163,.32); }
+    .status-tag.partial { background: rgba(192,143,52,.18); color: #f0c374; }
+    .status-tag.sold { background: rgba(255,255,255,.07); color: #9d9d94; }
 
     .ticket-bar-track {
         height: 6px;
@@ -244,73 +265,58 @@
     /* ───────────────────────── MAIN ───────────────────────── */
 
     .main {
-        padding: 34px 40px 60px;
-        max-width: 1180px;
+        padding: 32px 40px 0; max-width: 1180px; height: 100vh;
+        display: flex; flex-direction: column;
+        overflow: hidden;
     }
 
-    .main-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 26px;
-        flex-wrap: wrap;
-        gap: 12px;
+    .main-top { flex-shrink: 0; }
+
+    .main-scroll-wrap {
+        flex: 1 1 auto;
+        min-height: 0;
     }
 
-    .page-title {
-        font-family: var(--head);
-        font-size: 34px;
-        color: var(--leaf-dark);
+    .main-scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding: 0 0 40px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
     }
+    .main-scroll::-webkit-scrollbar { display: none; }
 
-    .page-sub {
-        font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        color: var(--ink3);
-        margin-top: 4px;
-    }
+    .main-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-family: var(--head); font-size: 32px; color: var(--leaf-darker); letter-spacing: -.01em; }
+    .page-sub { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin-top: 5px; }
 
-    .tabs {
-        display: flex;
-        gap: 6px;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 4px;
-    }
-
+    .tab-bar { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
     .tab-btn {
-        border: none;
-        background: transparent;
-        padding: 9px 18px;
-        border-radius: 7px;
-        font-family: var(--mono);
-        font-size: 12px;
-        letter-spacing: .03em;
-        text-transform: uppercase;
-        color: var(--ink2);
-        cursor: pointer;
-        transition: .15s;
+        font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+        color: var(--ink3); background: transparent; border: none; cursor: pointer;
+        padding: 12px 4px; margin-right: 26px; margin-bottom: -2px;
+        border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 8px;
+        transition: color .16s var(--ease), border-color .16s var(--ease);
     }
-    .tab-btn.active { background: var(--leaf); color: #fff; }
-    .tab-btn:not(.active):hover { background: var(--leaf-pale); }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active { color: var(--leaf-darker); border-bottom-color: var(--leaf-darker); }
+    .tab-count { background: var(--border); color: var(--ink2); border-radius: 20px; padding: 1px 7px; font-size: 9.5px; font-family: var(--mono); }
+    .tab-btn.active .tab-count { background: var(--leaf-pale2); color: var(--leaf-darker); }
+    .tab-btn[data-tab="bids"] .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); display: inline-block; box-shadow: 0 0 0 3px var(--leaf-pale); }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
     .msg {
-        margin-bottom: 16px;
-        padding: 12px 14px;
-        border-radius: 8px;
-        display: none;
-        font-family: var(--mono);
-        font-size: 12px;
+        margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; display: none;
+        font-family: var(--mono); font-size: 12px; border: 1px solid transparent;
+        animation: fadeUp .28s var(--ease) both;
     }
     .msg.show { display: block; }
-    .msg.error { background: var(--red-pale); color: var(--red); }
-    .msg.success { background: var(--leaf-pale); color: var(--leaf-dark); }
+    .msg.error { background: var(--red-pale); color: var(--red); border-color: rgba(183,64,47,.18); }
+    .msg.success { background: var(--leaf-pale); color: var(--leaf-darker); border-color: rgba(60,148,87,.2); }
 
     /* Bid cards */
     .bid-grid {
@@ -320,15 +326,19 @@
     }
 
     .bid-card {
-        background: #fff;
+        background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 14px;
+        border-top: 3px solid var(--leaf-dark);
+        border-radius: 10px;
         padding: 20px;
-        box-shadow: 0 18px 40px rgba(20, 30, 20, .05);
+        box-shadow: var(--shadow-md);
         display: flex;
         flex-direction: column;
         gap: 12px;
+        transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+        animation: fadeUp .32s var(--ease) both;
     }
+    .bid-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
 
     .bid-card-top {
         display: flex;
@@ -351,8 +361,8 @@
 
     .bid-status {
         font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: .05em;
+        font-size: 9px;
+        letter-spacing: .07em;
         text-transform: uppercase;
         padding: 4px 10px;
         border-radius: 20px;
@@ -415,52 +425,191 @@
         filter: blur(.3px);
     }
 
+    /* Live mandi auctions (buy-side auctions the farmer can bid into) */
+    .auction-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--leaf-dark);
+        border-radius: 10px;
+        padding: 22px;
+        box-shadow: var(--shadow-md);
+        transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+        animation: fadeUp .32s var(--ease) both;
+    }
+    .auction-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+    .ac-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .ac-name { font-family: var(--head); font-size: 21px; color: var(--ink); letter-spacing: -.005em; }
+    .ac-loc { font-family: var(--mono); font-size: 10.5px; color: var(--ink3); margin-top: 4px; letter-spacing: .03em; }
+    .ac-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .badge {
+        font-family: var(--mono); font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
+        padding: 4px 9px; border-radius: 20px; white-space: nowrap; border: 1px solid transparent;
+    }
+    .badge.forward { background: var(--leaf-pale); color: var(--leaf-dark); border-color: rgba(60,148,87,.28); }
+    .badge.reverse { background: var(--gold-pale); color: var(--gold-dark); border-color: rgba(192,143,52,.28); }
+    .badge.active { background: var(--leaf); color: #fff; box-shadow: 0 0 0 3px var(--leaf-pale); }
+    .badge.closed { background: #ece9e2; color: var(--ink3); border-color: var(--border2); }
+
+    .ac-stats {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+        padding: 15px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+        margin-bottom: 14px;
+    }
+    .ac-stat-label { font-family: var(--mono); font-size: 8.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
+    .ac-stat-value { font-size: 16px; font-weight: 500; font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .ac-stat-value.gold { color: var(--gold-dark); font-family: var(--mono); }
+    .ac-stat-value.countdown { color: var(--red); font-family: var(--mono); font-weight: 600; }
+    .ac-stat-value.countdown.ended { color: var(--ink3); }
+
+    .my-bid-note {
+        font-family: var(--mono); font-size: 11.5px; padding: 8px 10px; border-radius: 7px; margin-bottom: 12px;
+    }
+    .my-bid-note.pending { background: var(--gold-pale); color: var(--gold-dark); }
+    .my-bid-note.accepted { background: var(--leaf-pale); color: var(--leaf-darker); }
+    .my-bid-note.rejected, .my-bid-note.expired, .my-bid-note.auto_rejected { background: var(--red-pale); color: var(--red); }
+
+    .bid-panel {
+        background: var(--leaf-pale); border: 1px solid rgba(60, 148, 87, .28); border-radius: 10px;
+        padding: 14px 16px; margin-top: 4px;
+    }
+    .bid-panel-title {
+        font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+        color: var(--leaf-darker); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .bid-form-row { display: flex; gap: 8px; align-items: flex-end; }
+    .bid-field { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+    .bid-field-label {
+        font-family: var(--mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3);
+    }
+    .bid-form-row select,
+    .bid-form-row input {
+        width: 100%; height: 42px; border: 1px solid var(--border2); border-radius: 7px; padding: 0 12px;
+        font-family: var(--body); font-size: 14px; background: #fff; color: var(--ink); box-sizing: border-box;
+        transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+    }
+    .bid-price-wrap { position: relative; }
+    .bid-price-wrap input { padding-left: 26px; padding-right: 58px; }
+    .bid-price-wrap .price-prefix {
+        position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+        font-family: var(--mono); font-size: 13px; color: var(--ink3); pointer-events: none;
+    }
+    .bid-price-wrap .price-suffix {
+        position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+        font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; color: var(--ink3); pointer-events: none;
+    }
+    .bid-form-row select:hover,
+    .bid-form-row input:hover { border-color: #a9a290; }
+    .bid-form-row select:focus,
+    .bid-form-row input:focus { outline: none; border-color: var(--leaf); box-shadow: 0 0 0 3px var(--leaf-pale); }
+    .bid-form-row button {
+        height: 42px; padding: 0 18px; border: none; border-radius: 7px; background: var(--leaf); color: #fff;
+        font-family: var(--mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+        transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+    }
+    .bid-form-row button:hover { background: var(--leaf-dark); box-shadow: var(--shadow-sm); }
+    .bid-form-row button:active { transform: scale(.98); }
+    .bid-form-row button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .bid-hint {
+        font-family: var(--mono); font-size: 10.5px; color: var(--leaf-darker); margin-top: 8px; opacity: .85;
+    }
+
+    .round-title { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin: 14px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .round-list { display: flex; flex-direction: column; gap: 6px; }
+    .round-row {
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--border2); border-radius: 6px; font-size: 12.5px;
+        background: var(--surface);
+        transition: border-color .16s var(--ease), background .16s var(--ease);
+    }
+    .round-row.mine { border-left-color: var(--leaf); background: var(--leaf-pale); }
+    .round-row.accepted { border-left-color: var(--gold); background: var(--gold-pale); }
+    .round-row.rejected, .round-row.expired, .round-row.auto_rejected { opacity: .55; }
+    .round-row .round-who { font-family: var(--mono); font-size: 11px; color: var(--ink2); }
+    .round-row .round-price { font-family: var(--mono); font-weight: 600; }
+    .round-row .round-status { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--ink3); }
+
+    .tab-badge {
+        display: inline-block; min-width: 18px; padding: 1px 7px;
+        border-radius: 20px; background: var(--red); color: #fff;
+        font-family: var(--mono); font-size: 9.5px; line-height: 16px; text-align: center;
+    }
+    .tab-btn.active .tab-badge { background: var(--leaf-pale2); color: var(--leaf-darker); }
+
+    .invite-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .invite-actions button {
+        flex: 1; height: 42px; border-radius: 7px; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; border: none;
+        transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+    }
+    .invite-actions button:active { transform: scale(.98); }
+    .invite-accept-btn { background: var(--leaf); color: #fff; }
+    .invite-accept-btn:hover { background: var(--leaf-dark); box-shadow: var(--shadow-sm); }
+    .invite-decline-btn { background: #fff; color: var(--ink3); border: 1px solid var(--border2) !important; }
+    .invite-decline-btn:hover { background: var(--red-pale); color: var(--red); }
+
     /* ───────────────────────── MODALS ───────────────────────── */
 
     .modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 20, 15, .5);
-        backdrop-filter: blur(2px);
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 20px;
+        display: none; position: fixed; inset: 0; background: rgba(12, 18, 13, .52); backdrop-filter: blur(3px);
+        align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+        animation: fadeIn .18s var(--ease) both;
     }
     .modal-overlay.show { display: flex; }
 
     .modal-card {
-        background: #fff;
-        border-radius: 14px;
-        width: 460px;
-        max-width: 100%;
+        background: #fff; border-radius: 16px; width: 460px; max-width: 100%;
         max-height: calc(100vh - 60px);
-        overflow-y: auto;
-        box-shadow: 0 30px 70px rgba(0,0,0,.28);
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        box-shadow: var(--shadow-lg);
+        animation: popIn .22s var(--ease) both;
     }
 
     .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 20px 26px;
+        background: linear-gradient(175deg, var(--panel) 0%, var(--leaf-dark) 100%);
+        color: #ecf3ec;
     }
-    .modal-title { font-family: var(--head); font-size: 21px; color: var(--leaf-dark); }
+    .modal-header-text { display: flex; flex-direction: column; gap: 3px; }
+    .modal-title { font-family: var(--head); font-size: 21px; color: #eef3ea; letter-spacing: -.005em; }
+    .modal-subtitle { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #9db89f; }
     .modal-close {
-        border: none; background: transparent; cursor: pointer;
-        font-size: 20px; color: var(--ink2); padding: 4px; line-height: 1;
+        border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); cursor: pointer;
+        font-size: 18px; color: #ecf3ec; width: 30px; height: 30px; line-height: 1; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        transition: background .15s, border-color .15s;
     }
-    .modal-close:hover { color: var(--red); }
+    .modal-close:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
 
-    .modal-body { padding: 20px 24px; }
+    .modal-scroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        min-height: 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .modal-scroll::-webkit-scrollbar { display: none; }
 
-    .field-group { margin-bottom: 16px; }
+    .modal-body { padding: 22px 26px 6px; }
+
+    .form-section { margin-bottom: 18px; }
+    .form-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .form-section-icon {
+        width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+        background: var(--leaf-pale); color: var(--leaf-dark);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .form-section-icon svg { width: 13px; height: 13px; }
+    .form-section-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); }
+    .form-section-body { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+
+    .field-group { margin-bottom: 14px; }
+    .field-group:last-child { margin-bottom: 0; }
     .field-label {
         display: block;
         font-family: var(--mono);
-        font-size: 11px;
+        font-size: 10.5px;
         letter-spacing: .05em;
         text-transform: uppercase;
         color: var(--ink2);
@@ -474,13 +623,21 @@
         padding: 0 12px;
         font-size: 14px;
         font-family: var(--body);
+        background: #fff;
+        color: var(--ink);
+        transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
     }
+    .input:hover, .select:hover { border-color: #a9a290; }
+    .input:focus, .select:focus { outline: none; border-color: var(--leaf); box-shadow: 0 0 0 3px var(--leaf-pale); }
 
     .modal-footer {
+        flex-shrink: 0;
         display: flex;
         justify-content: flex-end;
         gap: 10px;
-        padding: 16px 24px 22px;
+        padding: 16px 26px 20px;
+        border-top: 1px solid var(--border);
+        background: #fff;
     }
 
     .btn {
@@ -491,11 +648,15 @@
         border-radius: 7px;
         padding: 0 18px;
         font-family: var(--mono);
-        font-size: 12.5px;
+        font-size: 12px;
+        letter-spacing: .04em;
+        text-transform: uppercase;
         cursor: pointer;
+        transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
     }
-    .btn:hover { background: var(--leaf-dark); }
-    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn:hover { background: var(--leaf-dark); box-shadow: var(--shadow-sm); }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
     .btn-secondary {
         height: 42px;
         border: 1px solid var(--border2);
@@ -504,10 +665,13 @@
         border-radius: 7px;
         padding: 0 18px;
         font-family: var(--mono);
-        font-size: 12.5px;
+        font-size: 12px;
+        letter-spacing: .04em;
+        text-transform: uppercase;
         cursor: pointer;
+        transition: background .15s var(--ease), border-color .15s var(--ease);
     }
-    .btn-secondary:hover { background: rgba(0,0,0,.04); }
+    .btn-secondary:hover { background: rgba(0,0,0,.04); border-color: #a9a290; }
 
     /* Detail modal */
     .detail-grid {
@@ -516,7 +680,7 @@
         gap: 14px 18px;
         margin-bottom: 18px;
     }
-    .detail-item { }
+    
     .detail-label {
         font-family: var(--mono);
         font-size: 9.5px;
@@ -575,17 +739,23 @@
 
     .loading-note {
         font-family: var(--mono);
-        font-size: 11.5px;
+        font-size: 11px;
         color: var(--ink3);
         text-align: center;
         padding: 30px 8px;
         grid-column: 1 / -1;
+        animation: fadeIn .25s var(--ease) both;
     }
 
     @media (max-width: 860px) {
-        body { grid-template-columns: 1fr; }
-        .sidebar { position: relative; height: auto; }
-        .main { padding: 24px 18px 50px; }
+        body { grid-template-columns: 1fr; height: auto; overflow: visible; }
+        .sidebar { position: relative; height: auto; overflow: visible; }
+        .listings-scroll { max-height: 340px; -webkit-mask-image: none; mask-image: none; }
+        .main { padding: 24px 18px 50px; height: auto; overflow: visible; display: block; }
+        .main-scroll { overflow-y: visible; -webkit-mask-image: none; mask-image: none; padding-bottom: 0; }
+        .ac-stats { grid-template-columns: repeat(2, 1fr); }
+        .bid-stats { grid-template-columns: repeat(2, 1fr); }
+        .modal-card { width: 100%; }
     }
 </style>
 </head>
@@ -595,35 +765,64 @@
 <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <aside class="sidebar">
 
-    <div class="brand">
-        <div class="brand-mark">CropAI</div>
-        <div class="brand-sub">Farmer Auction Floor</div>
-    </div>
-
-    <div class="farmer-chip">
-        <div class="farmer-avatar" id="farmerInitial">F</div>
-        <div class="farmer-meta">
-            <div class="farmer-name" id="farmerName">Farmer</div>
-            <div class="farmer-role">Registered Seller</div>
+    <div class="sidebar-top">
+        <div class="brand">
+            <div class="brand-icon">
+                <!-- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v18M7 8c0 4 2.5 5 5 5s5-1 5-5c0-2-2-3-5-3s-5 1-5 3z"/>
+                    <path d="M8 21h8"/>
+                </svg> -->
+                <img src="/static/tuteck_logo.png" alt="Crop Intelligence" style="width: 26px; height: 26px;">
+            </div>
+            <div class="brand-text">
+                <div class="brand-mark">Crop Intelligence</div>
+                <div class="brand-sub">Farmer Auction Floor</div>
+            </div>
         </div>
+
+        <div class="farmer-chip">
+            <div class="farmer-avatar" id="farmerInitial">F</div>
+            <div class="farmer-meta">
+                <div class="farmer-name" id="farmerName">Farmer</div>
+                <div class="farmer-role">Registered Seller</div>
+            </div>
+        </div>
+
+        <button class="add-btn" id="addBtn" onclick="openAddModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add crop listing
+        </button>
     </div>
 
-    <button class="add-btn" id="addBtn" onclick="openAddModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5v14M5 12h14"/>
-        </svg>
-        Add crop listing
-    </button>
-
-    <div>
+    <div class="listings-panel">
         <div class="sidebar-section-title">
             Submitted listings
             <span class="count-pill" id="listingCount">0</span>
         </div>
+
+        <div class="listings-scroll" id="listingsScroll">
+            <div class="empty-note">Loading listings…</div>
+        </div>
     </div>
 
-    <div class="listings-scroll" id="listingsScroll">
-        <div class="empty-note">Loading listings…</div>
+    <div class="sidebar-footer">
+        <div class="sidebar-footer-stats">
+            <div class="sidebar-footer-stat">
+                <div class="val" id="footerOpenCount">0</div>
+                <div class="lbl">Open</div>
+            </div>
+            <div class="sidebar-footer-stat">
+                <div class="val" id="footerSoldCount">0</div>
+                <div class="lbl">Sold out</div>
+            </div>
+            <div class="sidebar-footer-stat">
+                <div class="val" id="footerTotalCount">0</div>
+                <div class="lbl">Total listed</div>
+            </div>
+        </div>
+        <div class="sidebar-footer-tag">Crop Intelligence · Farmer Auction Floor</div>
     </div>
 
 </aside>
@@ -631,24 +830,62 @@
 <!-- ═══════════════════ MAIN ═══════════════════ -->
 <main class="main">
 
-    <div class="main-header">
-        <div>
-            <div class="page-title">Auction floor</div>
-            <div class="page-sub">Unused Crops Marketplace</div>
+    <div class="main-top">
+        <div class="main-header">
+            <div>
+                <div class="page-title">Auction floor</div>
+                <div class="page-sub">Unused Crops Marketplace</div>
+            </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="bids" onclick="switchTab('bids')">Active bids</button>
+        <div id="errorBox" class="msg error"></div>
+        <div id="successBox" class="msg success"></div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="bids" onclick="switchTab('bids')">
+                <span class="tab-dot"></span> Active bids
+            </button>
+            <button class="tab-btn" data-tab="invitations" onclick="switchTab('invitations')">
+                Invitations <span id="inviteBadge" class="tab-badge" style="display:none;">0</span>
+            </button>
+            <button class="tab-btn" data-tab="auctions" onclick="switchTab('auctions')">Live auctions</button>
+            <button class="tab-btn" data-tab="participated" onclick="switchTab('participated')">Participated</button>
         </div>
     </div>
 
-    <div id="errorBox" class="msg error"></div>
-    <div id="successBox" class="msg success"></div>
+    <div class="main-scroll-wrap">
+    <div class="main-scroll">
 
     <div class="tab-panel active" id="tab-bids">
+        <div class="round-title" style="margin-top:0;">Your crop offers</div>
         <div class="bid-grid" id="bidGrid">
             <div class="loading-note">Loading active bids…</div>
         </div>
+        <div class="round-title">Your live auction bids</div>
+        <div id="auctionBidsGrid" style="display:flex; flex-direction:column; gap:18px;">
+            <div class="loading-note">Loading auction bids…</div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-invitations">
+        <div id="invitationsGrid" style="display:flex; flex-direction:column; gap:18px;">
+            <div class="loading-note">Loading invitations…</div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-auctions">
+        <div id="liveAuctionsGrid" style="display:flex; flex-direction:column; gap:18px;">
+            <div class="loading-note">Loading live auctions…</div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-participated">
+        <div id="participatedGrid" style="display:flex; flex-direction:column; gap:18px;">
+            <div class="loading-note">Loading participated auctions…</div>
+        </div>
+    </div>
+
+    </div>
     </div>
 
 </main>
@@ -657,45 +894,64 @@
 <div class="modal-overlay" id="addModalOverlay" onclick="if(event.target===this) closeAddModal()">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">Add crop listing</div>
+            <div class="modal-header-text">
+                <div class="modal-title">Add crop listing</div>
+                <div class="modal-subtitle">List unused production for buyers to bid on</div>
+            </div>
             <button class="modal-close" onclick="closeAddModal()">&times;</button>
         </div>
+        <div class="modal-scroll">
         <div class="modal-body">
 
-            <div class="field-group">
-                <label class="field-label">Total production (tonnes)</label>
-                <input class="input" id="formProduction" type="number" min="0.1" step="0.1" placeholder="e.g. 20">
+            <!-- Production -->
+            <div class="form-section">
+                <div class="form-section-head">
+                    <div class="form-section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8c0 4 2.5 5 5 5s5-1 5-5c0-2-2-3-5-3s-5 1-5 3z"/><path d="M8 21h8"/></svg>
+                    </div>
+                    <div class="form-section-title">Production</div>
+                </div>
+                <div class="form-section-body">
+                    <div class="field-group" style="margin-bottom:0;">
+                        <label class="field-label">Total production (tonnes)</label>
+                        <input class="input" id="formProduction" type="number" min="0.1" step="0.1" placeholder="e.g. 20">
+                    </div>
+                </div>
             </div>
 
-            <div class="field-group">
-                <label class="field-label">Crop type</label>
-                <select class="select" id="formCropType">
-                    <option value="">Select crop</option>
-                    <option value="Wheat">Wheat</option>
-                    <option value="Rice">Rice</option>
-                    <option value="Maize">Maize</option>
-                    <option value="Cotton">Cotton</option>
-                    <option value="Sugarcane">Sugarcane</option>
-                    <option value="Soybean">Soybean</option>
-                    <option value="Mustard">Mustard</option>
-                    <option value="Potato">Potato</option>
-                </select>
+            <!-- Location -->
+            <div class="form-section">
+                <div class="form-section-head">
+                    <div class="form-section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <div class="form-section-title">Location &amp; crop</div>
+                </div>
+                <div class="form-section-body">
+                    <div class="field-group">
+                        <label class="field-label">State</label>
+                        <select class="select" id="formState" onchange="onFormStateChange()">
+                            <option value="">Select a state</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Crop type</label>
+                        <select class="select" id="formCropType">
+                            <option value="">Select a state first</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group" style="margin-bottom:0;">
+                        <label class="field-label">District</label>
+                        <select class="select" id="formDistrict">
+                            <option value="">Select a state first</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div class="field-group">
-                <label class="field-label">State</label>
-                <select class="select" id="formState" onchange="onFormStateChange()">
-                    <option value="">Select a state</option>
-                </select>
-            </div>
-
-            <div class="field-group">
-                <label class="field-label">District</label>
-                <select class="select" id="formDistrict">
-                    <option value="">Select a district</option>
-                </select>
-            </div>
-
+        </div>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeAddModal()">Cancel</button>
@@ -708,9 +964,13 @@
 <div class="modal-overlay" id="detailModalOverlay" onclick="if(event.target===this) closeDetailModal()">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title" id="detailCropTitle">Crop listing</div>
+            <div class="modal-header-text">
+                <div class="modal-title" id="detailCropTitle">Crop listing</div>
+                <div class="modal-subtitle">Listing detail &amp; sale history</div>
+            </div>
             <button class="modal-close" onclick="closeDetailModal()">&times;</button>
         </div>
+        <div class="modal-scroll">
         <div class="modal-body">
 
             <div class="detail-grid">
@@ -744,13 +1004,14 @@
                 <div class="detail-bar-fill" id="detailBarFill" style="width:0%"></div>
             </div>
             <div class="detail-bar-caption">
-                <span id="detailRemainingCaption">0 t remaining</span>
-                <span id="detailTotalCaption">of 0 t total</span>
+                <span id="detailRemainingCaption">0 tonnes remaining</span>
+                <span id="detailTotalCaption">of 0 tonnes total</span>
             </div>
 
             <div class="bid-history-title">Sale history</div>
             <div id="detailSaleHistory"></div>
 
+        </div>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeDetailModal()">Close</button>
@@ -812,6 +1073,24 @@
         return data;
     }
 
+    // ── Clock sync ──────────────────────────────────────────────
+    // Auction countdowns are computed against absolute timestamps the
+    // server stamped using its own clock. If that clock has drifted from
+    // this machine's clock, every countdown looks off by the same fixed
+    // amount. clockOffsetMs corrects for that: nowMs() below is what
+    // "now" is according to the server, not blindly this browser's clock.
+    let clockOffsetMs = 0;
+    async function syncClock() {
+        try {
+            const t0 = Date.now();
+            const res = await fetch("/api/server-time");
+            const data = await res.json();
+            const roundTrip = Date.now() - t0;
+            clockOffsetMs = data.serverTime + roundTrip / 2 - Date.now();
+        } catch (_) { /* keep last known offset if this fails */ }
+    }
+    function nowMs() { return Date.now() + clockOffsetMs; }
+
     function fmtTonnes(n) {
         return (Math.round(n * 100) / 100).toString();
     }
@@ -820,29 +1099,63 @@
         return new Date(ts).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
     }
 
-    // ── State / district data (shared with admin panel) ───────────
+    // ── State / crop / district data ───────────────────────────────
+    // Crop and district lists are pulled live from the same backend the
+    // Yield Detect editor uses (/api/yield/valid_crops, /api/yield/valid_districts)
+    // instead of being hardcoded here. Crop and District_Name are one-hot
+    // trained features on the yield model — a listing whose crop/district
+    // string doesn't exactly match one of the model's trained values would
+    // silently be treated differently downstream, so the "original" (real,
+    // trained) lists are fetched straight from the source of truth rather
+    // than kept as a second, possibly-stale hardcoded copy here.
 
-    const STATES_DISTRICTS = {
-        tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
-        meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills',
-            'North Garo Hills', 'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills',
-            'South West Khasi Hills', 'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'],
-        rajasthan: ['Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 'Bundi',
-            'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 'Jaipur', 'Jaisalmer',
-            'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 'Kota', 'Nagaur', 'Pali', 'Pratapgarh',
-            'Rajsamand', 'Sawai Madhopur', 'Sikar', 'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur']
-    };
+    const STATES = ['tripura', 'meghalaya', 'rajasthan'];
 
     function populateStateOptions() {
         const sel = document.getElementById("formState");
         sel.innerHTML = `<option value="">Select a state</option>` +
-            Object.keys(STATES_DISTRICTS).map(s => `<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join("");
+            STATES.map(s => `<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join("");
     }
+
+    async function loadFormCrops(state) {
+        const sel = document.getElementById("formCropType");
+        sel.innerHTML = '<option value="">Loading crops…</option>';
+        try {
+            const res = await fetch(`/api/yield/valid_crops?state=${encodeURIComponent(state)}`);
+            const data = await res.json();
+            const crops = data.crops || [];
+            sel.innerHTML = crops.length
+                ? `<option value="">Select crop</option>` + crops.map(c => `<option value="${c}">${c}</option>`).join("")
+                : '<option value="">No crops found</option>';
+        } catch {
+            sel.innerHTML = '<option value="">Could not load crops</option>';
+        }
+    }
+
+    async function loadFormDistricts(state) {
+        const sel = document.getElementById("formDistrict");
+        sel.innerHTML = '<option value="">Loading districts…</option>';
+        try {
+            const res = await fetch(`/api/yield/valid_districts?state=${encodeURIComponent(state)}`);
+            const data = await res.json();
+            const districts = data.districts || [];
+            sel.innerHTML = districts.length
+                ? `<option value="">Select a district</option>` + districts.map(d => `<option value="${d}">${d}</option>`).join("")
+                : '<option value="">No districts found</option>';
+        } catch {
+            sel.innerHTML = '<option value="">Could not load districts</option>';
+        }
+    }
+
     function onFormStateChange() {
         const state = document.getElementById("formState").value;
-        const districts = STATES_DISTRICTS[state] || [];
-        document.getElementById("formDistrict").innerHTML =
-            `<option value="">Select a district</option>` + districts.map(d => `<option value="${d}">${d}</option>`).join("");
+        if (!state) {
+            document.getElementById("formCropType").innerHTML = '<option value="">Select a state first</option>';
+            document.getElementById("formDistrict").innerHTML = '<option value="">Select a state first</option>';
+            return;
+        }
+        loadFormCrops(state);
+        loadFormDistricts(state);
     }
 
     // ── Header / identity ──────────────────────────────────────
@@ -875,9 +1188,9 @@
     function openAddModal() {
         populateStateOptions();
         document.getElementById("formProduction").value = "";
-        document.getElementById("formCropType").value = "";
         document.getElementById("formState").value = "";
-        document.getElementById("formDistrict").innerHTML = `<option value="">Select a district</option>`;
+        document.getElementById("formCropType").innerHTML = '<option value="">Select a state first</option>';
+        document.getElementById("formDistrict").innerHTML = '<option value="">Select a state first</option>';
         document.getElementById("addModalOverlay").classList.add("show");
     }
     function closeAddModal() {
@@ -899,15 +1212,19 @@
         btn.disabled = true;
 
         try {
-            await apiSend("POST", "/api/unused-crops", {
+            const result = await apiSend("POST", "/api/unused-crops", {
                 farmerEmail: session.email,
                 cropType, state, district,
                 totalProduction
             });
 
             closeAddModal();
-            showSuccess("Crop listing submitted.");
-            await Promise.all([renderListings(), renderBids()]);
+            showSuccess(
+                result.newInvitations > 0
+                    ? `Crop listing submitted — invited to ${result.newInvitations} live auction${result.newInvitations > 1 ? "s" : ""} already running for it.`
+                    : "Crop listing submitted."
+            );
+            await Promise.all([renderListings(), renderBids(), renderInvitations()]);
         } catch (err) {
             showError(err.message);
         } finally {
@@ -936,6 +1253,12 @@
 
         document.getElementById("listingCount").innerText = currentCrops.length;
 
+        const openCount = currentCrops.filter(c => c.status !== "sold").length;
+        const soldCount = currentCrops.filter(c => c.status === "sold").length;
+        document.getElementById("footerOpenCount").innerText = openCount;
+        document.getElementById("footerSoldCount").innerText = soldCount;
+        document.getElementById("footerTotalCount").innerText = currentCrops.length;
+
         if (currentCrops.length === 0) {
             scroll.innerHTML = `<div class="empty-note">No listings yet — add your first crop to enter the auction.</div>`;
             return;
@@ -959,8 +1282,8 @@
                     </div>
                     <div class="ticket-bar-track"><div class="ticket-bar-fill" style="width:${pctSold}%"></div></div>
                     <div class="ticket-bottom">
-                        <span>Remaining <b>${fmtTonnes(remaining)} t</b></span>
-                        <span>of ${fmtTonnes(c.totalProduction)} t</span>
+                        <span>Remaining <b>${fmtTonnes(remaining)} tonnes</b></span>
+                        <span>of ${fmtTonnes(c.totalProduction)} tonnes</span>
                     </div>
                 </div>
             `;
@@ -994,8 +1317,8 @@
         document.getElementById("detailStatus").innerText = statusLabel;
 
         document.getElementById("detailBarFill").style.width = pctSold + "%";
-        document.getElementById("detailRemainingCaption").innerText = `${fmtTonnes(remaining)} t remaining`;
-        document.getElementById("detailTotalCaption").innerText = `of ${fmtTonnes(crop.totalProduction)} t total`;
+        document.getElementById("detailRemainingCaption").innerText = `${fmtTonnes(remaining)} tonnes remaining`;
+        document.getElementById("detailTotalCaption").innerText = `of ${fmtTonnes(crop.totalProduction)} tonnes total`;
 
         const historyEl = document.getElementById("detailSaleHistory");
         if (!crop.saleHistory || crop.saleHistory.length === 0) {
@@ -1003,8 +1326,8 @@
         } else {
             historyEl.innerHTML = crop.saleHistory.map(s => `
                 <div class="bid-history-row">
-                    <span>${s.buyer} — ${fmtTonnes(s.quantity)} t on ${fmtDate(s.soldAt)}</span>
-                    <span class="bh-amt">₹${s.pricePerTonne}/t</span>
+                    <span>${s.buyer} — ${fmtTonnes(s.quantity)} tonnes on ${fmtDate(s.soldAt)}</span>
+                    <span class="bh-amt">₹${s.pricePerTonne}/tonne</span>
                 </div>
             `).join("");
         }
@@ -1018,11 +1341,101 @@
     // ── Main: active bids (via backend) ────────────────────────────
 
     function timeLeftLabel(endsAt) {
-        const diff = endsAt - Date.now();
+        const diff = endsAt - nowMs();
         if (diff <= 0) return "Auction closed";
         const hrs = Math.floor(diff / (1000 * 60 * 60));
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         return `${hrs}h ${mins}m left`;
+    }
+
+    // All auctions this farmer has ever joined (invitation accepted),
+    // active or closed — shared by the "Active bids" and "Participated"
+    // tabs so we only fetch it once per refresh.
+    let participatedAuctions = [];
+
+    async function fetchParticipatedAuctions() {
+        try {
+            return await apiGet(`/api/mandi/auctions/participated?farmerEmail=${encodeURIComponent(session.email)}`);
+        } catch (err) {
+            return [];
+        }
+    }
+
+    let knownAuctionStatus = {};
+
+    async function renderAuctionBids() {
+        const grid = document.getElementById("auctionBidsGrid");
+        participatedAuctions = await fetchParticipatedAuctions();
+
+        // If any auction we're in just flipped active -> closed, an
+        // accepted bid may have just consumed production off the matching
+        // crop listing — refresh listings now instead of waiting for the
+        // farmer to manually reload the page to see the updated remaining
+        // quantity.
+        let justClosed = false;
+        participatedAuctions.forEach(a => {
+            if (knownAuctionStatus[a.id] === "active" && a.status === "closed") justClosed = true;
+            knownAuctionStatus[a.id] = a.status;
+        });
+        if (justClosed) renderListings();
+
+        // "Active bids" only means auctions still running where this
+        // farmer has actually placed a bid — the round view (base offer,
+        // mandi's counter, every farmer's bid + status) is the same card
+        // used on the Live Auctions tab, so it stays live and consistent.
+        const inProgress = participatedAuctions.filter(a =>
+            a.status === "active" && (a.bids || []).some(b => b.farmerEmail === session.email)
+        );
+
+        if (inProgress.length === 0) {
+            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">No auction bids in progress right now.</div>`;
+            return;
+        }
+
+        grid.innerHTML = inProgress.map(a => renderLiveAuctionCard(a, false)).join("");
+    }
+
+    // Compact history row for the Participated tab — one line per auction
+    // the farmer joined, plus whatever the outcome was once it closed.
+    function renderParticipatedRow(a) {
+        const myBids = (a.bids || []).filter(b => b.farmerEmail === session.email);
+        const anyAccepted = (a.bids || []).some(b => b.status === "accepted");
+        const myAcceptedBid = myBids.find(b => b.status === "accepted");
+
+        let outcome, rowClass;
+        if (a.status === "active") {
+            outcome = myBids.length > 0 ? "Auction in progress — your bid is in" : "Auction in progress — no bid placed yet";
+            rowClass = "pending";
+        } else if (myAcceptedBid) {
+            outcome = `Your bid was accepted — ${fmtTonnes(myAcceptedBid.acceptedQuantity)} tonnes at ₹${myAcceptedBid.pricePerTonne}/tonne`;
+            rowClass = "accepted";
+        } else if (!anyAccepted) {
+            outcome = "No bids accepted";
+            rowClass = "expired";
+        } else {
+            outcome = "Another farmer's bid was accepted";
+            rowClass = "rejected";
+        }
+
+        return `
+            <div class="round-row ${rowClass}">
+                <span class="round-who">${a.auctionName} — ${a.cropType}, ${a.district}</span>
+                <span class="round-price">${outcome}</span>
+                <span class="round-status">${a.status === "active" ? "Live" : (a.outcome === "sold_out" ? "Sold out" : "Not sold out")}</span>
+            </div>
+        `;
+    }
+
+    async function renderParticipated() {
+        const grid = document.getElementById("participatedGrid");
+        participatedAuctions = await fetchParticipatedAuctions();
+
+        if (participatedAuctions.length === 0) {
+            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">You haven't joined any auctions yet — accept an invitation to get started.</div>`;
+            return;
+        }
+
+        grid.innerHTML = `<div class="round-list">${participatedAuctions.map(renderParticipatedRow).join("")}</div>`;
     }
 
     async function renderBids() {
@@ -1050,7 +1463,7 @@
             const crop = crops.find(c => c.id === b.cropId);
             if (!crop) return "";
             const remaining = crop.remainingProduction;
-            const closed = b.endsAt <= Date.now() || b.status === "won" || remaining <= 0;
+            const closed = b.endsAt <= nowMs() || b.status === "won" || remaining <= 0;
 
             return `
                 <div class="bid-card">
@@ -1065,11 +1478,11 @@
                     <div class="bid-stats">
                         <div>
                             <div class="bid-stat-label">Bid price</div>
-                            <div class="bid-stat-value gold">₹${b.pricePerTonne}/t</div>
+                            <div class="bid-stat-value gold">₹${b.pricePerTonne}/tonne</div>
                         </div>
                         <div>
                             <div class="bid-stat-label">Quantity bid</div>
-                            <div class="bid-stat-value">${fmtTonnes(b.quantity)} t</div>
+                            <div class="bid-stat-value">${fmtTonnes(b.quantity)} tonnes</div>
                         </div>
                     </div>
 
@@ -1113,7 +1526,7 @@
                 bidId: bid.id
             });
 
-            showSuccess(`${fmtTonnes(bid.quantity)} t sold to ${bid.buyer}. Listing updated to ${fmtTonnes(updated.remainingProduction)} t remaining.`);
+            showSuccess(`${fmtTonnes(bid.quantity)} tonnes sold to ${bid.buyer}. Listing updated to ${fmtTonnes(updated.remainingProduction)} tonnes remaining.`);
 
             await Promise.all([renderListings(), renderBids()]);
         } catch (err) {
@@ -1121,11 +1534,405 @@
         }
     }
 
+    // ── Live mandi auctions (buy-side auctions the farmer can bid into) ──
+    // Matched against the farmer's own listings: any active auction whose
+    // state + district + cropType matches something this farmer has
+    // listed shows up here, same matching rule the backend uses to decide
+    // who gets the "auction started" email.
+
+    let liveAuctions = [];
+
+    function auctionTimeLeftLabel(endsAt) {
+        const diff = endsAt - nowMs();
+        if (diff <= 0) return { text: "Ended", ended: true };
+        const mins = Math.floor(diff / 60000);
+        const hrs = Math.floor(mins / 60);
+        const secs = Math.floor((diff % 60000) / 1000);
+        const text = hrs > 0 ? `${hrs}h ${mins % 60}m left` : `${mins}m ${secs}s left`;
+        return { text, ended: false };
+    }
+
+    // The price a farmer's bid must clear right now. This ratchets: it's
+    // computed server-side off whichever is more binding — the best live
+    // bid already on the auction, or the mandi's last counter-offer — plus
+    // the fixed counter gap, so each new bid or counter-offer raises (or
+    // for reverse auctions, lowers) the bar for the next one. Falls back
+    // to a local calc off basePrice only if an older cached auction object
+    // doesn't have the server-computed field yet.
+    function requiredBidPrice(a) {
+        if (a.requiredBidPrice != null) return a.requiredBidPrice;
+        const baseline = a.mandiPrice != null ? a.mandiPrice : a.basePrice;
+        const gap = a.counterGap || 0;
+        return a.auctionType === "forward" ? baseline + gap : baseline - gap;
+    }
+
+    async function fetchLiveAuctions() {
+        // Unique (state, district, cropType) combos across this farmer's listings.
+        const combos = new Map();
+        currentCrops.forEach(c => {
+            const key = `${c.state}|${c.district}|${c.cropType}`;
+            combos.set(key, { state: c.state, district: c.district, cropType: c.cropType });
+        });
+
+        if (combos.size === 0) return [];
+
+        const results = await Promise.all(
+            Array.from(combos.values()).map(combo =>
+                apiGet(`/api/mandi/auctions/active?state=${encodeURIComponent(combo.state)}` +
+                       `&district=${encodeURIComponent(combo.district)}` +
+                       `&cropType=${encodeURIComponent(combo.cropType)}` +
+                       `&farmerEmail=${encodeURIComponent(session.email)}`).catch(() => [])
+            )
+        );
+
+        const byId = new Map();
+        results.flat().forEach(a => byId.set(a.id, a));
+        return Array.from(byId.values());
+    }
+
+    // ── Invitations (must be accepted before an auction shows up above) ──
+
+    let pendingInvitations = [];
+
+    async function fetchAllInvitations() {
+        try {
+            return await apiGet(`/api/mandi/auctions/invitations?farmerEmail=${encodeURIComponent(session.email)}&status=all`);
+        } catch (err) {
+            return [];
+        }
+    }
+
+    function renderInvitationCard(inv) {
+        const a = inv.auction;
+        const typeLabel = a.auctionType === "forward" ? "Forward — highest wins" : "Reverse — lowest wins";
+        return `
+            <div class="auction-card">
+                <div class="ac-top">
+                    <div>
+                        <div class="ac-name">${a.auctionName}</div>
+                        <div class="ac-loc">${a.cropType} — ${a.district}, ${a.state.charAt(0).toUpperCase()+a.state.slice(1)}</div>
+                    </div>
+                    <div class="ac-badges">
+                        <span class="badge ${a.auctionType}">${typeLabel}</span>
+                    </div>
+                </div>
+
+                <div class="ac-stats">
+                    <div><div class="ac-stat-label">Target</div><div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div></div>
+                    <div><div class="ac-stat-label">Base price</div><div class="ac-stat-value">₹${a.basePrice}/tonne</div></div>
+                    <div><div class="ac-stat-label">Time left</div><div class="ac-stat-value countdown" data-ends-at="${a.endsAt}">${auctionTimeLeftLabel(a.endsAt).text}</div></div>
+                    <div><div class="ac-stat-label">Mandi</div><div class="ac-stat-value" style="font-size:12px;">${a.mandiEmail}</div></div>
+                </div>
+
+                <div class="invite-actions">
+                    <button class="invite-accept-btn" onclick="respondToInvitation('${a.id}', 'accept')">Accept &amp; join auction</button>
+                    <button class="invite-decline-btn" onclick="respondToInvitation('${a.id}', 'decline')">Decline</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Compact history row for an invitation the farmer already acted on
+    // (or that auto-resolved to declined once the auction closed without a
+    // response). For accepted invitations we also surface whether this
+    // farmer's own bid ended up accepted or not.
+    function renderInvitationHistoryRow(inv) {
+        const a = inv.auction;
+        let statusLabel, rowClass;
+
+        if (inv.status === "declined") {
+            statusLabel = "Declined";
+            rowClass = "rejected";
+        } else {
+            // accepted — figure out the bid outcome from this auction's bids
+            const myBids = (a.bids || []).filter(b => b.farmerEmail === session.email);
+            const myAccepted = myBids.find(b => b.status === "accepted");
+            if (myAccepted) {
+                statusLabel = `Bid accepted — ${fmtTonnes(myAccepted.acceptedQuantity)} tonnes at ₹${myAccepted.pricePerTonne}/tonne`;
+                rowClass = "accepted";
+            } else if (a.status === "active") {
+                statusLabel = myBids.length > 0 ? "In progress — bid pending" : "Accepted — no bid placed yet";
+                rowClass = "pending";
+            } else if (myBids.length > 0) {
+                statusLabel = "Bid declined";
+                rowClass = "rejected";
+            } else {
+                statusLabel = "Closed — no bid placed";
+                rowClass = "expired";
+            }
+        }
+
+        return `
+            <div class="round-row ${rowClass}">
+                <span class="round-who">${a.auctionName} — ${a.cropType}, ${a.district}</span>
+                <span class="round-price">${statusLabel}</span>
+                <span class="round-status">${a.status === "active" ? "Live" : "Closed"}</span>
+            </div>
+        `;
+    }
+
+    async function renderInvitations() {
+        const grid = document.getElementById("invitationsGrid");
+        let allInvitations;
+        try {
+            allInvitations = await fetchAllInvitations();
+        } catch (err) {
+            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">Couldn't load invitations — ${err.message}</div>`;
+            return;
+        }
+
+        pendingInvitations = allInvitations.filter(i => i.status === "pending");
+        const resolvedInvitations = allInvitations.filter(i => i.status !== "pending");
+
+        const badge = document.getElementById("inviteBadge");
+        if (pendingInvitations.length > 0) {
+            badge.style.display = "inline-block";
+            badge.textContent = pendingInvitations.length;
+        } else {
+            badge.style.display = "none";
+        }
+
+        if (allInvitations.length === 0) {
+            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">No invitations yet. When a mandi opens an auction matching one of your listings, it'll show up here to accept.</div>`;
+            return;
+        }
+
+        const pendingHtml = pendingInvitations.map(renderInvitationCard).join("");
+        const historyHtml = resolvedInvitations.length > 0 ? `
+            <div class="round-title" style="margin-top:${pendingInvitations.length > 0 ? '10px' : '0'};">Past invitations</div>
+            <div class="round-list">${resolvedInvitations.map(renderInvitationHistoryRow).join("")}</div>
+        ` : "";
+
+        grid.innerHTML = pendingHtml + historyHtml;
+    }
+
+    async function respondToInvitation(auctionId, action) {
+        try {
+            await apiSend("PATCH", `/api/mandi/auctions/${encodeURIComponent(auctionId)}/invitations/respond`, {
+                farmerEmail: session.email,
+                action,
+            });
+            showSuccess(action === "accept" ? "Invitation accepted — auction added to Live auctions." : "Invitation declined.");
+            await Promise.all([renderInvitations(), renderLiveAuctions()]);
+            if (action === "accept") switchTab("auctions");
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function renderLiveAuctionCard(a, showForm = true) {
+        const t = a.status === "closed" ? { text: "Closed", ended: true } : auctionTimeLeftLabel(a.endsAt);
+        const typeLabel = a.auctionType === "forward" ? "Forward — highest wins" : "Reverse — lowest wins";
+        const myBids = (a.bids || []).filter(b => b.farmerEmail === session.email);
+        const myLatest = myBids[myBids.length - 1];
+
+        let myNote = "";
+        if (myLatest) {
+            const labelMap = {
+                pending: "Your last bid is pending the mandi's decision — you can still place another.",
+                accepted: `Your bid was accepted — ${fmtTonnes(myLatest.acceptedQuantity)} tonnes at ₹${myLatest.pricePerTonne}/tonne.`,
+                rejected: "Your last bid was rejected — you can bid again while time remains.",
+                expired: "Your bid expired when the auction closed.",
+                auto_rejected: "The target was met by other bids before yours was actioned.",
+            };
+            myNote = `<div class="my-bid-note ${myLatest.status}">Your last bid: ${labelMap[myLatest.status] || myLatest.status}</div>`;
+        }
+
+        // A farmer can place more than one bid on the same auction (e.g. to
+        // improve their price), as long as time remains and they still have
+        // a matching crop listing with production left to offer.
+        const myCrops = currentCrops.filter(c =>
+            c.cropType === a.cropType && c.state === a.state && c.district === a.district && c.remainingProduction > 0
+        );
+        const canBid = showForm && a.status === "active" && !t.ended && myCrops.length > 0;
+
+        const cropOptions = myCrops.map(c =>
+            `<option value="${c.id}">${fmtTonnes(c.remainingProduction)} tonnes left (listed ${fmtTonnes(c.totalProduction)} tonnes)</option>`
+        ).join("");
+
+        const bidForm = canBid ? `
+            <div class="bid-panel">
+                <div class="bid-panel-title">Place your bid</div>
+                <div class="bid-form-row">
+                    <div class="bid-field">
+                        <span class="bid-field-label">Crop listing</span>
+                        <select id="bidCrop-${a.id}">${cropOptions}</select>
+                    </div>
+                    <div class="bid-field">
+                        <span class="bid-field-label">Price per tonne</span>
+                        <div class="bid-price-wrap">
+                            <span class="price-prefix">₹</span>
+                            <input type="number" min="0.01" step="0.01" placeholder="${a.requiredBidPrice != null ? `${a.auctionType === 'forward' ? '≥' : '≤'} ${requiredBidPrice(a)}` : 'Enter price'}" id="bidPrice-${a.id}">
+                            <span class="price-suffix">/ tonne</span>
+                        </div>
+                    </div>
+                    <button onclick="placeBidOnAuction('${a.id}')">Place bid</button>
+                </div>
+                ${a.requiredBidPrice != null ? `<div class="bid-hint">Mandi requires a price ${a.auctionType === 'forward' ? 'of at least' : 'of at most'} ₹${requiredBidPrice(a)} per tonne.</div>` : ""}
+            </div>
+        ` : (showForm && a.status === "active" && !t.ended ? `
+            <div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">
+                No production left on a matching listing — add a new crop listing to bid again.
+            </div>
+        ` : "");
+
+        const outcomeBadge = a.status === "closed"
+            ? `<span class="badge ${a.outcome === 'sold_out' ? 'active' : 'closed'}">${a.outcome === 'sold_out' ? 'Sold out' : 'Not sold out'}</span>`
+            : "";
+
+        // Full round view: the base offer plus every bid placed on this
+        // auction by any farmer, best-ordered the same way the mandi sees
+        // it, so a farmer can follow how the round has moved.
+        const roundRows = (a.bids || []).map(b => {
+            const statusLabelMap = { pending: "Pending", accepted: "Accepted", rejected: "Rejected", expired: "Expired", auto_rejected: "Target met" };
+            const rowClass = [b.status, b.farmerEmail === session.email ? "mine" : ""].filter(Boolean).join(" ");
+            const who = b.farmerEmail === session.email ? "You" : "Another farmer";
+            const qty = b.status === "accepted" ? fmtTonnes(b.acceptedQuantity) : fmtTonnes(b.quantity);
+            return `
+                <div class="round-row ${rowClass}">
+                    <span class="round-who">${who}</span>
+                    <span class="round-price">₹${b.pricePerTonne}/tonne · ${qty} tonnes</span>
+                    <span class="round-status">${statusLabelMap[b.status] || b.status}</span>
+                </div>
+            `;
+        }).join("");
+
+        const roundView = `
+            <div class="round-title">This round</div>
+            <div class="round-list">
+                <div class="round-row">
+                    <span class="round-who">Base offer</span>
+                    <span class="round-price">₹${a.basePrice}/tonne</span>
+                    <span class="round-status"></span>
+                </div>
+                ${a.mandiPrice != null ? `
+                <div class="round-row mine" style="border-color:var(--gold);background:var(--gold-pale);">
+                    <span class="round-who">Mandi's counter</span>
+                    <span class="round-price">₹${a.mandiPrice}/tonne</span>
+                    <span class="round-status"></span>
+                </div>` : ""}
+                ${roundRows || `<div class="round-row"><span class="round-who">No bids yet</span><span class="round-price"></span><span class="round-status"></span></div>`}
+            </div>
+        `;
+
+        return `
+            <div class="auction-card">
+                <div class="ac-top">
+                    <div>
+                        <div class="ac-name">${a.auctionName}</div>
+                        <div class="ac-loc">${a.cropType} — ${a.district}, ${a.state.charAt(0).toUpperCase()+a.state.slice(1)}</div>
+                    </div>
+                    <div class="ac-badges">
+                        <span class="badge ${a.auctionType}">${typeLabel}</span>
+                        ${outcomeBadge}
+                    </div>
+                </div>
+
+                <div class="ac-stats">
+                    <div><div class="ac-stat-label">Target</div><div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div></div>
+                    <div><div class="ac-stat-label">Remaining</div><div class="ac-stat-value gold">${fmtTonnes(a.remainingQuantity)} tonnes</div></div>
+                    <div><div class="ac-stat-label">${a.mandiPrice != null ? "Mandi's counter" : "Base price"}</div><div class="ac-stat-value${a.mandiPrice != null ? ' gold' : ''}">₹${a.mandiPrice != null ? a.mandiPrice : a.basePrice}/tonne</div></div>
+                    ${a.requiredBidPrice != null ? `
+                    <div><div class="ac-stat-label">You must bid ${a.auctionType === "forward" ? "at least" : "at most"}</div><div class="ac-stat-value gold">₹${requiredBidPrice(a)}/tonne</div></div>
+                    ` : ""}
+                    <div><div class="ac-stat-label">Time left</div><div class="ac-stat-value countdown ${t.ended ? 'ended' : ''}" ${a.status === 'active' ? `data-ends-at="${a.endsAt}"` : ""}>${t.text}</div></div>
+                </div>
+
+                ${myNote}
+                ${bidForm}
+                ${roundView}
+            </div>
+        `;
+    }
+
+    // Tracks each auction's mandiPrice as of the last poll, so we can spot
+    // when the mandi moves the counter-offer and toast the farmer about it
+    // even if this refresh cycle is the only place they'd otherwise see it.
+    let knownMandiPrices = {};
+
+    async function renderLiveAuctions() {
+        const grid = document.getElementById("liveAuctionsGrid");
+
+        // The periodic resync used to blow away the whole grid, which wiped
+        // out a price the farmer was mid-typing. Skip the re-render while
+        // any bid-price input in this grid has focus (or has a typed,
+        // unsubmitted value) so a background refresh never yanks the field
+        // out from under them; the countdown ticker keeps times fresh
+        // separately, so nothing else here is time-critical to the second.
+        const active = document.activeElement;
+        const isTypingInGrid = active && grid.contains(active) && active.tagName === "INPUT";
+        if (isTypingInGrid) return;
+
+        try {
+            liveAuctions = await fetchLiveAuctions();
+        } catch (err) {
+            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">Couldn't load live auctions — ${err.message}</div>`;
+            return;
+        }
+
+        liveAuctions.forEach(a => {
+            const prev = knownMandiPrices[a.id];
+            if (prev !== undefined && a.mandiPrice != null && a.mandiPrice !== prev) {
+                showSuccess(`${a.auctionName}: mandi set a new price — ₹${a.mandiPrice}/tonne.`);
+            }
+            knownMandiPrices[a.id] = a.mandiPrice;
+        });
+
+        if (liveAuctions.length === 0) {
+            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">No live auctions right now for your crops/district. You'll get an email when a mandi opens one.</div>`;
+            return;
+        }
+
+        grid.innerHTML = liveAuctions.map(a => renderLiveAuctionCard(a)).join("");
+    }
+
+    async function placeBidOnAuction(auctionId) {
+        const priceInput = document.getElementById(`bidPrice-${auctionId}`);
+        const cropSelect = document.getElementById(`bidCrop-${auctionId}`);
+        const price = parseFloat(priceInput.value);
+        const cropId = cropSelect ? cropSelect.value : null;
+
+        if (!price || price <= 0 || !cropId) {
+            showError("Enter a valid price and pick which listing to bid with.");
+            return;
+        }
+
+        try {
+            await apiSend("POST", `/api/mandi/auctions/${encodeURIComponent(auctionId)}/bids`, {
+                farmerEmail: session.email,
+                pricePerTonne: price,
+                cropId,
+            });
+            showSuccess("Bid placed.");
+            await renderLiveAuctions();
+        } catch (err) {
+            showError(err.message);
+        }
+    }
+
+    function tickAuctionCountdowns() {
+        document.querySelectorAll("#liveAuctionsGrid .ac-stat-value.countdown, #auctionBidsGrid .ac-stat-value.countdown").forEach(el => {
+            if (!el.dataset.endsAt) return; // closed auctions render a static "Closed" label — nothing to tick
+            const endsAt = parseInt(el.dataset.endsAt, 10);
+            const t = auctionTimeLeftLabel(endsAt);
+            el.textContent = t.text;
+            el.classList.toggle("ended", t.ended);
+        });
+    }
+
     // ── Init ────────────────────────────────────────────────────
 
     (async function init() {
+        await syncClock();
         await Promise.all([renderListings(), renderBids()]);
-        setInterval(renderBids, 60000); // refresh countdowns + bid states
+        await Promise.all([renderLiveAuctions(), renderInvitations(), renderAuctionBids(), renderParticipated()]); // need currentCrops, populated above
+        setInterval(renderBids, 60000);          // refresh countdowns + bid states
+        setInterval(renderLiveAuctions, 8000);   // resync live auctions/bid status
+        setInterval(renderInvitations, 8000);    // resync pending invitations
+        setInterval(renderAuctionBids, 8000);    // resync in-progress auction bids
+        setInterval(renderParticipated, 15000);  // resync auction history
+        setInterval(tickAuctionCountdowns, 1000); // smooth per-second countdown
+        setInterval(syncClock, 60000);           // re-check clock drift periodically
     })();
 
 </script>

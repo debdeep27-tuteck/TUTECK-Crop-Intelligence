@@ -533,6 +533,7 @@
       <a class="gn-link" data-target="/disease" data-content="/content/disease" href="#">🔬 Disease Detection</a>
       <a class="gn-link" data-target="/yield-detect" data-content="/content/yield-detect" href="#">🛰️ Yield Detect</a>
       <a class="gn-link" data-target="/auction" data-content="/content/auction" href="#"> 📈 Auction</a>
+      <a class="gn-link" data-target="/auction-mandi" data-content="/content/auction-mandi" href="#">🏛️ Mandi Auction Desk</a>
     </div>
 
     <div class="gn-right">
@@ -773,10 +774,17 @@
     // district_admin AND state_admin accounts are pinned to the single
     // state they were assigned in the admin panel — neither gets to pick
     // a different state. district_admin is additionally pinned to one
-    // district within that state.
+    // district within that state. mandi accounts work the same way as
+    // district_admin here (always exactly one state + district), so the
+    // top state-switcher stays locked/consistent for them too — the
+    // mandi auction page itself reads session.state/district directly
+    // and doesn't actually consume this pill, but leaving it unlocked
+    // would let a mandi user flip it to a state that doesn't match their
+    // account, which is confusing even if harmless.
     const IS_DISTRICT_ADMIN = !!(session && (session.role || '').toLowerCase() === 'district_admin');
     const IS_STATE_ADMIN = !!(session && (session.role || '').toLowerCase() === 'state_admin');
-    const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN;
+    const IS_MANDI = !!(session && (session.role || '').toLowerCase() === 'mandi');
+    const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN || IS_MANDI;
     const ASSIGNED_STATE = IS_STATE_LOCKED ? (session.state || '').toLowerCase() : null;
 
     function getCurrentState() {
@@ -793,7 +801,7 @@
       // Let content pages (dashboard, yield-detect, etc.) scope their own
       // queries to this district without each one re-deriving it from the
       // session — the page's own script still needs to honour it.
-      if (IS_DISTRICT_ADMIN && session.district) {
+      if ((IS_DISTRICT_ADMIN || IS_MANDI) && session.district) {
         param += `&district=${encodeURIComponent(session.district)}`;
       }
       return param;

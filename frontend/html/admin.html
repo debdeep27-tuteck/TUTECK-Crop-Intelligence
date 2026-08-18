@@ -567,6 +567,7 @@
                         <option value="farmer">Farmer</option>
                         <option value="state_admin">State Admin</option>
                         <option value="district_admin">District Admin</option>
+                        <option value="mandi">Mandi</option>
                     </select>
                 </div>
 
@@ -710,8 +711,8 @@
             const stateGroup = document.getElementById("stateGroup");
             const districtGroup = document.getElementById("districtGroup");
 
-            const needsState = role === "state_admin" || role === "district_admin";
-            const needsDistrict = role === "district_admin";
+            const needsState = role === "state_admin" || role === "district_admin" || role === "mandi";
+            const needsDistrict = role === "district_admin" || role === "mandi";
 
             stateGroup.classList.toggle("field-hidden", !needsState);
             districtGroup.classList.toggle("field-hidden", !needsDistrict);
@@ -777,11 +778,11 @@
                 return;
             }
 
-            if ((role === "state_admin" || role === "district_admin") && !state) {
+            if ((role === "state_admin" || role === "district_admin" || role === "mandi") && !state) {
                 showError("Please select a state for this role.");
                 return;
             }
-            if (role === "district_admin" && !district) {
+            if ((role === "district_admin" || role === "mandi") && !district) {
                 showError("Please select a district for this role.");
                 return;
             }
@@ -841,7 +842,7 @@
         // Pages every role can potentially have. Since /api/users now returns
         // each user's own "pages" list, we derive the full column set from
         // whatever the backend hands back (falls back to a safe default).
-        const DEFAULT_ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect","/auction"];
+        const DEFAULT_ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect","/auction","/auction-mandi"];
         let allPages = DEFAULT_ALL_PAGES;
 
         function buildUsersHead() {
@@ -869,6 +870,7 @@ ${pageHeaders}
                 farmer: "Farmer",
                 state_admin: "State Admin",
                 district_admin: "District Admin",
+                mandi: "Mandi",
             }[role] || role;
         }
 

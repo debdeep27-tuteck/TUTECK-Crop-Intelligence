@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CropAI — Mandi Auction Desk</title>
+
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap">
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #f6f4ee;
+            --surface: #ffffff;
+            --border: #e4e0d5;
+            --border2: #cfc9b8;
+            --leaf: #3c9457;
+            --leaf-dark: #276b40;
+            --leaf-darker: #1e5432;
+            --leaf-pale: rgba(60, 148, 87, .1);
+            --leaf-pale2: rgba(60, 148, 87, .16);
+            --ink: #1c1f19;
+            --ink2: #4c5044;
+            --ink3: #8b8a78;
+            --gold: #c08f34;
+            --gold-dark: #93691f;
+            --gold-pale: rgba(192, 143, 52, .13);
+            --red: #b7402f;
+            --red-pale: #fbe6e2;
+            --panel: #142218;
+            --panel2: #1d3323;
+            --shadow-sm: 0 1px 2px rgba(20, 30, 20, .05), 0 1px 1px rgba(20, 30, 20, .04);
+            --shadow-md: 0 6px 16px rgba(20, 34, 22, .07), 0 2px 5px rgba(20, 34, 22, .05);
+            --shadow-lg: 0 22px 48px rgba(14, 24, 16, .14), 0 6px 16px rgba(14, 24, 16, .08);
+            --ease: cubic-bezier(.22, .8, .32, 1);
+            --mono: 'DM Mono', monospace;
+            --head: 'DM Serif Display', serif;
+            --body: 'Outfit', sans-serif;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: .001ms !important;
+                transition-duration: .001ms !important;
+            }
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            font-family: var(--body);
+            color: var(--ink);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection {
+            background: var(--leaf-pale2);
+            color: var(--leaf-darker);
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--leaf);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
+        /* Sidebar and main content each scroll independently within a fixed
+       viewport height, instead of one long page scroll — otherwise a
+       short sidebar scrolls out of view while a tall main panel keeps
+       going, leaving bare background where the sidebar used to be. */
+        body {
+            display: grid;
+            grid-template-columns: 336px 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ───────────────────────── SIDEBAR ───────────────────────── */
+
+        .sidebar {
+            position: relative;
+            background:
+                radial-gradient(560px 320px at 100% 0%, rgba(255, 255, 255, .05), transparent 60%),
+                linear-gradient(175deg, var(--panel) 0%, var(--leaf-darker) 100%);
+            color: #ecf3ec;
+            padding: 26px 20px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100vh;
+            overflow: hidden;
+            border-right: 1px solid rgba(0, 0, 0, .15);
+        }
+
+        /* Everything above "Your auctions" — brand, farmer chip, action
+       buttons — never scrolls; it's part of the fixed sidebar chrome. */
+        .sidebar-top {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, .09);
+        }
+
+        .brand-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            /* background: linear-gradient(155deg, var(--leaf) 0%, var(--leaf-darker) 100%); */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 3px 8px rgba(0,0,0,.25); */
+        }
+
+        .brand-icon svg {
+            width: 16px;
+            height: 16px;
+            color: #eaf5ec;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .brand-mark {
+            font-family: var(--head);
+            font-size: 21px;
+            color: #e8f0e5;
+            letter-spacing: .01em;
+            line-height: 1.1;
+        }
+
+        .brand-sub {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+            color: #7fa088;
+        }
+
+        .brand-icon.has-logo {
+            background: none;
+            box-shadow: none;
+        }
+
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: calc(contain,cover);
+            border-radius: 6px;
+        }
+
+        .farmer-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, .045);
+            border: 1px solid rgba(255, 255, 255, .09);
+            border-radius: 10px;
+            padding: 10px 12px;
+            transition: background .18s var(--ease), border-color .18s var(--ease);
+        }
+
+        .farmer-chip:hover {
+            background: rgba(255, 255, 255, .07);
+            border-color: rgba(255, 255, 255, .14);
+        }
+
+        .farmer-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(150deg, #d1a04a, var(--gold-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--mono);
+            font-weight: 600;
+            font-size: 13px;
+            color: #241a08;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3);
+        }
+
+        .farmer-meta {
+            line-height: 1.3;
+            overflow: hidden;
+        }
+
+        .farmer-name {
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .farmer-role {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            color: #8fae95;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+        }
+
+        .add-btn {
+            width: 100%;
+            height: 46px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(155deg, #d1a04a, var(--gold-dark));
+            color: #241a08;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform .15s var(--ease), box-shadow .15s var(--ease), filter .15s var(--ease);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .add-btn:hover {
+            filter: brightness(1.06);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .add-btn:active {
+            transform: translateY(0);
+        }
+
+        .add-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .add-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .sidebar-section-title {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+            color: #7fa088;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .count-pill {
+            background: rgba(255, 255, 255, .08);
+            border-radius: 20px;
+            padding: 1px 9px;
+            font-size: 10px;
+            color: #d9e8dc;
+            font-family: var(--mono);
+        }
+
+        /* The panel that holds the section title + the scrollable list. It
+       grows to fill whatever space is left between the fixed top chrome
+       and the fixed footer, and clips overflow so only its inner list
+       scrolls, not the title. */
+        .auctions-panel {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .listings-scroll {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* old Edge/IE */
+            margin: 0 -6px;
+            padding: 2px 6px 4px;
+            /* soft fade at the bottom edge so a clipped ticket reads as
+           "more below" rather than as an abrupt cut */
+            -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%);
+        }
+
+        .listings-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Chrome/Safari/new Edge */
+
+        .sidebar-footer {
+            flex-shrink: 0;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, .09);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar-footer-stats {
+            display: flex;
+            gap: 18px;
+        }
+
+        .sidebar-footer-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sidebar-footer-stat .val {
+            font-family: var(--head);
+            font-size: 18px;
+            color: #eef3ea;
+            line-height: 1;
+        }
+
+        .sidebar-footer-stat .lbl {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--bg);
+        }
+
+        .sidebar-footer-tag {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: .07em;
+            color: var(--surface);
+        }
+
+        .auction-ticket {
+            position: relative;
+            background: rgba(255, 255, 255, .035);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-left: 3px solid rgba(255, 255, 255, .16);
+            border-radius: 6px;
+            padding: 12px 13px 11px;
+            cursor: pointer;
+            transition: border-color .16s var(--ease), background .16s var(--ease), transform .16s var(--ease);
+            animation: fadeUp .32s var(--ease) both;
+        }
+
+        .auction-ticket:hover {
+            border-left-color: var(--gold);
+            background: rgba(192, 143, 52, .09);
+            transform: translateX(1px);
+        }
+
+        .auction-ticket.selected {
+            border-left-color: var(--leaf);
+            background: rgba(60, 148, 87, .15);
+        }
+
+        .ticket-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+
+        .ticket-crop {
+            font-family: var(--head);
+            font-size: 15.5px;
+            color: #eef3ea;
+            line-height: 1.15;
+        }
+
+        .ticket-name {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            color: #8fae95;
+            margin-top: 3px;
+        }
+
+        .status-tag {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 20px;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .status-tag.active {
+            background: var(--leaf-pale2);
+            color: #90e2a6;
+            border-color: rgba(142, 224, 163, .32);
+        }
+
+        .status-tag.closed {
+            background: rgba(255, 255, 255, .07);
+            color: #9d9d94;
+        }
+
+        .ticket-bottom {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: #b8c6b7;
+            margin-top: 8px;
+        }
+
+        .ticket-bottom b {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .empty-note {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: #8fae95;
+            text-align: center;
+            padding: 18px 8px;
+            border: 1px dashed rgba(255, 255, 255, .15);
+            border-radius: 10px;
+        }
+
+        /* ───────────────────────── MAIN ───────────────────────── */
+
+        .main {
+            padding: 32px 40px 0;
+            max-width: 1180px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header, alerts, and tab bar stay put; only the auction list below
+       them scrolls, so switching tabs never loses your place and the
+       page chrome never drifts out of view. */
+        .main-top {
+            flex-shrink: 0;
+        }
+
+        .auction-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* old Edge/IE */
+            padding-bottom: 40px;
+            -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+        }
+
+        .auction-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Chrome/Safari/new Edge */
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .page-title {
+            font-family: var(--head);
+            font-size: 32px;
+            color: var(--leaf-darker);
+            letter-spacing: -.01em;
+        }
+
+        .page-sub {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--ink3);
+            margin-top: 5px;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            display: none;
+            font-family: var(--mono);
+            font-size: 12px;
+            border: 1px solid transparent;
+            animation: fadeUp .28s var(--ease) both;
+        }
+
+        .msg.show {
+            display: block;
+        }
+
+        .msg.error {
+            background: var(--red-pale);
+            color: var(--red);
+            border-color: rgba(183, 64, 47, .18);
+        }
+
+        .msg.success {
+            background: var(--leaf-pale);
+            color: var(--leaf-darker);
+            border-color: rgba(60, 148, 87, .2);
+        }
+
+        .auction-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .auction-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--leaf-dark);
+            border-radius: 10px;
+            padding: 22px;
+            box-shadow: var(--shadow-md);
+            transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+            animation: fadeUp .32s var(--ease) both;
+        }
+
+        .auction-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .auction-card.completed-card {
+            border-top-color: var(--border2);
+        }
+
+        .auction-card.completed-card:hover {
+            transform: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        .ac-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .ac-name {
+            font-family: var(--head);
+            font-size: 21px;
+            color: var(--ink);
+            letter-spacing: -.005em;
+        }
+
+        .ac-loc {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            color: var(--ink3);
+            margin-top: 4px;
+            letter-spacing: .03em;
+        }
+
+        .ac-badges {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            padding: 4px 9px;
+            border-radius: 20px;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .badge.forward {
+            background: var(--leaf-pale);
+            color: var(--leaf-dark);
+            border-color: rgba(60, 148, 87, .28);
+        }
+
+        .badge.reverse {
+            background: var(--gold-pale);
+            color: var(--gold-dark);
+            border-color: rgba(192, 143, 52, .28);
+        }
+
+        .badge.active {
+            background: var(--leaf);
+            color: #fff;
+            box-shadow: 0 0 0 3px var(--leaf-pale);
+        }
+
+        .badge.closed {
+            background: #ece9e2;
+            color: var(--ink3);
+            border-color: var(--border2);
+        }
+
+        .ac-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            padding: 15px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 14px;
+        }
+
+        .ac-stat-label {
+            font-family: var(--mono);
+            font-size: 8.5px;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--ink3);
+            margin-bottom: 5px;
+        }
+
+        .ac-stat-value {
+            font-size: 16px;
+            font-weight: 500;
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -.01em;
+        }
+
+        .ac-stat-value.gold {
+            color: var(--gold-dark);
+            font-family: var(--mono);
+        }
+
+        .ac-stat-value.countdown {
+            color: var(--red);
+            font-family: var(--mono);
+            font-weight: 600;
+        }
+
+        .ac-stat-value.countdown.ended {
+            color: var(--ink3);
+        }
+
+        .bids-title {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--ink3);
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bid-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border2);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            background: var(--surface);
+            transition: border-color .16s var(--ease), background .16s var(--ease);
+        }
+
+        .bid-row.best {
+            border-left-color: var(--leaf);
+            background: var(--leaf-pale);
+        }
+
+        .bid-row.accepted {
+            border-left-color: var(--gold);
+            background: var(--gold-pale);
+        }
+
+        .bid-row.rejected,
+        .bid-row.expired,
+        .bid-row.auto_rejected {
+            opacity: .55;
+        }
+
+        .bid-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .bid-farmer {
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--mono);
+        }
+
+        .bid-meta {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            color: var(--ink3);
+        }
+
+        .bid-price {
+            font-family: var(--mono);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gold-dark);
+            letter-spacing: -.01em;
+        }
+
+        .bid-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .bid-btn {
+            height: 32px;
+            padding: 0 13px;
+            border-radius: 6px;
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease), transform .1s var(--ease);
+        }
+
+        .bid-btn:active {
+            transform: scale(.97);
+        }
+
+        .bid-btn.accept {
+            background: var(--leaf);
+            color: #fff;
+        }
+
+        .bid-btn.accept:hover {
+            background: var(--leaf-dark);
+        }
+
+        .bid-btn.reject {
+            background: transparent;
+            border-color: var(--border2);
+            color: var(--ink2);
+        }
+
+        .bid-btn.reject:hover {
+            background: rgba(183, 64, 47, .08);
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .bid-status-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .bid-status-label.accepted {
+            background: var(--gold);
+            color: #241a08;
+        }
+
+        .bid-status-label.rejected,
+        .bid-status-label.auto_rejected {
+            background: var(--red-pale);
+            color: var(--red);
+        }
+
+        .bid-status-label.expired {
+            background: #ece9e2;
+            color: var(--ink3);
+        }
+
+        .no-bids {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink3);
+            padding: 10px 0;
+        }
+
+        .loading-note {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink3);
+            text-align: center;
+            padding: 30px 8px;
+            animation: fadeIn .25s var(--ease) both;
+        }
+
+        /* ───────────────────────── TABS ───────────────────────── */
+
+        .tab-bar {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--ink3);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 12px 4px;
+            margin-right: 26px;
+            margin-bottom: -2px;
+            border-bottom: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color .16s var(--ease), border-color .16s var(--ease);
+        }
+
+        .tab-btn:hover {
+            color: var(--ink);
+        }
+
+        .tab-btn.active {
+            color: var(--leaf-darker);
+            border-bottom-color: var(--leaf-darker);
+        }
+
+        .tab-count {
+            background: var(--border);
+            color: var(--ink2);
+            border-radius: 20px;
+            padding: 1px 7px;
+            font-size: 9.5px;
+        }
+
+        .tab-btn.active .tab-count {
+            background: var(--leaf-pale2);
+            color: var(--leaf-darker);
+        }
+
+        .tab-btn[data-tab="live"] .tab-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--leaf);
+            display: inline-block;
+            box-shadow: 0 0 0 3px var(--leaf-pale);
+        }
+
+        /* ───────────────────────── MODAL ───────────────────────── */
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 18, 13, .52);
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            animation: fadeIn .18s var(--ease) both;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #fff;
+            border-radius: 16px;
+            width: 560px;
+            max-width: 100%;
+            max-height: calc(100vh - 60px);
+            overflow: hidden;
+            /* clips children so ALL four corners stay rounded */
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+            animation: popIn .22s var(--ease) both;
+        }
+
+        /* The only part that actually scrolls — kept separate from
+       .modal-card so the header/footer never get clipped, and the
+       scrollbar itself is hidden (still scrollable with mouse wheel /
+       touch / keyboard, just without a visible track+thumb). */
+        .modal-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* old Edge/IE */
+        }
+
+        .modal-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Chrome/Safari/new Edge */
+
+        .modal-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 26px;
+            background: linear-gradient(175deg, var(--panel) 0%, var(--leaf-dark) 100%);
+            color: #ecf3ec;
+        }
+
+        .modal-header-text {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .modal-title {
+            font-family: var(--head);
+            font-size: 22px;
+            color: #eef3ea;
+            letter-spacing: -.005em;
+        }
+
+        .modal-subtitle {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: #9db89f;
+        }
+
+        .modal-close {
+            border: 1px solid rgba(255, 255, 255, .16);
+            background: rgba(255, 255, 255, .06);
+            cursor: pointer;
+            font-size: 18px;
+            color: #ecf3ec;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, border-color .15s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, .14);
+            border-color: rgba(255, 255, 255, .3);
+        }
+
+        .modal-body {
+            padding: 22px 26px 6px;
+        }
+
+        .form-section {
+            margin-bottom: 18px;
+        }
+
+        .form-section-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .form-section-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            background: var(--leaf-pale);
+            color: var(--leaf-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-section-icon svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .form-section-title {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--ink2);
+        }
+
+        .form-section-body {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .field-group {
+            margin-bottom: 14px;
+        }
+
+        .field-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .field-label {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ink2);
+            margin-bottom: 6px;
+        }
+
+        .field-label .optional-tag {
+            font-family: var(--mono);
+            font-size: 9px;
+            letter-spacing: .04em;
+            text-transform: none;
+            color: var(--ink3);
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            padding: 1px 7px;
+            border-radius: 20px;
+        }
+
+        .field-hint {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--ink3);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .input,
+        .select {
+            width: 100%;
+            height: 42px;
+            border: 1px solid var(--border2);
+            border-radius: 7px;
+            padding: 0 12px;
+            font-size: 14px;
+            font-family: var(--body);
+            background: #fff;
+            color: var(--ink);
+            transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+        }
+
+        .input:hover,
+        .select:hover {
+            border-color: #a9a290;
+        }
+
+        .input:focus,
+        .select:focus {
+            outline: none;
+            border-color: var(--leaf);
+            box-shadow: 0 0 0 3px var(--leaf-pale);
+        }
+
+        /* Currency-prefixed price inputs — the ₹ symbol sits inside the field
+       instead of floating in the placeholder text, so it stays put once
+       the mandi starts typing. */
+        .input-prefix-wrap {
+            position: relative;
+        }
+
+        .input-prefix-wrap .input {
+            padding-left: 28px;
+        }
+
+        .input-prefix-wrap .prefix-symbol {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--ink3);
+            pointer-events: none;
+        }
+
+        .input-prefix-wrap .input:focus~.prefix-symbol,
+        .input-prefix-wrap.has-value .prefix-symbol {
+            color: var(--leaf-dark);
+        }
+
+        .type-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .type-opt {
+            flex: 1;
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            padding: 12px 12px;
+            cursor: pointer;
+            font-family: var(--mono);
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.5;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: background .16s var(--ease), border-color .16s var(--ease), color .16s var(--ease), transform .1s var(--ease), box-shadow .16s var(--ease);
+        }
+
+        .type-opt svg {
+            width: 16px;
+            height: 16px;
+            opacity: .75;
+        }
+
+        .type-opt:hover {
+            border-color: var(--leaf);
+        }
+
+        .type-opt:active {
+            transform: scale(.98);
+        }
+
+        .type-opt.active {
+            background: var(--leaf);
+            color: #fff;
+            border-color: var(--leaf);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .type-opt.active svg {
+            opacity: 1;
+        }
+
+        .type-opt-desc {
+            font-size: 9.5px;
+            opacity: .8;
+        }
+
+        .modal-footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 26px 20px;
+            border-top: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .btn {
+            height: 42px;
+            border: none;
+            background: var(--leaf);
+            color: #fff;
+            border-radius: 7px;
+            padding: 0 18px;
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+        }
+
+        .btn:hover {
+            background: var(--leaf-dark);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn:active {
+            transform: scale(.98);
+        }
+
+        .btn:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            height: 42px;
+            border: 1px solid var(--border2);
+            background: transparent;
+            color: var(--ink2);
+            border-radius: 7px;
+            padding: 0 18px;
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background .15s var(--ease), border-color .15s var(--ease);
+        }
+
+        .btn-small {
+            height: 34px;
+            border: none;
+            background: linear-gradient(150deg, var(--leaf), var(--leaf-dark));
+            color: #fff;
+            border-radius: 7px;
+            padding: 0 15px;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+            transition: transform .15s var(--ease), box-shadow .15s var(--ease), filter .15s var(--ease);
+        }
+
+        .btn-small:hover {
+            filter: brightness(1.08);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .btn-small:active {
+            transform: translateY(0);
+        }
+
+        .btn-small svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, .04);
+            border-color: #a9a290;
+        }
+
+        .counter-panel {
+            background: var(--gold-pale); border: 1px solid rgba(192, 143, 52, .3); border-radius: 10px;
+            padding: 14px 16px; margin: 4px 0 14px;
+        }
+        .counter-panel-title {
+            font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+            color: var(--gold-dark); margin-bottom: 10px;
+        }
+        .counter-panel .bid-form-row { display: flex; gap: 8px; align-items: flex-end; }
+        .counter-panel .bid-field { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+        .counter-panel .bid-field-label {
+            font-family: var(--mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3);
+        }
+        .counter-panel .input-prefix-wrap .input { padding-right: 58px; }
+        .counter-panel .price-suffix {
+            position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+            font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; color: var(--ink3); pointer-events: none;
+        }
+        .counter-panel .btn { flex-shrink: 0; }
+
+        @media (max-width: 860px) {
+            body {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow: visible;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+                overflow: visible;
+            }
+
+            .listings-scroll {
+                max-height: 340px;
+            }
+
+            .main {
+                padding: 24px 18px 50px;
+                height: auto;
+                overflow: visible;
+                display: block;
+            }
+
+            .auction-scroll {
+                overflow-y: visible;
+                -webkit-mask-image: none;
+                mask-image: none;
+                padding-bottom: 0;
+            }
+
+            .ac-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .field-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+    <aside class="sidebar">
+
+        <div class="sidebar-top">
+            <div class="brand">
+                <div class="brand-icon">
+                    <!-- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v18M7 8c0 4 2.5 5 5 5s5-1 5-5c0-2-2-3-5-3s-5 1-5 3z"/>
+                    <path d="M8 21h8"/>
+                </svg> -->
+                    <img src="/static/tuteck_logo.png" alt="Crop Intelligence" style="width: 26px; height: 26px;">
+                </div>
+                <div class="brand-text">
+                    <div class="brand-mark">Crop Intelligence</div>
+                    <div class="brand-sub">Mandi Auction Desk</div>
+                </div>
+            </div>
+
+            <div class="farmer-chip">
+                <div class="farmer-avatar" id="mandiInitial">M</div>
+                <div class="farmer-meta">
+                    <div class="farmer-name" id="mandiName">Mandi</div>
+                    <div class="farmer-role">Registered Buyer</div>
+                </div>
+            </div>
+
+            <!-- <button class="btn-secondary" id="testEmailBtn" onclick="sendTestEmail()"
+                style="color:#cfe0d1;border-color:rgba(255,255,255,.18);width:100%;">
+            Send test email to myself
+        </button>
+
+        <button class="add-btn" id="startBtn" onclick="openStartModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Start auction
+        </button> -->
+        </div>
+
+        <div class="auctions-panel">
+            <div class="sidebar-section-title">
+                Your auctions
+                <span class="count-pill" id="auctionCount">0</span>
+            </div>
+
+            <div class="listings-scroll" id="auctionsScroll">
+                <div class="empty-note">Loading auctions…</div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-stats">
+                <div class="sidebar-footer-stat">
+                    <div class="val" id="footerActiveCount">0</div>
+                    <div class="lbl">Live now</div>
+                </div>
+                <div class="sidebar-footer-stat">
+                    <div class="val" id="footerSoldCount">0</div>
+                    <div class="lbl">Sold out</div>
+                </div>
+                <div class="sidebar-footer-stat">
+                    <div class="val" id="footerTotalCount">0</div>
+                    <div class="lbl">Total run</div>
+                </div>
+            </div>
+            <div class="sidebar-footer-tag">CropAI · Mandi Auction Desk</div>
+        </div>
+
+    </aside>
+
+    <!-- ═══════════════════ MAIN ═══════════════════ -->
+    <main class="main">
+
+        <div class="main-top">
+            <div class="main-header">
+                <div>
+                    <div class="page-title">Auction desk</div>
+                    <div class="page-sub" id="mandiLocLine">Live &amp; recent auctions</div>
+                </div>
+                <button class="btn-small" id="startBtnHeader" onclick="openStartModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Start auction
+                </button>
+            </div>
+
+            <div id="errorBox" class="msg error"></div>
+            <div id="successBox" class="msg success"></div>
+
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="live" onclick="switchTab('live')">
+                    <span class="tab-dot"></span> Live auctions <span class="tab-count" id="liveTabCount">0</span>
+                </button>
+                <button class="tab-btn" data-tab="completed" onclick="switchTab('completed')">
+                    Completed <span class="tab-count" id="completedTabCount">0</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="auction-scroll">
+            <div class="auction-grid" id="auctionGrid">
+                <div class="loading-note">Loading auctions…</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ═══════════════════ START AUCTION MODAL ═══════════════════ -->
+    <div class="modal-overlay" id="startModalOverlay" onclick="if(event.target===this) closeStartModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-header-text">
+                    <div class="modal-title">Start auction</div>
+                    <div class="modal-subtitle">Open a new auction round for farmers</div>
+                </div>
+                <button class="modal-close" onclick="closeStartModal()">&times;</button>
+            </div>
+            <div class="modal-scroll">
+                <div class="modal-body">
+
+                    <!-- Basics -->
+                    <div class="form-section">
+                        <div class="form-section-head">
+                            <div class="form-section-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                </svg>
+                            </div>
+                            <div class="form-section-title">Basics</div>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="field-group">
+                                <label class="field-label">Auction name</label>
+                                <input class="input" id="formAuctionName" type="text"
+                                    placeholder="e.g. Kharif Paddy Procurement — Lot 12">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Crop type</label>
+                                <select class="select" id="formCropType">
+                                    <option value="">Loading crops…</option>
+                                </select>
+                            </div>
+
+                            <div class="field-group" style="margin-bottom:0;">
+                                <label class="field-label">Target quantity (tonnes)</label>
+                                <input class="input" id="formTarget" type="number" min="0.1" step="0.1"
+                                    placeholder="e.g. 10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="form-section">
+                        <div class="form-section-head">
+                            <div class="form-section-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                </svg>
+                            </div>
+                            <div class="form-section-title">Pricing</div>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="field-group">
+                                <label class="field-label">Base price (₹ / tonne)</label>
+                                <div class="input-prefix-wrap" id="basePriceWrap">
+                                    <input class="input" id="formBasePrice" type="number" min="1" step="1"
+                                        placeholder="2200" oninput="syncPrefixState(this)">
+                                    <span class="prefix-symbol">₹</span>
+                                </div>
+                            </div>
+
+                            <div class="field-group" style="margin-bottom:0;">
+                                <label class="field-label">Counter gap (₹ / tonne)<span
+                                        class="optional-tag">optional</span></label>
+                                <div class="input-prefix-wrap" id="counterGapWrap">
+                                    <input class="input" id="formCounterGap" type="number" min="0" step="1"
+                                        placeholder="e.g. 10" oninput="syncPrefixState(this)">
+                                    <span class="prefix-symbol">₹</span>
+                                </div>
+                                <div class="field-hint">Every farmer bid must clear this margin beyond the current
+                                    reference price. Leave blank for no extra margin.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auction type -->
+                    <div class="form-section">
+                        <div class="form-section-head">
+                            <div class="form-section-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 1l4 4-4 4" />
+                                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                    <path d="M7 23l-4-4 4-4" />
+                                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                                </svg>
+                            </div>
+                            <div class="form-section-title">Auction type</div>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="type-toggle">
+                                <div class="type-opt active" id="typeForward" onclick="setAuctionType('forward')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 9l-6-6-6 6" />
+                                        <path d="M12 3v18" />
+                                    </svg>
+                                    Forward
+                                    <span class="type-opt-desc">Highest price wins</span>
+                                </div>
+                                <div class="type-opt" id="typeReverse" onclick="setAuctionType('reverse')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 15l6 6 6-6" />
+                                        <path d="M12 21V3" />
+                                    </svg>
+                                    Reverse
+                                    <span class="type-opt-desc">Lowest price wins</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timing -->
+                    <div class="form-section">
+                        <div class="form-section-head">
+                            <div class="form-section-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path d="M12 7v5l3.5 2" />
+                                </svg>
+                            </div>
+                            <div class="form-section-title">Timing</div>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="field-group">
+                                <label class="field-label">Start date &amp; time</label>
+                                <input class="input" id="formStartsAt" type="datetime-local">
+                            </div>
+
+                            <div class="field-row">
+                                <div class="field-group" style="margin-bottom:0;">
+                                    <label class="field-label">Duration (minutes)</label>
+                                    <input class="input" id="formDuration" type="number" min="1" step="1" value="30">
+                                </div>
+                                <div class="field-group" style="margin-bottom:0;">
+                                    <label class="field-label">Extension (minutes)</label>
+                                    <input class="input" id="formExtension" type="number" min="0" step="1" value="5">
+                                </div>
+                            </div>
+                            <div class="field-hint">If a bid comes in inside the extension window before closing, the
+                                auction extends by that many minutes.</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeStartModal()">Cancel</button>
+                <button class="btn" id="submitAuctionBtn" onclick="submitAuction()">Start auction</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // ═══════════════════════════════════════════════════════════
+        //  Backend wiring — talks to gateway.py, which proxies:
+        //    /api/mandi/auctions/...  ->  auction_backend.py (mandi_auctions / mandi_bids tables)
+        // ═══════════════════════════════════════════════════════════
+
+        const SESSION_KEY = "cropai_session";
+
+        function loadSession() {
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (raw) { try { return JSON.parse(raw); } catch (e) { } }
+            return null;
+        }
+
+        const session = loadSession();
+
+        if (!session) {
+            window.location = "/login";
+            throw new Error("No session");
+        }
+        if ((session.role || "").toLowerCase() !== "mandi") {
+            // Only mandi accounts may see this page.
+            window.top.location.href = "/dashboard";
+            throw new Error("Auction desk is only available to mandi accounts.");
+        }
+
+        function authHeaders(json = true) {
+            const headers = {};
+            if (json) headers["Content-Type"] = "application/json";
+            if (session.token) headers["Authorization"] = "Bearer " + session.token;
+            return headers;
+        }
+
+        async function apiGet(path) {
+            const res = await fetch(path, { headers: authHeaders(false) });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+            return data;
+        }
+        async function apiSend(method, path, body) {
+            const res = await fetch(path, { method, headers: authHeaders(true), body: body !== undefined ? JSON.stringify(body) : undefined });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+            return data;
+        }
+
+        // ── Clock sync ──────────────────────────────────────────────
+        // Countdowns are computed against absolute timestamps the server
+        // stamped with its own clock — if that drifts from this machine's
+        // clock, the countdown is off by that same fixed amount. nowMs()
+        // is "now" corrected by that offset; used only for countdown math,
+        // not for the auction-scheduling datetime picker (which should
+        // still reflect this machine's own local time as typed).
+        let clockOffsetMs = 0;
+        async function syncClock() {
+            try {
+                const t0 = Date.now();
+                const res = await fetch("/api/server-time");
+                const data = await res.json();
+                const roundTrip = Date.now() - t0;
+                clockOffsetMs = data.serverTime + roundTrip / 2 - Date.now();
+            } catch (_) { /* keep last known offset if this fails */ }
+        }
+        function nowMs() { return Date.now() + clockOffsetMs; }
+
+        function showError(m) {
+            const e = document.getElementById("errorBox");
+            e.innerText = m; e.classList.add("show");
+            setTimeout(() => e.classList.remove("show"), 4500);
+        }
+        function showSuccess(m) {
+            const e = document.getElementById("successBox");
+            e.innerText = m; e.classList.add("show");
+            setTimeout(() => e.classList.remove("show"), 4500);
+        }
+
+        function fmtTonnes(n) { return (Math.round(n * 100) / 100).toString(); }
+
+        function maskEmail(email) {
+            if (!email || typeof email !== "string" || !email.includes("@")) return email;
+            const [local, domain] = email.split("@");
+            // Keep first 3 chars (or fewer if the local part is short), mask the rest.
+            const visible = local.slice(0, Math.min(3, local.length));
+            return `${visible}***@${domain}`;
+        }
+
+        // ── Identity ────────────────────────────────────────────────
+
+        document.getElementById("mandiName").innerText = session.email || "Mandi";
+        document.getElementById("mandiInitial").innerText = (session.email || "M").charAt(0).toUpperCase();
+        document.getElementById("mandiLocLine").innerText =
+            `Live & recent auctions — ${(session.district || "—")}, ${(session.state || "—").toString().replace(/^./, c => c.toUpperCase())}`;
+
+        // ── Crop dropdown (same trained-crop source as everywhere else) ─────
+
+        async function loadCrops(state) {
+            const sel = document.getElementById("formCropType");
+            sel.innerHTML = '<option value="">Loading crops…</option>';
+            try {
+                const res = await fetch(`/api/yield/valid_crops?state=${encodeURIComponent(state)}`);
+                const data = await res.json();
+                const crops = data.crops || [];
+                sel.innerHTML = crops.length
+                    ? '<option value="">Select crop</option>' + crops.map(c => `<option value="${c}">${c}</option>`).join("")
+                    : '<option value="">No crops found</option>';
+            } catch {
+                sel.innerHTML = '<option value="">Could not load crops</option>';
+            }
+        }
+
+        // ── Start auction modal ────────────────────────────────────
+
+        let selectedAuctionType = "forward";
+        function setAuctionType(t) {
+            selectedAuctionType = t;
+            document.getElementById("typeForward").classList.toggle("active", t === "forward");
+            document.getElementById("typeReverse").classList.toggle("active", t === "reverse");
+        }
+
+        // Keeps the ₹ prefix legible (darker) once a price field actually has
+        // a value in it, rather than always looking the same as when empty.
+        function syncPrefixState(inputEl) {
+            const wrap = inputEl.closest(".input-prefix-wrap");
+            if (!wrap) return;
+            wrap.classList.toggle("has-value", inputEl.value.trim() !== "");
+        }
+
+        function localDatetimeNowValue() {
+            const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+            return d.toISOString().slice(0, 16);
+        }
+
+        function openStartModal() {
+            document.getElementById("formAuctionName").value = "";
+            document.getElementById("formTarget").value = "";
+            document.getElementById("formBasePrice").value = "";
+            document.getElementById("formCounterGap").value = "";
+            document.getElementById("formDuration").value = "30";
+            document.getElementById("formExtension").value = "5";
+            document.getElementById("formStartsAt").value = localDatetimeNowValue();
+            document.getElementById("basePriceWrap").classList.remove("has-value");
+            document.getElementById("counterGapWrap").classList.remove("has-value");
+            setAuctionType("forward");
+            loadCrops(session.state);
+            document.getElementById("startModalOverlay").classList.add("show");
+        }
+        function closeStartModal() {
+            document.getElementById("startModalOverlay").classList.remove("show");
+        }
+
+        async function sendTestEmail() {
+            const btn = document.getElementById("testEmailBtn");
+            btn.disabled = true;
+            btn.textContent = "Sending…";
+            try {
+                const result = await apiSend("POST", "/api/mandi/auctions/test-email", { email: session.email });
+                showSuccess(`Test email sent to ${result.to} — check your inbox.`);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Send test email to myself";
+            }
+        }
+
+        async function submitAuction() {
+            const auctionName = document.getElementById("formAuctionName").value.trim();
+            const cropType = document.getElementById("formCropType").value;
+            const targetQuantity = parseFloat(document.getElementById("formTarget").value);
+            const basePrice = parseFloat(document.getElementById("formBasePrice").value);
+            const counterGapRaw = document.getElementById("formCounterGap").value;
+            const counterGap = counterGapRaw === "" ? null : parseFloat(counterGapRaw);
+            const startsAtLocal = document.getElementById("formStartsAt").value;
+            const durationMinutes = parseInt(document.getElementById("formDuration").value, 10);
+            const extensionMinutes = parseInt(document.getElementById("formExtension").value, 10) || 0;
+
+            if (!auctionName || !cropType || !targetQuantity || targetQuantity <= 0 ||
+                !basePrice || basePrice <= 0 || !durationMinutes || durationMinutes <= 0) {
+                showError("Please fill all fields with valid values.");
+                return;
+            }
+            if (counterGap !== null && (isNaN(counterGap) || counterGap < 0)) {
+                showError("Counter gap must be a non-negative number, or left blank.");
+                return;
+            }
+            if (!session.state || !session.district) {
+                showError("Your mandi account has no state/district set — contact an admin.");
+                return;
+            }
+
+            const startsAt = startsAtLocal ? new Date(startsAtLocal).getTime() : Date.now();
+
+            const btn = document.getElementById("submitAuctionBtn");
+            btn.disabled = true;
+            try {
+                const auction = await apiSend("POST", "/api/mandi/auctions", {
+                    mandiEmail: session.email,
+                    auctionName, cropType,
+                    state: session.state, district: session.district,
+                    targetQuantity, basePrice, counterGap,
+                    auctionType: selectedAuctionType,
+                    durationMinutes, extensionMinutes,
+                    startsAt,
+                });
+                closeStartModal();
+                showSuccess(`Auction started — notified ${auction.matchedFarmerCount ?? 0} matching farmer(s).`);
+                await renderAll();
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ── Sidebar: mandi's own auctions ──────────────────────────
+
+        let currentAuctions = [];
+        let currentTab = "live"; // "live" | "completed"
+
+        // The 8s poll below does a full grid.innerHTML rebuild, which would
+        // otherwise wipe out whatever the mandi is mid-typing into a counter
+        // -offer box (and drop focus). Track focus on any such input via
+        // delegation, since the inputs themselves get recreated on every
+        // render and a directly-attached listener would be lost each time.
+        let counterInputActive = false;
+        document.addEventListener("focusin", (e) => {
+            if (e.target.matches && e.target.matches('input[id^="mandiPrice-"]')) counterInputActive = true;
+        });
+        document.addEventListener("focusout", (e) => {
+            if (e.target.matches && e.target.matches('input[id^="mandiPrice-"]')) counterInputActive = false;
+        });
+
+        // Belt-and-suspenders: if a poll does land while a counter-offer
+        // box has a value in it (e.g. the split second between blur and
+        // the button's click handler running), snapshot it beforehand and
+        // restore it onto the freshly-rendered input with the same id.
+        function snapshotCounterInputs() {
+            const snap = {};
+            document.querySelectorAll('input[id^="mandiPrice-"]').forEach((el) => {
+                if (el.value !== "") {
+                    snap[el.id] = { value: el.value, focused: document.activeElement === el, selStart: el.selectionStart, selEnd: el.selectionEnd };
+                }
+            });
+            return snap;
+        }
+        function restoreCounterInputs(snap) {
+            Object.entries(snap).forEach(([id, state]) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.value = state.value;
+                el.closest(".input-prefix-wrap")?.classList.add("has-value");
+                if (state.focused) {
+                    el.focus();
+                    try { el.setSelectionRange(state.selStart, state.selEnd); } catch (_) {}
+                }
+            });
+        }
+        let selectedAuctionId = null;
+
+        async function fetchAuctions() {
+            const data = await apiGet(`/api/mandi/auctions?mandiEmail=${encodeURIComponent(session.email)}`);
+            return Array.isArray(data) ? data : [];
+        }
+
+        function timeLeftLabel(endsAt) {
+            const diff = endsAt - nowMs();
+            if (diff <= 0) return { text: "Ended", ended: true };
+            const mins = Math.floor(diff / 60000);
+            const hrs = Math.floor(mins / 60);
+            const secs = Math.floor((diff % 60000) / 1000);
+            const text = hrs > 0 ? `${hrs}h ${mins % 60}m left` : `${mins}m ${secs}s left`;
+            return { text, ended: false };
+        }
+
+        function renderSidebar() {
+            const scroll = document.getElementById("auctionsScroll");
+            document.getElementById("auctionCount").innerText = currentAuctions.length;
+
+            document.getElementById("footerActiveCount").innerText =
+                currentAuctions.filter(a => a.status === "active" || a.status === "scheduled").length;
+            document.getElementById("footerSoldCount").innerText =
+                currentAuctions.filter(a => a.outcome === "sold_out").length;
+            document.getElementById("footerTotalCount").innerText = currentAuctions.length;
+
+            if (currentAuctions.length === 0) {
+                scroll.innerHTML = `<div class="empty-note">No auctions yet — start your first one.</div>`;
+                return;
+            }
+
+            scroll.innerHTML = currentAuctions.map((a, i) => {
+                const isSelected = a.id === selectedAuctionId;
+                const statusClass = a.status === "active" ? "active" : (a.status === "scheduled" ? "reverse" : "closed");
+                const statusLabel = a.status === "active" ? "Active" : (a.status === "scheduled" ? "Scheduled" : "Closed");
+                return `
+                <div class="auction-ticket ${isSelected ? "selected" : ""}" style="animation-delay:${Math.min(i, 8) * 35}ms" onclick="selectAuction('${a.id}')">
+                    <div class="ticket-top">
+                        <div>
+                            <div class="ticket-crop">${a.cropType}</div>
+                            <div class="ticket-name">${a.auctionName}</div>
+                        </div>
+                        <span class="status-tag ${statusClass}">${statusLabel}</span>
+                    </div>
+                    <div class="ticket-bottom">
+                        <span>Target <b>${fmtTonnes(a.targetQuantity)} tonnes</b></span>
+                        <span>${fmtTonnes(a.remainingQuantity)} tonnes left</span>
+                    </div>
+                </div>
+            `;
+            }).join("");
+        }
+
+        function selectAuction(id) {
+            selectedAuctionId = id;
+            renderSidebar();
+            const card = document.getElementById(`auction-card-${id}`);
+            if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        // ── Main: auction cards with bid lists ─────────────────────
+
+        function bidRowClass(bid, index) {
+            if (bid.status === "accepted") return "accepted";
+            if (["rejected", "expired", "auto_rejected"].includes(bid.status)) return bid.status;
+            return index === 0 ? "best" : "";
+        }
+
+        function renderAuctionCard(a, index = 0) {
+            const t = a.status === "closed" ? { text: "Closed", ended: true }
+                : a.status === "scheduled" ? timeLeftLabel(a.startsAt)
+                    : timeLeftLabel(a.endsAt);
+            const timeStatLabel = a.status === "scheduled" ? "Starts in" : "Time left";
+            const typeLabel = a.auctionType === "forward" ? "Forward — highest wins" : "Reverse — lowest wins";
+            const pctFilled = a.targetQuantity > 0 ? Math.min(100, ((a.targetQuantity - a.remainingQuantity) / a.targetQuantity) * 100) : 0;
+
+            const bidsHtml = (!a.bids || a.bids.length === 0)
+                ? `<div class="no-bids">No bids placed yet.</div>`
+                : a.bids.map((b, i) => {
+                    const rowClass = bidRowClass(b, i);
+                    let actions = "";
+                    if (b.status === "pending" && a.status === "active") {
+                        actions = `
+                        <div class="bid-actions">
+                            <button class="bid-btn accept" onclick="decideBid('${a.id}','${b.id}','accept')">Accept</button>
+                            <button class="bid-btn reject" onclick="decideBid('${a.id}','${b.id}','reject')">Reject</button>
+                        </div>`;
+                    } else {
+                        const labelMap = { accepted: "Accepted", rejected: "Rejected", expired: "Expired", auto_rejected: "Target met" };
+                        actions = `<span class="bid-status-label ${b.status}">${labelMap[b.status] || b.status}</span>`;
+                    }
+                    const qtyLine = b.status === "accepted"
+                        ? `${fmtTonnes(b.acceptedQuantity)} tonnes accepted${b.acceptedQuantity < b.quantity ? ` (of ${fmtTonnes(b.quantity)} tonnes bid)` : ""}`
+                        : `${fmtTonnes(b.quantity)} tonnes bid`;
+                    return `
+                    <div class="bid-row ${rowClass}">
+                        <div class="bid-left">
+                            <div class="bid-farmer">${maskEmail(b.farmerEmail)}</div>
+                            <div class="bid-meta">${qtyLine}</div>
+                        </div>
+                        <div class="bid-price">₹${b.pricePerTonne}/tonne</div>
+                        ${actions}
+                    </div>
+                `;
+                }).join("");
+
+            const outcomeBadge = a.status === "closed"
+                ? `<span class="badge ${a.outcome === 'sold_out' ? 'active' : 'closed'}">${a.outcome === 'sold_out' ? 'Sold out' : 'Not sold out'}</span>`
+                : "";
+
+            const counterForm = a.status === "active" ? `
+            <div class="counter-panel">
+                <div class="counter-panel-title">Set counter-offer</div>
+                <div class="bid-form-row">
+                    <div class="bid-field">
+                        <span class="bid-field-label">New counter price</span>
+                        <div class="input-prefix-wrap">
+                            <input class="input" type="number" min="0.01" step="0.01" placeholder="Enter price" id="mandiPrice-${a.id}" oninput="this.closest('.input-prefix-wrap').classList.toggle('has-value', this.value !== '')">
+                            <span class="prefix-symbol">₹</span>
+                            <span class="price-suffix">/ tonne</span>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="setMandiPrice('${a.id}')">Set counter-offer</button>
+                </div>
+                ${a.requiredBidPrice != null ? `<div class="bid-hint" style="color:var(--gold-dark);margin-top:8px;font-family:var(--mono);font-size:10.5px;opacity:.85;">Your counter-offer must be ${a.auctionType === 'forward' ? 'at least' : 'at most'} ₹${a.requiredBidPrice} per tonne.</div>` : ""}
+            </div>
+        ` : "";
+
+            return `
+            <div class="auction-card ${a.status === 'closed' ? 'completed-card' : ''}" id="auction-card-${a.id}" style="animation-delay:${Math.min(index, 6) * 45}ms">
+                <div class="ac-top">
+                    <div>
+                        <div class="ac-name">${a.auctionName}</div>
+                        <div class="ac-loc">${a.cropType} — ${a.district}, ${a.state.charAt(0).toUpperCase() + a.state.slice(1)}</div>
+                    </div>
+                    <div class="ac-badges">
+                        <span class="badge ${a.auctionType}">${typeLabel}</span>
+                        <span class="badge ${a.status === 'active' ? 'active' : (a.status === 'scheduled' ? 'reverse' : 'closed')}">${a.status === 'active' ? 'Active' : (a.status === 'scheduled' ? 'Scheduled' : 'Closed')}</span>
+                        ${outcomeBadge}
+                    </div>
+                </div>
+
+                <div class="ac-stats">
+                    <div>
+                        <div class="ac-stat-label">Target</div>
+                        <div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div>
+                    </div>
+                    <div>
+                        <div class="ac-stat-label">Remaining</div>
+                        <div class="ac-stat-value gold">${fmtTonnes(a.remainingQuantity)} tonnes</div>
+                    </div>
+                    <div>
+                        <div class="ac-stat-label">Base price</div>
+                        <div class="ac-stat-value">₹${a.basePrice}/tonne</div>
+                    </div>
+                    ${a.counterGap != null ? `
+                    <div>
+                        <div class="ac-stat-label">Farmers must bid ${a.auctionType === "forward" ? "at least" : "at most"}</div>
+                        <div class="ac-stat-value gold">₹${a.auctionType === "forward"
+                        ? (a.mandiPrice != null ? a.mandiPrice : a.basePrice) + a.counterGap
+                        : (a.mandiPrice != null ? a.mandiPrice : a.basePrice) - a.counterGap}/tonne</div>
+                    </div>
+                    ` : ""}
+                    <div>
+                        <div class="ac-stat-label">${a.mandiPrice != null ? "Current counter" : timeStatLabel}</div>
+                        <div class="ac-stat-value ${a.mandiPrice != null ? 'gold' : `countdown ${t.ended ? 'ended' : ''}`}" ${a.mandiPrice == null && a.status !== 'closed' ? `data-ends-at="${a.status === 'scheduled' ? a.startsAt : a.endsAt}"` : ""}>${a.mandiPrice != null ? `₹${a.mandiPrice}/tonne` : t.text}</div>
+                    </div>
+                    ${a.mandiPrice != null ? `
+                    <div>
+                        <div class="ac-stat-label">${timeStatLabel}</div>
+                        <div class="ac-stat-value countdown ${t.ended ? 'ended' : ''}" ${a.status !== 'closed' ? `data-ends-at="${a.status === 'scheduled' ? a.startsAt : a.endsAt}"` : ""}>${t.text}</div>
+                    </div>` : ""}
+                </div>
+
+                ${counterForm}
+
+                <div class="bids-title">Bids (${a.bidCount || 0}) — best on top</div>
+                ${bidsHtml}
+            </div>
+        `;
+        }
+
+        async function setMandiPrice(auctionId) {
+            const input = document.getElementById(`mandiPrice-${auctionId}`);
+            const price = parseFloat(input.value);
+            if (!price || price <= 0) {
+                showError("Enter a valid counter price.");
+                return;
+            }
+            try {
+                await apiSend("PATCH", `/api/mandi/auctions/${encodeURIComponent(auctionId)}/price`, { pricePerTonne: price });
+                showSuccess("Counter-offer set — farmers' next bids must beat it.");
+                await renderAll();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.tab === tab);
+            });
+            renderMain();
+        }
+
+        async function renderMain() {
+            const grid = document.getElementById("auctionGrid");
+
+            const live = currentAuctions.filter(a => a.status === "active" || a.status === "scheduled");
+            const completed = currentAuctions.filter(a => a.status === "closed");
+            document.getElementById("liveTabCount").textContent = live.length;
+            document.getElementById("completedTabCount").textContent = completed.length;
+
+            const list = currentTab === "live" ? live : completed;
+
+            if (currentAuctions.length === 0) {
+                grid.innerHTML = `<div class="loading-note">No auctions yet. Start one above.</div>`;
+                return;
+            }
+            if (list.length === 0) {
+                grid.innerHTML = currentTab === "live"
+                    ? `<div class="loading-note">No live auctions right now — start one above.</div>`
+                    : `<div class="loading-note">No completed auctions yet.</div>`;
+                return;
+            }
+            grid.innerHTML = list.map((a, i) => renderAuctionCard(a, i)).join("");
+        }
+
+        async function decideBid(auctionId, bidId, action) {
+            try {
+                const result = await apiSend("PATCH", `/api/mandi/auctions/${encodeURIComponent(auctionId)}/bids/${encodeURIComponent(bidId)}`, { action });
+                if (action === "accept" && result.lastAccept) {
+                    const la = result.lastAccept;
+                    let m = `Accepted ${fmtTonnes(la.acceptedQuantity)} tonnes from ${maskEmail(la.farmerEmail)}.`;
+                    if (la.leftoverQuantity > 0) m += ` ${fmtTonnes(la.leftoverQuantity)} tonnes of their bid couldn't be filled — target was reached.`;
+                    if (la.auctionClosed) m += " Auction closed — target fully met.";
+                    showSuccess(m);
+                } else if (action === "reject") {
+                    showSuccess("Bid rejected — that farmer can bid again while time remains.");
+                }
+                await renderAll();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        // ── Live countdown ticking (no refetch needed every second) ────────
+
+        function tickCountdowns() {
+            document.querySelectorAll(".ac-stat-value.countdown").forEach(el => {
+                if (!el.dataset.endsAt) return; // closed auctions render a static "Closed" label — nothing to tick
+                const endsAt = parseInt(el.dataset.endsAt, 10);
+                const t = timeLeftLabel(endsAt);
+                el.textContent = t.text;
+                el.classList.toggle("ended", t.ended);
+            });
+        }
+
+        // ── Init / refresh loop ─────────────────────────────────────
+
+        async function renderAll() {
+            const inputSnapshot = snapshotCounterInputs();
+            try {
+                currentAuctions = await fetchAuctions();
+            } catch (err) {
+                document.getElementById("auctionsScroll").innerHTML = `<div class="empty-note">Couldn't load auctions — ${err.message}</div>`;
+                return;
+            }
+            renderSidebar();
+            await renderMain();
+            restoreCounterInputs(inputSnapshot);
+        }
+
+        (async function init() {
+            await syncClock();
+            await renderAll();
+            setInterval(tickCountdowns, 1000);       // smooth per-second countdown
+            // Skip the resync while the mandi is actively typing a counter
+            // -offer — otherwise the full re-render would clear the box
+            // (and steal focus) mid-keystroke, right before they can click.
+            setInterval(() => { if (!counterInputActive) renderAll(); }, 8000);
+            setInterval(syncClock, 60000);           // re-check clock drift periodically
+        })();
+
+    </script>
+
+</body>
+
+</html>

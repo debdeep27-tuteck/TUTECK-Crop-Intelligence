@@ -20,6 +20,7 @@ Public URLs:
   http://localhost:8085/alerts
   http://localhost:8085/disease
   http://localhost:8085/auction
+  http://localhost:8085/auction-mandi
 
 Usage:
   python main.py                         # launch all services

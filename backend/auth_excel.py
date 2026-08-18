@@ -54,20 +54,22 @@ EXCEL_FILE = BASE_DIR / "users.xlsx"
 PERMISSIONS_FILE = BASE_DIR / "permissions.xlsx"
 USER_PERMISSIONS_FILE = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/auction"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/auction", "/auction-mandi"]
 
 PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separated string
 USER_PERMISSIONS_COLUMNS = ["uid", "pages"]  # per-user page overrides, comma-separated
 
 COLUMNS = ["uid", "email", "password", "role", "status", "state", "district"]  # NOTE: "password" is stored as PLAINTEXT — see warning below
 
-VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin"}
+VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi"}
 VALID_STATUSES = {"active", "restricted"}
 
 # Roles that must be tied to a state (state_admin needs just the state;
-# district_admin needs the state AND the district within it).
-STATE_SCOPED_ROLES = {"state_admin", "district_admin"}
-DISTRICT_SCOPED_ROLES = {"district_admin"}
+# district_admin and mandi need the state AND the district within it — a
+# mandi is a physical buying post in one specific district, so its auctions
+# always resolve to exactly one state/district pair).
+STATE_SCOPED_ROLES = {"state_admin", "district_admin", "mandi"}
+DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
 
 # Default permissions, used only to seed permissions.xlsx the first time it's
 # created. After that, permissions.xlsx is the single source of truth and is
@@ -91,6 +93,10 @@ DEFAULT_ROLE_PERMISSIONS = {
     },
     "district_admin": {
         "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/auction"],
+        "crud": False,
+    },
+    "mandi": {
+        "pages": ["/auction-mandi"],
         "crud": False,
     },
 }
