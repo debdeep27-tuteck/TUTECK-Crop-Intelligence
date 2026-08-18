@@ -115,6 +115,7 @@ def admin_page():
 @app.route("/yield-detect")
 @app.route("/auction")
 @app.route("/cold-storage")
+@app.route("/auction-mandi")
 def home():
     return send_from_directory(str(HTML_DIR), "index.html")
 
@@ -166,6 +167,11 @@ def content_auction():
 @app.route("/content/cold-storage")
 def content_cold_storage():
     return send_from_directory(str(HTML_DIR), "cold_storage.html")
+
+
+@app.route("/content/auction-mandi")
+def content_auction_mandi():
+    return send_from_directory(str(HTML_DIR), "auction_mandi.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -318,6 +324,27 @@ def forward_request(base_url, path, override_params=None, override_json=None):
                     timeout=180
                 )
 
+        elif request.method == "PATCH":
+            if request.is_json:
+                body = request.get_json(silent=True) or {}
+                if override_json:
+                    body.update(override_json)
+                resp = requests.patch(
+                    url,
+                    params=params,
+                    json=body,
+                    headers=headers,
+                    timeout=180
+                )
+            else:
+                resp = requests.patch(
+                    url,
+                    params=params,
+                    data=request.get_data(),
+                    headers=headers,
+                    timeout=180
+                )
+
         elif request.method == "DELETE":
             resp = requests.delete(
                 url,
@@ -452,6 +479,18 @@ def auction_crops_api(path=""):
 @app.route("/api/bids/<path:path>", methods=["GET", "PATCH"])
 def auction_bids_api(path=""):
     full_path = f"api/bids/{path}".rstrip("/") if path else "api/bids"
+    return forward_request(AUCTION_API, full_path)
+
+
+@app.route("/api/mandi/auctions", methods=["GET", "POST"])
+@app.route("/api/mandi/auctions/<path:path>", methods=["GET", "POST", "PATCH"])
+def mandi_auction_api(path=""):
+    # Covers /api/mandi/auctions, /api/mandi/auctions/active,
+    # /api/mandi/auctions/<id>, /api/mandi/auctions/<id>/bids, and
+    # /api/mandi/auctions/<id>/bids/<bid_id> — auction_backend.py mounts
+    # all of these itself under /api/mandi/auctions/..., same convention
+    # as /api/yield and /api/unused-crops above.
+    full_path = f"api/mandi/auctions/{path}".rstrip("/") if path else "api/mandi/auctions"
     return forward_request(AUCTION_API, full_path)
 
 
