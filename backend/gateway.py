@@ -30,6 +30,9 @@ YIELD_API = "http://127.0.0.1:5008"
 # Auction — farmer crop listings / bidding (SQLite-backed, unused_crops table)
 AUCTION_API = "http://127.0.0.1:5009"
 
+# Cold Storage — geofenced cold storage listings (SQLite-backed)
+COLD_STORAGE_API = "http://127.0.0.1:5010"
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -111,6 +114,7 @@ def admin_page():
 @app.route("/disease")
 @app.route("/yield-detect")
 @app.route("/auction")
+@app.route("/cold-storage")
 def home():
     return send_from_directory(str(HTML_DIR), "index.html")
 
@@ -158,6 +162,10 @@ def content_yield_detect():
 @app.route("/content/auction")
 def content_auction():
     return send_from_directory(str(HTML_DIR), "auction_farmer.html")
+
+@app.route("/content/cold-storage")
+def content_cold_storage():
+    return send_from_directory(str(HTML_DIR), "cold_storage.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -462,6 +470,20 @@ def yield_health_direct():
 def auction_health_direct():
     return forward_request(AUCTION_API, "health")
 
+@app.route("/api/cold-storage-health")
+def cold_storage_health_direct():
+    return forward_request(COLD_STORAGE_API, "api/cold-storage/health")
+
+
+@app.route("/api/cold-storage/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+def cold_storage_api(path):
+    # cold_storage_backend.py mounts its own routes under /api/cold-storage/...
+    # itself, same convention as /api/yield above — forward the full path so
+    # e.g. /api/cold-storage/districts/<d>/summary reaches the backend unchanged.
+    # (This general proxy was missing — only the /api/cold-storage-health
+    # shortcut existed, which is why every real cold-storage call 404'd.)
+    return forward_request(COLD_STORAGE_API, f"api/cold-storage/{path}")
+
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────
 
@@ -482,6 +504,7 @@ def health():
             "shared": {
                 "disease": DISEASE_API,
                 "yield_detect": YIELD_API,
+                "cold_storage": COLD_STORAGE_API,
                 "auction": AUCTION_API
             }
         }

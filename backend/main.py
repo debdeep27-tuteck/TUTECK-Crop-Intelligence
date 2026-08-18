@@ -10,8 +10,6 @@ Starts:
 • backend_2.py Rajasthan       -> http://127.0.0.1:5006 (crop yield / stats API)
   • irrigation_backend2.py       -> http://127.0.0.1:5001 (irrigation advisory API, if present)
   • disease_backend.py           -> http://127.0.0.1:5004 (crop disease detection API)
-  • yield_detect_backend.py      -> http://127.0.0.1:5008 (yield detect API, if present)
-  • auction_backend.py           -> http://127.0.0.1:5009 (farmer auction/marketplace API, if present)
 
 Public URLs:
   http://localhost:8085/dashboard
@@ -19,7 +17,6 @@ Public URLs:
   http://localhost:8085/recommender
   http://localhost:8085/alerts
   http://localhost:8085/disease
-  http://localhost:8085/auction
 
 Usage:
   python main.py                         # launch all services
@@ -74,6 +71,10 @@ YIELD_DETECT_PORT = 5008
 # gateway.py forwards /api/unused-crops/*, /api/bids/*, /content/auction
 # and /auction to this port.
 AUCTION_PORT = 5009
+
+# Cold Storage Intelligence backend (deterministic storage-capacity
+# advisory); gateway.py forwards /api/cold-storage/* to this port.
+COLD_STORAGE_PORT = 5010
 
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
@@ -197,7 +198,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-irrigation", action="store_true", help="Skip irrigation backend")
     parser.add_argument("--no-disease", action="store_true", help="Skip disease detection backend")
     parser.add_argument("--no-yield-detect", action="store_true", help="Skip yield detect (geofencing) backend")
-    parser.add_argument("--no-auction", action="store_true", help="Skip auction (farmer marketplace) backend")
+    parser.add_argument("--no-cold-storage", action="store_true", help="Skip cold storage intelligence backend")
+    parser.add_argument("--no-auction", action="store_true", help="Skip auction backend")
 
     return parser.parse_args()
 
@@ -272,6 +274,7 @@ def main() -> None:
     disease_script = find_script(base_dir, "disease_backend.py")
     yield_detect_script = find_script(base_dir, "yield_detect_backend.py")
     auction_script = find_script(base_dir, "auction_backend.py")
+    cold_storage_script = find_script(base_dir, "cold_storage_backend.py")
     gateway_script = find_script(base_dir, "gateway.py")
 
     if not backend_script:
@@ -339,7 +342,7 @@ def main() -> None:
     else:
         log(RED, "yield-detect", "yield_detect_backend.py not found; Yield Detect tab will show BACKEND OFFLINE.")
 
-    # 3c) Start auction backend (farmer crop listings + bidding).
+     # 3c) Start auction backend (farmer crop listings + bidding).
     if args.no_auction:
         log(YELLOW, "auction", "Skipped by --no-auction")
     elif auction_script:
@@ -356,6 +359,21 @@ def main() -> None:
         )
     else:
         log(RED, "auction", "auction_backend.py not found; Auction tab will show BACKEND OFFLINE.")
+
+    # 3d) Start cold-storage-intelligence backend.
+    if args.no_cold_storage:
+        log(YELLOW, "cold-storage", "Skipped by --no-cold-storage")
+    elif cold_storage_script:
+        start_if_needed(
+            label="cold-storage",
+            script=cold_storage_script,
+            cmd_args=[],
+            port=COLD_STORAGE_PORT,
+            timeout=args.ready_timeout,
+            env_extra={"GATEWAY_INTERNAL_URL": f"http://127.0.0.1:{args.gateway_port}"},
+        )
+    else:
+        log(RED, "cold-storage", "cold_storage_backend.py not found; Cold Storage Intelligence API will be unavailable.")
 
     # 4) Start gateway last, after internal services are up.
     start_if_needed(

@@ -791,6 +791,66 @@ def list_lands():
     return jsonify([row_to_dict(r) for r in rows])
 
 
+@app.route("/api/yield/internal/production", methods=["GET"])
+def internal_production():
+    """
+    Internal, service-to-service endpoint (no auth — mirrors
+    auction_backend.py's /api/unused-crops) so other backends on the same
+    host (e.g. cold_storage_backend.py) can pull expected crop production
+    for a state+district from the geofenced Yield Detect lands, instead of
+    from Auction-floor listings.
+
+    Production per land is estimated as predicted_yield * area_hectare
+    (falls back to normal_yield if a prediction hasn't been run yet for
+    that land), summed per crop. Returns a flat list of lands actually
+    used in the case that fell back to normal_yield, capacity for
+    debugging.
+
+    Also returns "by_farmer": a per-land breakdown (crop + user_email +
+    production_mt) so callers that want a per-farmer view (e.g. the cold
+    storage dashboard's Yield Detect table) don't have to guess an
+    identity — user_email is the only farmer-identifying field this
+    service (or the auth gateway) actually stores; there is no separate
+    display-name field anywhere in the stack.
+    """
+    state = request.args.get("state")
+    district = request.args.get("district")
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    clauses, params = [], []
+    if state:
+        clauses.append("lower(state) = lower(?)")
+        params.append(state)
+    if district:
+        clauses.append("lower(district) = lower(?)")
+        params.append(district)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    rows = conn.execute(
+        f"SELECT crop, area_hectare, predicted_yield, normal_yield, user_email FROM lands {where}", params
+    ).fetchall()
+    conn.close()
+
+    totals: dict[str, float] = {}
+    by_farmer: list[dict] = []
+    for row in rows:
+        crop = row["crop"]
+        area = row["area_hectare"] or 0
+        if not crop or not area:
+            continue
+        yield_rate = row["predicted_yield"] if row["predicted_yield"] is not None else row["normal_yield"]
+        if not yield_rate:
+            continue
+        production = float(yield_rate) * float(area)
+        totals[crop] = totals.get(crop, 0.0) + production
+        by_farmer.append({
+            "crop": crop,
+            "user_email": row["user_email"],
+            "production_mt": production,
+        })
+
+    return jsonify({"state": state, "district": district, "production_mt": totals, "by_farmer": by_farmer})
+
+
 @app.route("/api/yield/lands/<int:land_id>", methods=["GET"])
 @require_auth()
 def get_land(land_id):

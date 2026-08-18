@@ -54,7 +54,7 @@ EXCEL_FILE = BASE_DIR / "users.xlsx"
 PERMISSIONS_FILE = BASE_DIR / "permissions.xlsx"
 USER_PERMISSIONS_FILE = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/auction"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/cold-storage", "/auction"]
 
 PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separated string
 USER_PERMISSIONS_COLUMNS = ["uid", "pages"]  # per-user page overrides, comma-separated
@@ -74,23 +74,23 @@ DISTRICT_SCOPED_ROLES = {"district_admin"}
 # editable live from the admin panel (see /api/permissions routes below).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/auction"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction"],
         "crud": True,
     },
     "analyst": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction"],
         "crud": False,
     },
     "farmer": {
-        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/auction"],
+        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction"],
         "crud": False,
     },
     "state_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/auction"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction"],
         "crud": False,
     },
     "district_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/auction"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction"],
         "crud": False,
     },
 }
