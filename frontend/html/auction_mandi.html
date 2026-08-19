@@ -1246,6 +1246,43 @@
             opacity: .8;
         }
 
+        .farmer-picker {
+            margin-top: 12px;
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        .farmer-picker-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border2);
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .farmer-picker-row:last-child { border-bottom: none; }
+        .farmer-picker-row:hover { background: var(--leaf-pale); }
+        .farmer-picker-row input[type="checkbox"] {
+            width: 15px; height: 15px; accent-color: var(--leaf); cursor: pointer; flex-shrink: 0;
+        }
+        .farmer-picker-email { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+        .farmer-picker-qty { font-family: var(--mono); font-size: 10.5px; color: var(--ink3); white-space: nowrap; }
+        .farmer-picker-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; margin-bottom: 0;
+        }
+        .farmer-picker-selectall {
+            font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+            color: var(--leaf-dark); cursor: pointer; background: none; border: none; padding: 0;
+        }
+        .farmer-picker-selectall:hover { text-decoration: underline; }
+        .farmer-picker-count {
+            font-family: var(--mono); font-size: 10.5px; color: var(--ink3);
+        }
+
         .modal-footer {
             flex-shrink: 0;
             display: flex;
@@ -1552,7 +1589,7 @@
 
                             <div class="field-group">
                                 <label class="field-label">Crop type</label>
-                                <select class="select" id="formCropType">
+                                <select class="select" id="formCropType" onchange="onCropTypeChanged()">
                                     <option value="">Loading crops…</option>
                                 </select>
                             </div>
@@ -1668,6 +1705,54 @@
                             </div>
                             <div class="field-hint">If a bid comes in inside the extension window before closing, the
                                 auction extends by that many minutes.</div>
+                        </div>
+                    </div>
+
+                    <!-- Notify -->
+                    <div class="form-section">
+                        <div class="form-section-head">
+                            <div class="form-section-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                </svg>
+                            </div>
+                            <div class="form-section-title">Notify</div>
+                        </div>
+                        <div class="form-section-body">
+                            <div class="type-toggle">
+                                <div class="type-opt active" id="notifyAll" onclick="setNotifyMode('all')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                    </svg>
+                                    All matching farmers
+                                    <span class="type-opt-desc">Everyone with this crop listed here</span>
+                                </div>
+                                <div class="type-opt" id="notifySelective" onclick="setNotifyMode('selective')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 11l3 3L22 4" />
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                    </svg>
+                                    Select specific farmers
+                                    <span class="type-opt-desc">Pick who gets invited</span>
+                                </div>
+                            </div>
+
+                            <div id="farmerPickerSection" style="display:none;">
+                                <div class="farmer-picker-head">
+                                    <span class="farmer-picker-count" id="farmerPickerCount">0 selected</span>
+                                    <button type="button" class="farmer-picker-selectall" id="farmerPickerSelectAllBtn" onclick="toggleSelectAllFarmers()">Select all</button>
+                                </div>
+                                <div class="farmer-picker" id="farmerPickerList">
+                                    <div class="farmer-picker-row" style="cursor:default;color:var(--ink3);">Pick a crop type above first…</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1800,6 +1885,91 @@
             document.getElementById("typeReverse").classList.toggle("active", t === "reverse");
         }
 
+        // ── Notify mode: all matching farmers, or a hand-picked subset ──
+
+        let notifyMode = "all";
+        let matchingFarmers = [];       // [{farmerEmail, availableProduction}], for the current crop type
+        let selectedFarmerEmails = new Set();
+
+        function setNotifyMode(mode) {
+            notifyMode = mode;
+            document.getElementById("notifyAll").classList.toggle("active", mode === "all");
+            document.getElementById("notifySelective").classList.toggle("active", mode === "selective");
+            document.getElementById("farmerPickerSection").style.display = mode === "selective" ? "" : "none";
+            if (mode === "selective") refreshFarmerPicker();
+        }
+
+        async function onCropTypeChanged() {
+            if (notifyMode === "selective") await refreshFarmerPicker();
+        }
+
+        async function refreshFarmerPicker() {
+            const list = document.getElementById("farmerPickerList");
+            const cropType = document.getElementById("formCropType").value;
+            if (!cropType) {
+                list.innerHTML = `<div class="farmer-picker-row" style="cursor:default;color:var(--ink3);">Pick a crop type above first…</div>`;
+                matchingFarmers = [];
+                selectedFarmerEmails.clear();
+                updateFarmerPickerCount();
+                return;
+            }
+            list.innerHTML = `<div class="farmer-picker-row" style="cursor:default;color:var(--ink3);">Loading farmers…</div>`;
+            try {
+                matchingFarmers = await apiGet(`/api/mandi/matching-farmers?state=${encodeURIComponent(session.state)}&district=${encodeURIComponent(session.district)}&cropType=${encodeURIComponent(cropType)}`);
+            } catch (err) {
+                list.innerHTML = `<div class="farmer-picker-row" style="cursor:default;color:var(--ink3);">Couldn't load farmers — ${err.message}</div>`;
+                return;
+            }
+            // Keep previously-checked farmers checked if they're still in
+            // the new list (switching crop type resets the pool, so drop
+            // selections that no longer apply).
+            selectedFarmerEmails = new Set([...selectedFarmerEmails].filter(e => matchingFarmers.some(f => f.farmerEmail === e)));
+            renderFarmerPicker();
+        }
+
+        function renderFarmerPicker() {
+            const list = document.getElementById("farmerPickerList");
+            if (matchingFarmers.length === 0) {
+                list.innerHTML = `<div class="farmer-picker-row" style="cursor:default;color:var(--ink3);">No farmers have this crop listed here yet.</div>`;
+                updateFarmerPickerCount();
+                return;
+            }
+            list.innerHTML = matchingFarmers.map(f => `
+                <label class="farmer-picker-row">
+                    <input type="checkbox" ${selectedFarmerEmails.has(f.farmerEmail) ? "checked" : ""}
+                        onchange="toggleFarmerSelected('${f.farmerEmail}', this.checked)">
+                    <span class="farmer-picker-email">${f.farmerEmail}</span>
+                    <span class="farmer-picker-qty">${fmtTonnes(f.availableProduction)} tonnes available</span>
+                </label>
+            `).join("");
+            updateFarmerPickerCount();
+        }
+
+        function toggleFarmerSelected(email, checked) {
+            if (checked) selectedFarmerEmails.add(email); else selectedFarmerEmails.delete(email);
+            updateFarmerPickerCount();
+        }
+
+        function toggleSelectAllFarmers() {
+            const allSelected = matchingFarmers.length > 0 && matchingFarmers.every(f => selectedFarmerEmails.has(f.farmerEmail));
+            if (allSelected) {
+                selectedFarmerEmails.clear();
+            } else {
+                matchingFarmers.forEach(f => selectedFarmerEmails.add(f.farmerEmail));
+            }
+            renderFarmerPicker();
+        }
+
+        function updateFarmerPickerCount() {
+            const countEl = document.getElementById("farmerPickerCount");
+            if (countEl) countEl.textContent = `${selectedFarmerEmails.size} selected`;
+            const btn = document.getElementById("farmerPickerSelectAllBtn");
+            if (btn) {
+                const allSelected = matchingFarmers.length > 0 && matchingFarmers.every(f => selectedFarmerEmails.has(f.farmerEmail));
+                btn.textContent = allSelected ? "Deselect all" : "Select all";
+            }
+        }
+
         // Keeps the ₹ prefix legible (darker) once a price field actually has
         // a value in it, rather than always looking the same as when empty.
         function syncPrefixState(inputEl) {
@@ -1824,6 +1994,9 @@
             document.getElementById("basePriceWrap").classList.remove("has-value");
             document.getElementById("counterGapWrap").classList.remove("has-value");
             setAuctionType("forward");
+            selectedFarmerEmails = new Set();
+            matchingFarmers = [];
+            setNotifyMode("all");
             loadCrops(session.state);
             document.getElementById("startModalOverlay").classList.add("show");
         }
@@ -1870,6 +2043,10 @@
                 showError("Your mandi account has no state/district set — contact an admin.");
                 return;
             }
+            if (notifyMode === "selective" && selectedFarmerEmails.size === 0) {
+                showError("Select at least one farmer to notify, or switch to 'All matching farmers'.");
+                return;
+            }
 
             const startsAt = startsAtLocal ? new Date(startsAtLocal).getTime() : Date.now();
 
@@ -1884,6 +2061,8 @@
                     auctionType: selectedAuctionType,
                     durationMinutes, extensionMinutes,
                     startsAt,
+                    notifyMode,
+                    selectedFarmerEmails: notifyMode === "selective" ? [...selectedFarmerEmails] : undefined,
                 });
                 closeStartModal();
                 showSuccess(`Auction started — notified ${auction.matchedFarmerCount ?? 0} matching farmer(s).`);
