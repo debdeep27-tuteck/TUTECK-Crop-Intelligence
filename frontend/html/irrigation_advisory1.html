@@ -1,211 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Irrigation Advisor — Tripura</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Literata:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/irrigation_advisory1.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IrriSense — AI Irrigation Advisor | Smart Agriculture Dashboard</title>
+
+  <!-- Fonts: Inter & DM Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="../css/irrigation_advisory1.css">
 </head>
+
 <body>
 
-<header>
-  <div class="logo-group">
-    <span class="logo-text">💧 IrriSense</span>
-    <span class="logo-sub" id="state-header-sub">Tripura · AI Irrigation Advisor</span>
-  </div>
-  <div class="header-badges">
-    <span class="hbadge">OPEN-METEO LIVE</span>
-    <span class="hbadge">FAO-56 MODEL</span>
-  </div>
-</header>
-
-<div class="app-layout">
-
-  <!-- ── SIDEBAR ── -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title">Farm Details</div>
-      <div class="sidebar-desc">Enter your farm's parameters to get a precision irrigation schedule for the next 7 days.</div>
-    </div>
-
-    <div class="form-body">
-
-      <div class="section-tag">Location &amp; Crop</div>
-
-      <div class="field">
-        <label>District</label>
-        <select id="district"></select>
-      </div>
-
-      <div class="field">
-        <label>Crop</label>
-        <select id="crop">
-          <option value="Rice" selected>Rice</option>
-          <option value="Wheat">Wheat</option>
-          <option value="Maize">Maize</option>
-          <option value="Groundnut">Groundnut</option>
-          <option value="Sugarcane">Sugarcane</option>
-          <option value="Jute">Jute</option>
-          <option value="Rapeseed &Mustard">Rapeseed &amp; Mustard</option>
-          <option value="Arhar/Tur">Arhar / Tur</option>
-          <option value="Moong(Green Gram)">Moong (Green Gram)</option>
-          <option value="Urad">Urad</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Sowing Date <span class="hint">When was crop sown?</span></label>
-        <input type="date" id="sowing_date">
-      </div>
-
-      <div class="section-tag">Soil &amp; Irrigation</div>
-
-      <div class="field">
-        <label>Soil Type</label>
-        <select id="soil_type">
-          <option selected>Red Laterite</option>
-          <option>Alluvial</option>
-          <option>Clay</option>
-          <option>Loam</option>
-          <option>Sandy Loam</option>
-          <option>Sandy</option>
-          <option>Black Cotton</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Irrigation Method</label>
-        <select id="irrigation_method">
-          <option>Flood</option>
-          <option>Furrow</option>
-          <option>Sprinkler</option>
-          <option>Drip</option>
-          <option>Rainfed</option>
-        </select>
-      </div>
-
-      <div class="input-row">
-        <div class="field">
-          <label>Area (ha)</label>
-          <input type="number" id="area_ha" value="2" min="0.1" step="0.1">
-        </div>
-        <div class="field">
-          <label>Area (bigha) <span class="hint">auto</span></label>
-          <input type="number" id="area_bigha" value="7.9" min="0" step="0.5" placeholder="Bigha">
-        </div>
-      </div>
-
-      <div class="section-tag">Current Conditions</div>
-
-      <div class="field">
-        <label>How does your topsoil feel? <span class="hint">press a handful</span></label>
-        <select id="soil_feel">
-          <option value="dry">🟤 Dry — loose, crumbly, flows through fingers</option>
-          <option value="slightly" selected>🟡 Slightly moist — weak ball, crumbles easily</option>
-          <option value="moist">🟢 Moist — firm ball, stains hand</option>
-          <option value="wet">💧 Wet — free water visible, waterlogged</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Last significant rainfall <span class="hint">≥5mm on your field</span></label>
-        <input type="date" id="last_rain_date">
-        <span class="hint" id="last-rain-warning" style="display:none;color:#b91c1c;font-size:11px;margin-top:4px">
-          ⚠️ Date can't be in the future — it's been ignored.
-        </span>
-      </div>
-
-      <button class="run-btn" id="run-btn" onclick="runAdvise()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="btn-icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><polyline points="12 6 12 12 16 14"/></svg>
-        Get Irrigation Schedule
+  <!-- ═══════════════════════════════════════════════════════════════
+       1. TOP NAVBAR
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="top-navbar">
+    <div class="nav-left">
+      <button class="menu-toggle-btn" id="menu-toggle" aria-label="Toggle sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
       </button>
 
-    </div>
-  </aside>
-
-  <!-- ── MAIN ── -->
-  <main class="main-panel" id="main-panel">
-
-    <!-- Empty state -->
-    <div class="empty-state" id="empty-state">
-      <div class="empty-icon">💧</div>
-      <div class="empty-title">AI Irrigation Advisor</div>
-      <div class="empty-body">
-        Get a precision 7-day irrigation schedule using live weather forecasts, soil moisture modelling, and FAO-56 crop water requirements.
-      </div>
-      <div class="empty-steps">
-        <div class="step-row"><div class="step-num">1</div>Select your district and crop</div>
-        <div class="step-row"><div class="step-num">2</div>Enter sowing date, soil type, and irrigation method</div>
-        <div class="step-row"><div class="step-num">3</div>Click <strong>Get Irrigation Schedule</strong></div>
+      <div class="brand-container">
+        <div class="logo-icon-wrap">
+          <svg class="brand-drop" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22C55E"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="#22C55E" fill-opacity="0.18"></path>
+          </svg>
+        </div>
+        <div class="brand-text-block">
+          <span class="brand-title">IrriSense</span>
+          <span class="brand-subtitle" id="state-header-sub">Rajasthan · AI Irrigation Advisor</span>
+        </div>
       </div>
     </div>
+  </header>
 
-    <!-- Results -->
-    <div class="results-wrap" id="results-wrap" style="display:none"></div>
+  <!-- Sub-header Meta Strip -->
+  <div class="meta-subbar">
+    <div class="meta-left">
+      <span class="meta-tag">AI PRECISION ADVISORY</span>
+      <span class="meta-dot">•</span>
+      <span class="meta-desc">Dynamic 7-Day Soil Moisture &amp; Evapotranspiration Model</span>
+    </div>
+  </div>
 
-  </main>
-</div>
+  <!-- ═══════════════════════════════════════════════════════════════
+       APP LAYOUT: SIDEBAR + MAIN CONTENT AREA
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="app-layout">
 
-<!-- Loading overlay -->
-<div class="loading-overlay" id="loading-overlay">
-  <div class="loading-spinner"></div>
-  <div class="loading-text">Fetching live weather &amp; computing schedule…</div>
-</div>
+    <!-- ── 2. LEFT SIDEBAR PANEL (Farm Details) ── -->
+    <aside class="sidebar" id="sidebar-panel">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Farm Details</h2>
+        <p class="sidebar-desc">Enter your farm's parameters to get a precision irrigation schedule for the next 7 days.
+        </p>
+      </div>
 
-<script>
-// ── Session / role scoping ──────────────────────────────────────────────
-function _getSession() {
-  try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
-}
-const _session = _getSession();
-const _role = (_session && _session.role || '').toLowerCase();
-const _isDistrictAdmin = _role === 'district_admin';
-const _isStateAdmin = _role === 'state_admin';
-const _isStateLocked = _isDistrictAdmin || _isStateAdmin;
-const _assignedDistrict = _isDistrictAdmin ? (_session.district || '') : null;
+      <div class="form-body">
 
-// ── State-aware district population ──────────────────────────────────
-// district_admin/state_admin accounts are pinned to their assigned state —
-// ignore any ?state= override or stale localStorage pick for them.
-const _STATE = (_isStateLocked && _session.state)
-  ? _session.state.toLowerCase()
-  : (new URLSearchParams(location.search).get('state')
-     || localStorage.getItem('cropai_state') || 'tripura');
-const _DISTRICTS = {
-  tripura:  ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
-  meghalaya:['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills',
-             'North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills',
-             'South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
-  rajasthan:['Ajmer','Alwar','Banswara','Baran','Barmer','Bharatpur','Bhilwara','Bikaner','Bundi',
-             'Chittorgarh','Churu','Dausa','Dholpur','Dungarpur','Hanumangarh','Jaipur','Jaisalmer',
-             'Jalore','Jhalawar','Jhunjhunu','Jodhpur','Karauli','Kota','Nagaur','Pali','Pratapgarh',
-             'Rajsamand','Sawai Madhopur','Sikar','Sirohi','Sri Ganganagar','Tonk','Udaipur']
-};
-const _stateName = _STATE.charAt(0).toUpperCase() + _STATE.slice(1);
-const _dists = _DISTRICTS[_STATE] || _DISTRICTS.tripura;
-const _sel = document.getElementById('district');
-if (_isDistrictAdmin && _assignedDistrict) {
-  // Only their assigned district is selectable — lock it, no dropdown of
-  // other districts in the state.
-  const o = document.createElement('option');
-  o.value = _assignedDistrict; o.textContent = _assignedDistrict;
-  o.selected = true;
-  _sel.appendChild(o);
-  _sel.disabled = true;
-} else {
-  // state_admin (and everyone else) picks freely among districts within
-  // their pinned state — only the state itself is locked, not the district.
-  _dists.forEach((d, i) => {
-    const o = document.createElement('option');
-    o.value = d; o.textContent = d;
-    if (i === _dists.length - 1) o.selected = true;
-    _sel.appendChild(o);
-  });
-}
-const _sub = document.getElementById('state-header-sub');
-if (_sub) _sub.textContent = `${_stateName} · AI Irrigation Advisor`;
-</script>
-<script src="../js/irrigation_advisory1.js"></script>
+        <!-- Section 1: Location & Crop -->
+        <div class="section-tag">Location &amp; Crop</div>
+
+        <div class="field">
+          <label for="district">District</label>
+          <div class="custom-select-wrap">
+            <select id="district"></select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="crop">Crop</label>
+          <div class="custom-select-wrap">
+            <select id="crop">
+              <option value="" disabled>Loading crops…</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="sowing_date">Sowing Date <span class="hint">(When was crop sown?)</span></label>
+          <div class="input-with-icon">
+            <input type="date" id="sowing_date">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Section 2: Soil & Irrigation -->
+        <div class="section-tag">Soil &amp; Irrigation</div>
+
+        <div class="field">
+          <label for="soil_type">Soil Type</label>
+          <div class="custom-select-wrap">
+            <select id="soil_type">
+              <option selected>Red Laterite</option>
+              <option>Alluvial</option>
+              <option>Clay</option>
+              <option>Loam</option>
+              <option>Sandy Loam</option>
+              <option>Sandy</option>
+              <option>Black Cotton</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="irrigation_method">Irrigation Method</label>
+          <div class="custom-select-wrap">
+            <select id="irrigation_method">
+              <option selected>Flood</option>
+              <option>Furrow</option>
+              <option>Sprinkler</option>
+              <option>Drip</option>
+              <option>Rainfed</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="field">
+            <label for="area_ha">Area (ha)</label>
+            <input type="number" id="area_ha" value="2" min="0.1" step="0.1">
+          </div>
+          <div class="field">
+            <label for="area_bigha">Area (bigha) <span class="hint">auto</span></label>
+            <input type="number" id="area_bigha" value="7.9" min="0" step="0.5" placeholder="Bigha">
+          </div>
+        </div>
+
+        <!-- Section 3: Current Conditions -->
+        <div class="section-tag">Current Conditions</div>
+
+        <div class="field">
+          <label for="soil_feel">How does your topsoil feel? <span class="hint">(press a handful)</span></label>
+          <div class="custom-select-wrap">
+            <select id="soil_feel">
+              <option value="dry">🟤 Dry — loose, crumbly, flows through fingers</option>
+              <option value="slightly" selected>🟡 Slightly moist — weak ball, crumbles easily</option>
+              <option value="moist">🟢 Moist — firm ball, stains hand</option>
+              <option value="wet">💧 Wet — free water visible, waterlogged</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="last_rain_date">Last significant rainfall <span class="hint">(≥5mm on your field)</span></label>
+          <div class="input-with-icon">
+            <input type="date" id="last_rain_date">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B"
+              stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <span class="hint" id="last-rain-warning" style="display:none;color:#ef4444;font-size:11px;margin-top:4px">
+            ⚠️ Date can't be in the future — it's been ignored.
+          </span>
+        </div>
+
+        <!-- Primary CTA Button -->
+        <button class="run-btn" id="run-btn" onclick="runAdvise()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round" id="btn-icon">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="currentColor" fill-opacity="0.25"></path>
+          </svg>
+          <span>Get Irrigation Schedule</span>
+        </button>
+
+        <div class="sidebar-privacy">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Your data is private and secure</span>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ── MAIN PANEL ── -->
+    <main class="main-panel" id="main-panel">
+
+      <!-- Empty state (displayed if no calculation yet) -->
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">💧</div>
+        <div class="empty-title">AI Irrigation Advisor</div>
+        <div class="empty-body">
+          Get a precision 7-day irrigation schedule using live weather forecasts, soil moisture modelling, and FAO-56
+          crop water requirements.
+        </div>
+        <div class="empty-steps">
+          <div class="step-row">
+            <div class="step-num">1</div>Select your district and crop
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>Enter sowing date, soil type, and irrigation method
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>Click <strong>Get Irrigation Schedule</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Wrap (dynamically rendered on load / calculation) -->
+      <div class="results-wrap" id="results-wrap" style="display:none"></div>
+
+    </main>
+
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner-card">
+      <div class="loading-spinner"></div>
+      <div class="loading-title">Calculating AI Irrigation Schedule</div>
+      <div class="loading-text">Fetching live weather &amp; computing schedule…</div>
+    </div>
+  </div>
+
+  <!-- ── Dynamic Session / Role & District Population Script ── -->
+  <script>
+    // ── Session / role scoping ──────────────────────────────────────────────
+    function _getSession() {
+      try { return JSON.parse(localStorage.getItem('cropai_session')); } catch { return null; }
+    }
+    const _session = _getSession();
+    const _role = (_session && _session.role || '').toLowerCase();
+    const _isDistrictAdmin = _role === 'district_admin';
+    const _isStateAdmin = _role === 'state_admin';
+    const _isStateLocked = _isDistrictAdmin || _isStateAdmin;
+    const _assignedDistrict = _isDistrictAdmin ? (_session.district || '') : null;
+
+    // ── State-aware district population ──────────────────────────────────
+    // district_admin/state_admin accounts are pinned to their assigned state —
+    // ignore any ?state= override or stale localStorage pick for them.
+    const _STATE = (_isStateLocked && _session.state)
+      ? _session.state.toLowerCase()
+      : (new URLSearchParams(location.search).get('state')
+        || localStorage.getItem('cropai_state') || 'rajasthan');
+    const _DISTRICTS = {
+      tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
+      meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills',
+        'North Garo Hills', 'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills',
+        'South West Khasi Hills', 'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'],
+      rajasthan: ['Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 'Bundi',
+        'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 'Jaipur', 'Jaisalmer',
+        'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 'Kota', 'Nagaur', 'Pali', 'Pratapgarh',
+        'Rajsamand', 'Sawai Madhopur', 'Sikar', 'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur']
+    };
+    const _stateName = _STATE.charAt(0).toUpperCase() + _STATE.slice(1);
+    const _dists = _DISTRICTS[_STATE] || _DISTRICTS.rajasthan;
+    const _sel = document.getElementById('district');
+    if (_isDistrictAdmin && _assignedDistrict) {
+      // Only their assigned district is selectable — lock it, no dropdown of
+      // other districts in the state.
+      const o = document.createElement('option');
+      o.value = _assignedDistrict; o.textContent = _assignedDistrict;
+      o.selected = true;
+      _sel.appendChild(o);
+      _sel.disabled = true;
+    } else {
+      // state_admin (and everyone else) picks freely among districts within
+      // their pinned state — only the state itself is locked, not the district.
+      _dists.forEach((d) => {
+        const o = document.createElement('option');
+        o.value = d; o.textContent = d;
+        if (d === 'Udaipur' || (_STATE === 'tripura' && d === 'Dhalai')) o.selected = true;
+        _sel.appendChild(o);
+      });
+    }
+    const _sub = document.getElementById('state-header-sub');
+    if (_sub) _sub.textContent = `${_stateName} · AI Irrigation Advisor`;
+    const _locDisplay = document.getElementById('location-name-display');
+    if (_locDisplay) _locDisplay.textContent = _stateName;
+
+    // ── Dynamic Crop Population from backend_2.py /valid_crops (via gateway) ──
+    (async function _loadCrops() {
+      const cropSel = document.getElementById('crop');
+      if (!cropSel) return;
+
+      // Pretty-print the crop name for display (value sent to API stays exact)
+      function prettyName(raw) {
+        if (raw === 'Rapeseed &Mustard') return 'Rapeseed & Mustard';
+        if (raw === 'Arhar/Tur')         return 'Arhar / Tur';
+        if (raw === 'Moong(Green Gram)') return 'Moong (Green Gram)';
+        if (raw === 'Cotton(lint)')      return 'Cotton (lint)';
+        if (raw === 'other oilseeds')    return 'Other oilseeds';
+        return raw;
+      }
+
+      function populate(names) {
+        cropSel.innerHTML = '';
+        names.forEach((name, i) => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = prettyName(name);
+          if (i === 0) opt.selected = true;   // default to first crop
+          cropSel.appendChild(opt);
+        });
+      }
+
+      // 1) Primary source: backend_2.py's state-scoped valid_crops, via the
+      //    gateway's /api/crop proxy — show every crop the yield model
+      //    supports for this state. Crops without dedicated FAO-56 water-need
+      //    data in irrigation_backend2.py still get a schedule; the backend
+      //    falls back to generic (Rice-like) crop-water defaults for them.
+      try {
+        const resp = await fetch(`/api/crop/valid_crops?state=${encodeURIComponent(_STATE)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          const raw = Array.isArray(data.valid_crops) ? data.valid_crops : [];
+          const names = [...new Set(raw.map(c => String(c).trim()).filter(Boolean))];
+          if (names.length) {
+            populate(names);
+            return; // success — stop here
+          }
+        }
+      } catch (_) { /* network error — fall through to next source */ }
+
+      // 2) Fallback: irrigation_backend2.py's own /crops (works even if
+      //    backend_2.py for this state isn't running).
+      const endpoints = [
+        `/api/irrigation/crops?state=${encodeURIComponent(_STATE)}`,
+        `http://127.0.0.1:5001/crops?state=${encodeURIComponent(_STATE)}`
+      ];
+      for (const url of endpoints) {
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const crops = Array.isArray(data) ? data : [];
+          if (!crops.length) continue;
+          const names = crops.map(c => (typeof c === 'string' ? c : (c.name || ''))).filter(Boolean);
+          if (!names.length) continue;
+          populate(names);
+          return;
+        } catch (_) { /* network error – try next */ }
+      }
+
+      // 3) Last resort: hardcoded list so the form still works offline.
+      const fallback = [
+        ['Rice','Rice'], ['Wheat','Wheat'], ['Maize','Maize'],
+        ['Groundnut','Groundnut'], ['Sugarcane','Sugarcane'], ['Jute','Jute'],
+        ['Rapeseed &Mustard','Rapeseed & Mustard'], ['Arhar/Tur','Arhar / Tur'],
+        ['Moong(Green Gram)','Moong (Green Gram)'], ['Urad','Urad']
+      ];
+      cropSel.innerHTML = fallback.map(([v, t], i) =>
+        `<option value="${v}"${i === 0 ? ' selected' : ''}>${t}</option>`
+      ).join('');
+    })();
+  </script>
+  <script src="../js/irrigation_advisory1.js"></script>
 </body>
+
 </html>
