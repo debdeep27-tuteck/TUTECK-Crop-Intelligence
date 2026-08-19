@@ -465,6 +465,11 @@ def yield_api(path):
     return forward_request(YIELD_API, f"api/yield/{path}")
 
 
+@app.route("/api/cold-storage/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+def cold_storage_api(path):
+    return forward_request(COLD_STORAGE_API, f"api/cold-storage/{path}")
+
+
 @app.route("/api/unused-crops", methods=["GET", "POST"])
 @app.route("/api/unused-crops/<path:path>", methods=["GET", "PATCH", "DELETE", "POST"])
 def auction_crops_api(path=""):

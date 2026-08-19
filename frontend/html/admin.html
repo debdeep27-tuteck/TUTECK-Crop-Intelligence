@@ -2,1070 +2,1196 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CropAI — Settings &amp; Administration Console</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/design_system.css">
-
-    <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --bg: #F8FAFC;
-            --border: #E2E8F0;
-            --border2: #CBD5E1;
-            --leaf: #064E3B;
-            --leaf-dark: #047857;
-            --text: #0F172A;
-            --text2: #475569;
-            --text3: #64748B;
-            --red: #EF4444;
-            --sky: #3B82F6;
-            --mono: 'DM Mono', monospace;
-            --head: 'Inter', sans-serif;
-        }
-
-        html,
-        body {
-            height: 100%;
-            background: var(--bg);
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            padding: 28px;
-        }
-
-        .page {
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .title {
-            font-family: var(--head);
-            font-size: 32px;
-            color: var(--leaf);
-        }
-
-        .subtitle {
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--text3);
-            margin-top: 5px;
-        }
-
-        .logout-btn {
-            height: 42px;
-            padding: 0 18px;
-            border: none;
-            background: var(--red);
-            color: white;
-            border-radius: 6px;
-            font-family: var(--mono);
-            cursor: pointer;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1.3fr 1fr;
-            gap: 20px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, .75);
-            backdrop-filter: blur(6px);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 24px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, .05);
-        }
-
-        .section-title {
-            font-family: var(--head);
-            font-size: 22px;
-            color: var(--leaf);
-            margin-bottom: 16px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr auto;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .input,
-        .select {
-            height: 42px;
-            border: 1px solid var(--border2);
-            border-radius: 6px;
-            padding: 0 12px;
-            font-size: 14px;
-        }
-
-        .btn {
-            height: 42px;
-            border: none;
-            background: var(--leaf);
-            color: white;
-            border-radius: 6px;
-            padding: 0 14px;
-            cursor: pointer;
-            font-family: var(--mono);
-        }
-
-        .btn:hover {
-            background: var(--leaf-dark);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text2);
-            border: 1px solid var(--border2);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(0, 0, 0, .04);
-        }
-
-        .icon-btn:disabled {
-            filter: blur(0.1px);
-            opacity: .3;
-            cursor: not-allowed;
-        }
-
-        .icon-btn:disabled:hover {
-            filter: blur(0.1px);
-        }
-
-        .add-user-row {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 16px;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(20, 20, 15, .45);
-            backdrop-filter: blur(2px);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal-card {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            width: 460px;
-            max-width: calc(100vw - 40px);
-            max-height: calc(100vh - 60px);
-            overflow-y: auto;
-            box-shadow: 0 30px 70px rgba(0, 0, 0, .25);
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .modal-title {
-            font-family: var(--head);
-            font-size: 22px;
-            color: var(--leaf);
-        }
-
-        .modal-close {
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            color: var(--text2);
-            font-size: 20px;
-            line-height: 1;
-            padding: 4px;
-        }
-
-        .modal-close:hover {
-            color: var(--red);
-        }
-
-        .modal-body {
-            padding: 20px 24px;
-        }
-
-        .field-group {
-            margin-bottom: 18px;
-        }
-
-        .field-label {
-            display: block;
-            font-family: var(--mono);
-            font-size: 12px;
-            letter-spacing: .04em;
-            text-transform: uppercase;
-            color: var(--text2);
-            margin-bottom: 6px;
-        }
-
-        .field-group .input,
-        .field-group .select {
-            width: 100%;
-        }
-
-        .field-hidden {
-            display: none;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 16px 24px 22px;
-        }
-
-        .modal-footer .btn,
-        .modal-footer .btn-secondary {
-            padding: 0 20px;
-        }
-
-        .table-wrap {
-            overflow: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 12px;
-            font-family: var(--mono);
-            font-size: 10px;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border2);
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .role-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: rgba(74, 124, 89, .12);
-            color: var(--leaf);
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .action-btn {
-            border: none;
-            padding: 7px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 6px;
-            font-size: 12px;
-        }
-
-        .delete-btn {
-            background: #fbe4e1;
-            color: var(--red);
-        }
-
-        .icon-btn {
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 4px;
-            vertical-align: middle;
-        }
-
-        .icon-btn svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .icon-btn.restrict-off {
-            color: var(--red);
-        }
-
-        .icon-btn.restrict-off:hover {
-            background: #fbe4e1;
-        }
-
-        .icon-btn.restrict-on {
-            color: var(--leaf);
-        }
-
-        .icon-btn.restrict-on:hover {
-            background: rgba(74, 124, 89, .12);
-        }
-
-        .icon-btn.delete-icon {
-            color: var(--red);
-        }
-
-        .icon-btn.delete-icon:hover {
-            background: #fbe4e1;
-        }
-
-        .icon-btn.edit-icon {
-            color: var(--leaf-dark);
-        }
-
-        .icon-btn.edit-icon:hover {
-            background: rgba(74, 124, 89, .12);
-        }
-
-        .perm-th {
-            text-align: center !important;
-            white-space: nowrap;
-        }
-
-        .perm-td {
-            text-align: center;
-        }
-
-        .perm-td input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--leaf);
-            cursor: pointer;
-        }
-
-        .actions-cell {
-            white-space: nowrap;
-        }
-
-        .permission-card {
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 12px;
-            background: white;
-        }
-
-        .role-title {
-            font-family: var(--mono);
-            font-size: 12px;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            color: var(--leaf);
-        }
-
-        .checkbox-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .checkbox-list label {
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .save-btn {
-            width: 100%;
-        }
-
-        .msg {
-            margin-bottom: 15px;
-            padding: 12px;
-            border-radius: 6px;
-            display: none;
-            font-family: var(--mono);
-            font-size: 12px;
-        }
-
-        .error {
-            background: #fdecea;
-            color: #c0392b;
-        }
-
-        .success {
-            background: #e9f7ef;
-            color: #1e8449;
-        }
-
-        .show {
-            display: block;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .nav-btn {
-            height: 42px;
-            padding: 0 18px;
-            border: none;
-            border-radius: 6px;
-            background: var(--sky);
-            color: #fff;
-            cursor: pointer;
-            font-family: var(--mono);
-            transition: .2s;
-        }
-
-        .nav-btn:hover {
-            opacity: .9;
-        }
-
-        .admin-only {
-            display: none;
-        }
-
-        @media(max-width:1000px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CropAI — Enterprise Administration &amp; Access Control</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/design_system.css">
+
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --border-subtle: #EDF2F7;
+      --primary: #1B4332;
+      --primary-dark: #0F291E;
+      --primary-light: #E8F5E9;
+      --accent: #10B981;
+      --accent-hover: #059669;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-sub: #475569;
+      --danger: #EF4444;
+      --danger-bg: #FEF2F2;
+      --warning: #F59E0B;
+      --warning-bg: #FFFBEB;
+      --info: #3B82F6;
+      --info-bg: #EFF6FF;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      padding: 24px 32px 48px;
+    }
+
+    .admin-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(27, 67, 50, 0.25);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-nav-dashboard {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-nav-dashboard:hover {
+      background: var(--primary-light);
+      border-color: #A7F3D0;
+      color: var(--primary-dark);
+    }
+
+    .btn-nav-logout {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--danger-bg);
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #DC2626;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-nav-logout:hover {
+      background: #FEE2E2;
+      border-color: #F87171;
+    }
+
+    /* KPI Quick Stats */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-lbl {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .kpi-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      letter-spacing: -0.02em;
+    }
+
+    /* Main Table Card */
+    .main-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      background: #FFFFFF;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .user-count-badge {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid #A7F3D0;
+    }
+
+    .btn-add-user {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #10B981;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-add-user:hover {
+      background: #059669;
+    }
+
+    /* Table Container */
+    .table-container {
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    table.admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    table.admin-table thead tr {
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table.admin-table th {
+      padding: 10px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    table.admin-table th.col-center {
+      text-align: center;
+    }
+
+    table.admin-table tbody tr {
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.1s ease;
+    }
+
+    table.admin-table tbody tr:hover {
+      background-color: #F8FAFC;
+    }
+
+    table.admin-table tbody tr.row-restricted {
+      background-color: #FEF2F2;
+      opacity: 0.85;
+    }
+
+    table.admin-table td {
+      padding: 9px 6px;
+      vertical-align: middle;
+    }
+
+    table.admin-table td.col-center {
+      text-align: center;
+    }
+
+    /* User Profile Info */
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #A7F3D0;
+      flex-shrink: 0;
+    }
+
+    .user-email-text {
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.2;
+      font-size: 12px;
+    }
+
+    .user-jurisdiction {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* Role Badges */
+    .role-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+
+    .role-admin { background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; }
+    .role-farmer { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+    .role-state_admin { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .role-district_admin { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+    .role-mandi { background: #F0F9FF; color: #0369A1; border: 1px solid #BAE6FD; }
+    .role-analyst { background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; }
+
+    /* Modern Permission Switch / Checkbox */
+    .perm-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .perm-toggle input {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: #FFFFFF;
+      position: relative;
+    }
+
+    .perm-toggle input:checked {
+      background-color: #10B981;
+      border-color: #10B981;
+    }
+
+    .perm-toggle input:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 4px;
+      height: 8px;
+      border: solid #FFFFFF;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* Action Buttons */
+    .action-btn-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .icon-action-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .icon-action-btn:hover {
+      background: #F1F5F9;
+      color: var(--text-main);
+    }
+
+    .icon-action-btn.edit-btn:hover {
+      background: var(--primary-light);
+      border-color: #A7F3D0;
+      color: var(--primary);
+    }
+
+    .icon-action-btn.restrict-btn:hover {
+      background: #FFFBEB;
+      border-color: #FDE68A;
+      color: var(--warning);
+    }
+
+    .icon-action-btn.restrict-btn.active {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: var(--danger);
+    }
+
+    .icon-action-btn.delete-btn:hover {
+      background: var(--danger-bg);
+      border-color: #FECACA;
+      color: var(--danger);
+    }
+
+    .icon-action-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Modal Overlay & Card */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #FFFFFF;
+      border-radius: 14px;
+      width: 480px;
+      max-width: 100%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlide {
+      from { transform: translateY(12px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      background: #F8FAFC;
+    }
+
+    .modal-head-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .modal-close-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .modal-close-btn:hover {
+      background: #E2E8F0;
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .form-input, .form-select {
+      height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      outline: none;
+      background: #FFFFFF;
+      transition: border-color 0.15s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: #10B981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      background: #F8FAFC;
+    }
+
+    .btn-cancel {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .btn-save {
+      padding: 8px 18px;
+      border: none;
+      background: #10B981;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #FFFFFF;
+      cursor: pointer;
+    }
+
+    .btn-save:hover {
+      background: #059669;
+    }
+
+    /* Floating Toast Alerts */
+    .toast-box {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toastIn 0.2s ease forwards;
+    }
+
+    @keyframes toastIn {
+      from { transform: translateX(40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast-success {
+      background: #064E3B;
+      color: #FFFFFF;
+      border: 1px solid #059669;
+    }
+
+    .toast-error {
+      background: #7F1D1D;
+      color: #FFFFFF;
+      border: 1px solid #DC2626;
+    }
+
+    .field-hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
 
-    <div class=" page">
+  <div class="toast-box" id="toastBox"></div>
 
-        <div class="header">
+  <div class="admin-container">
 
-            <div>
-                <div class="title">CropAI Admin Panel</div>
-                <div class="subtitle">User Management & Role Permissions</div>
-            </div>
-
-            <div class="header-actions">
-
-                <button class="nav-btn" onclick="goToMain()">
-                    Crop-Intelligence Dashboard
-                </button>
-
-                <button class="nav-btn admin-only" id="adminBtn" onclick="goToAdmin()">
-                    Admin Panel
-                </button>
-
-                <button class="logout-btn" onclick="logout()">
-                    Logout
-                </button>
-
-            </div>
-
+    <!-- Top Navigation Header -->
+    <div class="top-nav">
+      <div class="brand-group">
+        <div class="brand-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
-
-        <div id="errorBox" class="msg error"></div>
-        <div id="successBox" class="msg success"></div>
-
-        <div class="card">
-
-            <div class="section-title">
-                Users
-            </div>
-
-            <div class="add-user-row">
-                <button class="btn" onclick="openUserModal()">
-                    + Add user
-                </button>
-            </div>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr id="usersHeadRow">
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th class="perm-th">Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="usersBody">
-
-                    </tbody>
-
-                </table>
-            </div>
-
+        <div>
+          <div class="brand-title">CropAI Admin Console</div>
+          <div class="brand-subtitle">Identity Access Management (IAM) &amp; Role Permissions</div>
         </div>
+      </div>
 
+      <div class="nav-actions">
+        <a class="btn-nav-dashboard" href="/dashboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          Crop Intelligence Dashboard
+        </a>
+
+        <button class="btn-nav-logout" onclick="logout()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
     </div>
 
-    <div class="modal-overlay" id="userModalOverlay" onclick="if(event.target===this) closeUserModal()">
-        <div class="modal-card">
-
-            <div class="modal-header">
-                <div class="modal-title" id="userModalTitle">Add user</div>
-                <button class="modal-close" onclick="closeUserModal()">&times;</button>
-            </div>
-
-            <div class="modal-body">
-
-                <div class="field-group">
-                    <label class="field-label">Email</label>
-                    <input class="input" id="modalEmail" placeholder="name@example.com">
-                </div>
-
-                <div class="field-group" id="passwordGroup">
-                    <label class="field-label">Password</label>
-                    <input class="input" id="modalPassword" type="password" placeholder="At least 6 characters">
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Role</label>
-                    <select class="select" id="modalRole" onchange="onModalRoleChange()">
-                        <option value="admin">Admin</option>
-                        <option value="analyst">Analyst</option>
-                        <option value="farmer">Farmer</option>
-                        <option value="state_admin">State Admin</option>
-                        <option value="district_admin">District Admin</option>
-                        <option value="mandi">Mandi</option>
-                    </select>
-                </div>
-
-                <div class="field-group field-hidden" id="stateGroup">
-                    <label class="field-label">State</label>
-                    <select class="select" id="modalState" onchange="onModalStateChange()">
-                        <option value="">Select a state</option>
-                    </select>
-                </div>
-
-                <div class="field-group field-hidden" id="districtGroup">
-                    <label class="field-label">District</label>
-                    <select class="select" id="modalDistrict">
-                        <option value="">Select a district</option>
-                    </select>
-                </div>
-
-                <div class="field-group" id="statusGroup">
-                    <label class="field-label">Status</label>
-                    <select class="select" id="modalStatus">
-                        <option value="active">Active</option>
-                        <option value="restricted">Restricted</option>
-                    </select>
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeUserModal()">Cancel</button>
-                <button class="btn" onclick="saveUserModal()">Save user</button>
-            </div>
-
-        </div>
+    <!-- Quick Stats Metric Strip -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Total Registered Accounts</div>
+        <div class="kpi-num" id="stat-total-users">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">System Administrators</div>
+        <div class="kpi-num" id="stat-admins">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">State / District Admins</div>
+        <div class="kpi-num" id="stat-state-admins">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Farmer Accounts</div>
+        <div class="kpi-num" id="stat-farmers">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Mandi Operators</div>
+        <div class="kpi-num" id="stat-mandis">—</div>
+      </div>
     </div>
 
-    <script>
+    <!-- Users Table Card -->
+    <div class="main-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title">User Accounts &amp; Module Access Control</div>
+          <span class="user-count-badge" id="userBadgeCount">Loading…</span>
+        </div>
 
-        const SESSION_KEY = "cropai_session";
+        <button class="btn-add-user" onclick="openUserModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New User
+        </button>
+      </div>
 
-        function showError(msg) {
-            const e = document.getElementById("errorBox");
-            e.innerText = msg;
-            e.classList.add("show");
-            setTimeout(() => e.classList.remove("show"), 4000);
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr id="usersHeadRow">
+              <th style="width:23%;">User Account</th>
+              <th style="width:11%;">Role</th>
+              <th class="col-center" style="width:6.5%;">Dashboard</th>
+              <th class="col-center" style="width:6.5%;">Irrigation</th>
+              <th class="col-center" style="width:6.5%;">Recommender</th>
+              <th class="col-center" style="width:6.5%;">Alerts</th>
+              <th class="col-center" style="width:6.5%;">Disease</th>
+              <th class="col-center" style="width:6.5%;">Yield</th>
+              <th class="col-center" style="width:6.5%;">Auction</th>
+              <th class="col-center" style="width:6.5%;">Mandi</th>
+              <th class="col-center" style="width:6.5%;">Storage</th>
+              <th class="col-center" style="width:7.5%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr>
+              <td colspan="12" style="text-align:center;padding:36px;color:var(--text-muted);">Loading system users…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Add / Edit User Modal -->
+  <div class="modal-overlay" id="userModalOverlay" onclick="if(event.target===this) closeUserModal()">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-head-title" id="userModalTitle">Create User Account</div>
+        <button class="modal-close-btn" onclick="closeUserModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" id="modalEmail" placeholder="user@cropai.in" type="email">
+        </div>
+
+        <div class="form-group" id="passwordGroup">
+          <label class="form-label">Account Password</label>
+          <input class="form-input" id="modalPassword" type="password" placeholder="At least 6 characters">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Role Designation</label>
+          <select class="form-select" id="modalRole" onchange="onModalRoleChange()">
+            <option value="admin">Admin (Full System Access)</option>
+            <option value="state_admin">State Admin (Jurisdiction Scoped)</option>
+            <option value="district_admin">District Admin (District Scoped)</option>
+            <option value="farmer">Farmer (Agri Producer)</option>
+            <option value="mandi">Mandi (Auction Trader)</option>
+            <option value="analyst">Analyst</option>
+          </select>
+        </div>
+
+        <div class="form-group field-hidden" id="stateGroup">
+          <label class="form-label">State Scope</label>
+          <select class="form-select" id="modalState" onchange="onModalStateChange()">
+            <option value="">Select a state</option>
+          </select>
+        </div>
+
+        <div class="form-group field-hidden" id="districtGroup">
+          <label class="form-label">District Scope</label>
+          <select class="form-select" id="modalDistrict">
+            <option value="">Select a district</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="statusGroup">
+          <label class="form-label">Account Status</label>
+          <select class="form-select" id="modalStatus">
+            <option value="active">Active (Normal Access)</option>
+            <option value="restricted">Restricted (Suspended Access)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeUserModal()">Cancel</button>
+        <button class="btn-save" onclick="saveUserModal()">Save User</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SESSION_KEY = "cropai_session";
+
+    function showToast(msg, isError = false) {
+      const box = document.getElementById("toastBox");
+      const toast = document.createElement("div");
+      toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
+      toast.innerHTML = isError 
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ${msg}`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+      
+      box.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(40px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function getSession() {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) {
+        window.location = "/";
+        return null;
+      }
+      return JSON.parse(raw);
+    }
+
+    const session = getSession();
+    if (!session) throw new Error("No session");
+
+    function isSelfUser(user) {
+      if (!user) return false;
+      if (session.email && user.email) {
+        return String(session.email).trim().toLowerCase() === String(user.email).trim().toLowerCase();
+      }
+      return false;
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + session.token
+      };
+    }
+
+    const STATES_DISTRICTS = {
+      tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
+      meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills', 'North Garo Hills', 'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills', 'South West Khasi Hills', 'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'],
+      rajasthan: ['Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 'Bundi', 'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 'Jaipur', 'Jaisalmer', 'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 'Kota', 'Nagaur', 'Pali', 'Pratapgarh', 'Rajsamand', 'Sawai Madhopur', 'Sikar', 'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur']
+    };
+
+    let modalMode = "create";
+    let modalEditingUid = null;
+
+    function populateStateOptions() {
+      const stateSelect = document.getElementById("modalState");
+      stateSelect.innerHTML = `<option value="">Select a state</option>` +
+        Object.keys(STATES_DISTRICTS)
+          .map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`)
+          .join("");
+    }
+
+    function onModalRoleChange() {
+      const role = document.getElementById("modalRole").value;
+      const stateGroup = document.getElementById("stateGroup");
+      const districtGroup = document.getElementById("districtGroup");
+
+      const needsState = role === "state_admin" || role === "district_admin" || role === "mandi";
+      const needsDistrict = role === "district_admin" || role === "mandi";
+
+      stateGroup.classList.toggle("field-hidden", !needsState);
+      districtGroup.classList.toggle("field-hidden", !needsDistrict);
+
+      if (!needsState) document.getElementById("modalState").value = "";
+      if (!needsDistrict) document.getElementById("modalDistrict").value = "";
+    }
+
+    function onModalStateChange() {
+      const state = document.getElementById("modalState").value;
+      const districtSelect = document.getElementById("modalDistrict");
+      const districts = STATES_DISTRICTS[state] || [];
+      districtSelect.innerHTML = `<option value="">Select a district</option>` +
+        districts.map(d => `<option value="${d}">${d}</option>`).join("");
+    }
+
+    function openUserModal(user) {
+      modalMode = user ? "edit" : "create";
+      modalEditingUid = user ? user.uid : null;
+
+      document.getElementById("userModalTitle").innerText = user ? "Edit User Account" : "Create New User";
+      populateStateOptions();
+
+      document.getElementById("modalEmail").value = user ? user.email : "";
+      document.getElementById("modalPassword").value = "";
+      document.getElementById("modalPassword").placeholder = user ? "Leave blank to keep current password" : "At least 6 characters";
+      document.getElementById("modalRole").value = user ? user.role : "admin";
+      document.getElementById("modalStatus").value = user ? (user.status || "active") : "active";
+
+      document.getElementById("statusGroup").classList.toggle("field-hidden", !user);
+      onModalRoleChange();
+
+      if (user && user.state) {
+        document.getElementById("modalState").value = user.state;
+        onModalStateChange();
+        if (user.district) document.getElementById("modalDistrict").value = user.district;
+      } else {
+        onModalStateChange();
+      }
+
+      document.getElementById("userModalOverlay").classList.add("show");
+    }
+
+    function closeUserModal() {
+      document.getElementById("userModalOverlay").classList.remove("show");
+    }
+
+    async function saveUserModal() {
+      const email = document.getElementById("modalEmail").value.trim();
+      const password = document.getElementById("modalPassword").value;
+      const role = document.getElementById("modalRole").value;
+      const state = document.getElementById("modalState").value;
+      const district = document.getElementById("modalDistrict").value;
+
+      if (!email || (modalMode === "create" && !password)) {
+        showToast("Please fill all required fields.", true);
+        return;
+      }
+
+      if ((role === "state_admin" || role === "district_admin" || role === "mandi") && !state) {
+        showToast("Please select a state for this role.", true);
+        return;
+      }
+      if ((role === "district_admin" || role === "mandi") && !district) {
+        showToast("Please select a district for this role.", true);
+        return;
+      }
+
+      let res, data;
+      if (modalMode === "create") {
+        res = await fetch("/api/users", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ email, password, role, state, district })
+        });
+        data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || "Failed to create user", true);
+          return;
         }
-        function goToMain() {
-            window.location.href = "/dashboard";
-        }
+        showToast("User created successfully.");
+      } else {
+        const body = { email, role, state, district };
+        if (password) body.password = password;
 
-        function goToAdmin() {
-            window.location.href = "/admin";
-        }
-        function showSuccess(msg) {
-            const e = document.getElementById("successBox");
-            e.innerText = msg;
-            e.classList.add("show");
-            setTimeout(() => e.classList.remove("show"), 4000);
-        }
-
-        function getSession() {
-            const raw = localStorage.getItem(SESSION_KEY);
-
-            if (!raw) {
-                window.location = "/";
-                return null;
-            }
-
-            return JSON.parse(raw);
-        }
-
-        const session = getSession();
-
-        if (!session) {
-            throw new Error();
-        }
-
-        // This backend's session object only carries { token, email, role,
-        // state, district, loggedInAt } — no uid/id field. So identity is
-        // matched by email (case-insensitive). id fields are still checked
-        // first in case the backend adds one later.
-        function isSelfUser(user) {
-            if (!user) return false;
-
-            const sessionIdCandidates = [
-                session.uid, session.id, session._id, session.userId, session.user_id
-            ].filter(v => v !== undefined && v !== null);
-
-            const userIdCandidates = [
-                user.uid, user.id, user._id, user.userId, user.user_id
-            ].filter(v => v !== undefined && v !== null);
-
-            const idMatch = sessionIdCandidates.length && userIdCandidates.length &&
-                sessionIdCandidates.some(sid =>
-                    userIdCandidates.some(uid => String(sid) === String(uid))
-                );
-
-            if (idMatch) return true;
-
-            if (session.email && user.email) {
-                return String(session.email).trim().toLowerCase() === String(user.email).trim().toLowerCase();
-            }
-
-            return false;
-        }
-
-        function authHeaders() {
-            return {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + session.token
-            };
-        }
-
-        // ── Add/Edit user modal ──────────────────────────────────────────
-
-        // Sample state → district mapping. Extend this with your real data.
-        const STATES_DISTRICTS = {
-            tripura: ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
-            meghalaya: ['East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'Eastern West Khasi Hills',
-                'North Garo Hills', 'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills',
-                'South West Khasi Hills', 'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'],
-            rajasthan: ['Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 'Bundi',
-                'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 'Jaipur', 'Jaisalmer',
-                'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 'Kota', 'Nagaur', 'Pali', 'Pratapgarh',
-                'Rajsamand', 'Sawai Madhopur', 'Sikar', 'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur']
-        };
-
-        let modalMode = "create"; // "create" | "edit"
-        let modalEditingUid = null;
-
-        function populateStateOptions() {
-            const stateSelect = document.getElementById("modalState");
-            stateSelect.innerHTML = `<option value="">Select a state</option>` +
-                Object.keys(STATES_DISTRICTS)
-                    .map(s => `<option value="${s}">${s}</option>`)
-                    .join("");
-        }
-
-        function onModalRoleChange() {
-            const role = document.getElementById("modalRole").value;
-
-            const stateGroup = document.getElementById("stateGroup");
-            const districtGroup = document.getElementById("districtGroup");
-
-            const needsState = role === "state_admin" || role === "district_admin" || role === "mandi";
-            const needsDistrict = role === "district_admin" || role === "mandi";
-
-            stateGroup.classList.toggle("field-hidden", !needsState);
-            districtGroup.classList.toggle("field-hidden", !needsDistrict);
-
-            if (!needsState) document.getElementById("modalState").value = "";
-            if (!needsDistrict) document.getElementById("modalDistrict").value = "";
-        }
-
-        function onModalStateChange() {
-            const state = document.getElementById("modalState").value;
-            const districtSelect = document.getElementById("modalDistrict");
-
-            const districts = STATES_DISTRICTS[state] || [];
-            districtSelect.innerHTML = `<option value="">Select a district</option>` +
-                districts.map(d => `<option value="${d}">${d}</option>`).join("");
-        }
-
-        function openUserModal(user) {
-            modalMode = user ? "edit" : "create";
-            modalEditingUid = user ? user.uid : null;
-
-            document.getElementById("userModalTitle").innerText = user ? "Edit user" : "Add user";
-
-            populateStateOptions();
-
-            document.getElementById("modalEmail").value = user ? user.email : "";
-            document.getElementById("modalPassword").value = "";
-            document.getElementById("modalPassword").placeholder =
-                user ? "Leave blank to keep current password" : "At least 6 characters";
-            document.getElementById("modalRole").value = user ? user.role : "admin";
-            document.getElementById("modalStatus").value = user ? user.status : "active";
-
-            // Status only makes sense once the account exists.
-            document.getElementById("statusGroup").classList.toggle("field-hidden", !user);
-
-            onModalRoleChange();
-
-            if (user && user.state) {
-                document.getElementById("modalState").value = user.state;
-                onModalStateChange();
-                if (user.district) document.getElementById("modalDistrict").value = user.district;
-            } else {
-                onModalStateChange();
-            }
-
-            document.getElementById("userModalOverlay").classList.add("show");
-        }
-
-        function closeUserModal() {
-            document.getElementById("userModalOverlay").classList.remove("show");
-        }
-
-        async function saveUserModal() {
-
-            const email = document.getElementById("modalEmail").value.trim();
-            const password = document.getElementById("modalPassword").value;
-            const role = document.getElementById("modalRole").value;
-            const state = document.getElementById("modalState").value;
-            const district = document.getElementById("modalDistrict").value;
-
-            if (!email || (modalMode === "create" && !password)) {
-                showError("Please fill all required fields.");
-                return;
-            }
-
-            if ((role === "state_admin" || role === "district_admin" || role === "mandi") && !state) {
-                showError("Please select a state for this role.");
-                return;
-            }
-            if ((role === "district_admin" || role === "mandi") && !district) {
-                showError("Please select a district for this role.");
-                return;
-            }
-
-            let res, data;
-
-            if (modalMode === "create") {
-
-                res = await fetch("/api/users", {
-                    method: "POST",
-                    headers: authHeaders(),
-                    body: JSON.stringify({ email, password, role, state, district })
-                });
-                data = await res.json();
-
-                if (!res.ok) {
-                    showError(data.error);
-                    return;
-                }
-
-                showSuccess("User created.");
-
-            } else {
-
-                const body = { email, role, state, district };
-                if (password) body.password = password;
-
-                res = await fetch(`/api/users/${modalEditingUid}`, {
-                    method: "PATCH",
-                    headers: authHeaders(),
-                    body: JSON.stringify(body)
-                });
-                data = await res.json();
-
-                if (!res.ok) {
-                    showError(data.error);
-                    return;
-                }
-
-                const statusValue = document.getElementById("modalStatus").value;
-                const editingUser = currentUsers.find(u => u.uid === modalEditingUid);
-                if (statusValue !== (data.status || "active") && !isSelfUser(editingUser)) {
-                    await fetch(`/api/users/${modalEditingUid}/restrict`, {
-                        method: "PATCH",
-                        headers: authHeaders(),
-                        body: JSON.stringify({ restricted: statusValue === "restricted" })
-                    });
-                }
-
-                showSuccess("User updated.");
-            }
-
-            closeUserModal();
-            loadUsers();
-        }
-
-        // Pages every role can potentially have. Since /api/users now returns
-        // each user's own "pages" list, we derive the full column set from
-        // whatever the backend hands back (falls back to a safe default).
-        const DEFAULT_ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect","/auction","/auction-mandi"];
-        let allPages = DEFAULT_ALL_PAGES;
-
-        function buildUsersHead() {
-
-            const headRow = document.getElementById("usersHeadRow");
-
-            const pageHeaders = allPages
-                .map(page => `<th class="perm-th">${page}</th>`)
-                .join("");
-
-            headRow.innerHTML = `
-<th>Email</th>
-<th>Role</th>
-${pageHeaders}
-<th class="perm-th">Actions</th>
-`;
-        }
-
-        let currentUsers = [];
-
-        function roleLabel(role) {
-            return {
-                admin: "Admin",
-                analyst: "Analyst",
-                farmer: "Farmer",
-                state_admin: "State Admin",
-                district_admin: "District Admin",
-                mandi: "Mandi",
-            }[role] || role;
-        }
-
-        function editUser(uid) {
-            const user = currentUsers.find(u => u.uid === uid);
-            if (user) openUserModal(user);
+        res = await fetch(`/api/users/${modalEditingUid}`, {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify(body)
+        });
+        data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || "Failed to update user", true);
+          return;
         }
 
-        async function loadUsers() {
+        const statusValue = document.getElementById("modalStatus").value;
+        const editingUser = currentUsers.find(u => u.uid === modalEditingUid);
+        if (statusValue !== (data.status || "active") && !isSelfUser(editingUser)) {
+          await fetch(`/api/users/${modalEditingUid}/restrict`, {
+            method: "PATCH",
+            headers: authHeaders(),
+            body: JSON.stringify({ restricted: statusValue === "restricted" })
+          });
+        }
+        showToast("User account updated.");
+      }
 
-            const res = await fetch("/api/users", {
-                headers: authHeaders()
-            });
+      closeUserModal();
+      loadUsers();
+    }
 
-            if (!res.ok) {
-                showError("Admin authorization failed.");
-                return;
-            }
+    const PAGE_MODULES = [
+      { id: "/dashboard", name: "Dashboard", title: "Crop Intelligence Dashboard" },
+      { id: "/irrigation", name: "Irrigation", title: "Irrigation Advisory" },
+      { id: "/recommend-page", name: "Recommender", title: "Crop Recommender" },
+      { id: "/alerts", name: "Alerts", title: "Live Alerts (EWAS)" },
+      { id: "/disease", name: "Disease", title: "Disease Detection" },
+      { id: "/yield-detect", name: "Yield", title: "Yield Detect" },
+      { id: "/auction", name: "Auction", title: "Farmer Auction Listing" },
+      { id: "/auction-mandi", name: "Mandi", title: "Mandi Trading Floor" },
+      { id: "/cold-storage", name: "Storage", title: "Cold Storage Intelligence" },
+    ];
 
-            const users = await res.json();
-            currentUsers = users;
+    let currentUsers = [];
 
-            // Union of every page seen across users, keeping the default order first.
-            const seen = new Set(DEFAULT_ALL_PAGES);
-            users.forEach(u => (u.pages || []).forEach(p => seen.add(p)));
-            allPages = DEFAULT_ALL_PAGES.filter(p => seen.has(p))
-                .concat([...seen].filter(p => !DEFAULT_ALL_PAGES.includes(p)));
+    function roleLabel(role) {
+      return {
+        admin: "Admin",
+        analyst: "Analyst",
+        farmer: "Farmer",
+        state_admin: "State Admin",
+        district_admin: "District Admin",
+        mandi: "Mandi Operator",
+      }[role] || role;
+    }
 
-            buildUsersHead();
+    function editUser(uid) {
+      const user = currentUsers.find(u => u.uid === uid);
+      if (user) openUserModal(user);
+    }
 
-            const tbody = document.getElementById("usersBody");
-
-            tbody.innerHTML = "";
-
-            users.forEach(user => {
-
-                const userPages = user.pages || [];
-                const isSelf = isSelfUser(user);
-                const isRestricted = user.status === "restricted";
-
-                const pageCells = allPages.map(page => `
-<td class="perm-td">
-<input type="checkbox"
-data-uid="${user.uid}"
-data-page="${page}"
-${userPages.includes(page) ? "checked" : ""}
-onchange="toggleUserPagePermission(this)"
-title="${page}">
-</td>
-`).join("");
-
-                tbody.innerHTML += `
-<tr>
-<td>${user.email}</td>
-<td>
-<span class="role-badge">${roleLabel(user.role)}</span>
-</td>
-${pageCells}
-<td class="actions-cell">
-<button class="icon-btn ${isRestricted ? "restrict-on" : "restrict-off"}"
-title="${isSelf ? "You can't restrict your own account" : (isRestricted ? "Unrestrict user" : "Restrict user")}"
-${isSelf ? "disabled" : `onclick="restrictUser('${user.uid}')"`}>
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-stroke-linecap="round" stroke-linejoin="round">
-<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-</svg>
-</button>
-<button class="icon-btn edit-icon"
-title="Edit user"
-onclick="editUser('${user.uid}')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-stroke-linecap="round" stroke-linejoin="round">
-<path d="M12 20h9"/>
-<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
-</svg>
-</button>
-<button class="icon-btn delete-icon"
-title="${isSelf ? "You can't delete your own account" : "Delete user"}"
-${isSelf ? "disabled" : `onclick="deleteUser('${user.uid}')"`}>
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-stroke-linecap="round" stroke-linejoin="round">
-<polyline points="3 6 5 6 21 6"/>
-<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-<path d="M10 11v6"/>
-<path d="M14 11v6"/>
-<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-</svg>
-</button>
-</td>
-</tr>
-`;
-
-            });
+    async function loadUsers() {
+      try {
+        const res = await fetch("/api/users", { headers: authHeaders() });
+        if (!res.ok) {
+          showToast("Admin authorization failed.", true);
+          return;
         }
 
-        async function toggleUserPagePermission(checkbox) {
+        const users = await res.json();
+        currentUsers = users;
 
-            const uid = checkbox.dataset.uid;
-            const page = checkbox.dataset.page;
+        // Update KPI counters
+        document.getElementById('stat-total-users').textContent = users.length;
+        document.getElementById('stat-admins').textContent = users.filter(u => u.role === 'admin').length;
+        document.getElementById('stat-state-admins').textContent = users.filter(u => u.role === 'state_admin' || u.role === 'district_admin').length;
+        document.getElementById('stat-farmers').textContent = users.filter(u => u.role === 'farmer').length;
+        document.getElementById('stat-mandis').textContent = users.filter(u => u.role === 'mandi').length;
+        document.getElementById('userBadgeCount').textContent = `${users.length} Active Accounts`;
 
-            // Read current state straight from the row's own checkboxes so we
-            // send the full, correct page list for this one user.
-            const row = checkbox.closest("tr");
-            const pages = [...row.querySelectorAll("input[type=checkbox]")]
-                .filter(cb => cb.checked)
-                .map(cb => cb.dataset.page);
+        // Render Head Row
+        const headRow = document.getElementById("usersHeadRow");
+        headRow.innerHTML = `
+          <th style="width:23%;">User Account</th>
+          <th style="width:11%;">Role</th>
+          ${PAGE_MODULES.map(m => `<th class="col-center" title="${m.title}" style="width:6.5%;">${m.name}</th>`).join('')}
+          <th class="col-center" style="width:7.5%;">Actions</th>
+        `;
 
-            const res = await fetch(`/api/users/${uid}/permissions`, {
-                method: "PATCH",
-                headers: authHeaders(),
-                body: JSON.stringify({ pages })
-            });
+        const tbody = document.getElementById("usersBody");
+        tbody.innerHTML = "";
 
-            const data = await res.json();
+        users.forEach(user => {
+          const userPages = user.pages || [];
+          const isSelf = isSelfUser(user);
+          const isRestricted = user.status === "restricted";
 
-            if (!res.ok) {
-                showError(data.error);
-                checkbox.checked = !checkbox.checked;
-                return;
-            }
+          const initial = (user.email || 'U').charAt(0).toUpperCase();
+          const jurisdiction = [user.state, user.district].filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' • ');
 
-            showSuccess(`${page} permission updated.`);
-        }
+          const pageCells = PAGE_MODULES.map(m => `
+            <td class="col-center">
+              <label class="perm-toggle" title="${m.name} permission for ${user.email}">
+                <input type="checkbox"
+                  data-uid="${user.uid}"
+                  data-page="${m.id}"
+                  ${userPages.includes(m.id) ? "checked" : ""}
+                  onchange="toggleUserPagePermission(this)">
+              </label>
+            </td>
+          `).join("");
 
-        async function restrictUser(uid) {
+          tbody.innerHTML += `
+            <tr class="${isRestricted ? 'row-restricted' : ''}">
+              <td>
+                <div class="user-profile">
+                  <div class="user-avatar">${initial}</div>
+                  <div>
+                    <div class="user-email-text">${user.email} ${isSelf ? '<span style="font-size:10px;color:#10B981;font-weight:700;">(You)</span>' : ''}</div>
+                    ${jurisdiction ? `<div class="user-jurisdiction">${jurisdiction}</div>` : ''}
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="role-badge role-${user.role}">${roleLabel(user.role)}</span>
+              </td>
+              ${pageCells}
+              <td class="col-center">
+                <div class="action-btn-group">
+                  <button class="icon-action-btn restrict-btn ${isRestricted ? 'active' : ''}"
+                    title="${isSelf ? "You cannot restrict your own account" : (isRestricted ? "Reactivate user access" : "Restrict user access")}"
+                    ${isSelf ? "disabled" : `onclick="restrictUser('${user.uid}')"`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </button>
 
-            const targetUser = currentUsers.find(u => u.uid === uid);
-            if (isSelfUser(targetUser)) {
-                showError("You can't restrict your own account.");
-                return;
-            }
+                  <button class="icon-action-btn edit-btn"
+                    title="Edit user details"
+                    onclick="editUser('${user.uid}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                  </button>
 
-            const res = await fetch(`/api/users/${uid}/restrict`, {
-                method: "PATCH",
-                headers: authHeaders(),
-                body: JSON.stringify({})  // no "restricted" flag = toggle current state
-            });
+                  <button class="icon-action-btn delete-btn"
+                    title="${isSelf ? "You cannot delete your own account" : "Delete user"}"
+                    ${isSelf ? "disabled" : `onclick="deleteUser('${user.uid}')"`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        showToast("Error loading users.", true);
+      }
+    }
 
-            const data = await res.json();
+    async function toggleUserPagePermission(checkbox) {
+      const uid = checkbox.dataset.uid;
+      const page = checkbox.dataset.page;
 
-            if (!res.ok) {
-                showError(data.error);
-                return;
-            }
+      const row = checkbox.closest("tr");
+      const pages = [...row.querySelectorAll("input[type=checkbox]")]
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.page);
 
-            showSuccess(
-                data.status === "restricted"
-                    ? `${data.email} has been restricted.`
-                    : `${data.email} has been reactivated.`
-            );
+      const res = await fetch(`/api/users/${uid}/permissions`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ pages })
+      });
 
-            loadUsers();
-        }
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Permission update failed", true);
+        checkbox.checked = !checkbox.checked;
+        return;
+      }
 
-        async function deleteUser(uid) {
+      showToast(`Permission for ${page} updated.`);
+    }
 
-            const targetUser = currentUsers.find(u => u.uid === uid);
-            if (isSelfUser(targetUser)) {
-                showError("You can't delete your own account.");
-                return;
-            }
+    async function restrictUser(uid) {
+      const targetUser = currentUsers.find(u => u.uid === uid);
+      if (isSelfUser(targetUser)) {
+        showToast("You cannot restrict your own account.", true);
+        return;
+      }
 
-            if (!confirm("Delete this user?"))
-                return;
+      const res = await fetch(`/api/users/${uid}/restrict`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({})
+      });
 
-            const res = await fetch(`/api/users/${uid}`, {
-                method: "DELETE",
-                headers: authHeaders()
-            });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Failed to update user status", true);
+        return;
+      }
 
-            const data = await res.json();
+      showToast(data.status === "restricted" ? `${data.email} has been restricted.` : `${data.email} reactivated.`);
+      loadUsers();
+    }
 
-            if (!res.ok) {
-                showError(data.error);
-                return;
-            }
+    async function deleteUser(uid) {
+      const targetUser = currentUsers.find(u => u.uid === uid);
+      if (isSelfUser(targetUser)) {
+        showToast("You cannot delete your own account.", true);
+        return;
+      }
 
-            showSuccess("User deleted.");
-            loadUsers();
-        }
+      if (!confirm(`Delete user ${targetUser?.email || ''}? This action cannot be undone.`)) return;
 
-        function logout() {
+      const res = await fetch(`/api/users/${uid}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
 
-            localStorage.removeItem(
-                SESSION_KEY
-            );
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Delete failed", true);
+        return;
+      }
 
-            window.location = "/";
-        }
+      showToast("User account deleted.");
+      loadUsers();
+    }
 
-        (async function () {
+    function logout() {
+      localStorage.removeItem(SESSION_KEY);
+      window.location = "/";
+    }
 
-            if (session.role !== "admin") {
-                document.body.innerHTML =
-                    "<h2 style='padding:40px'>Admin access required</h2>";
-                return;
-            }
-
-            await loadUsers();
-
-        })();
-    </script>
-
+    (async function () {
+      if (session.role !== "admin") {
+        document.body.innerHTML = "<h2 style='padding:40px;color:#EF4444;'>Admin access required</h2>";
+        return;
+      }
+      await loadUsers();
+    })();
+  </script>
 </body>
 
 </html>

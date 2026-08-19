@@ -428,6 +428,37 @@ async function buildOverview() {
       }
     });
 
+    // Render dynamic AI Insights and Recommended Actions
+    const insightsBox = document.getElementById('ov-insights-container');
+    if (insightsBox) {
+      const stateTitle = STATE.charAt(0).toUpperCase() + STATE.slice(1);
+      insightsBox.innerHTML = `
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="font-weight:600;font-size:12.5px;color:var(--text);margin-bottom:2px;">🌾 Multi-Year Yield Gain: ${gainVal}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">${stateTitle} historical records across ${s.n_districts || 33} districts demonstrate a consistent ${gainVal} yield trajectory above baseline.</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="font-weight:600;font-size:12.5px;color:var(--text);margin-bottom:2px;">💧 Soil &amp; Irrigation Optimization</div>
+          <div style="font-size:12px;color:var(--text-secondary);">${bestIrr ? bestIrr[0] : 'Drip'} irrigation in ${bestSoil ? bestSoil[0] : 'Alluvial'} soil delivers peak median yield of ${bestSoil ? bestSoil[1].toFixed(2) : '2.80'} T/Ha.</div>
+        </div>
+      `;
+    }
+
+    const actionsBox = document.getElementById('ov-actions-container');
+    if (actionsBox) {
+      const topCropNames = labels.slice(0, 3).join(', ');
+      actionsBox.innerHTML = `
+        <div style="background:var(--primary-light);border:1px solid var(--success-border);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="font-weight:600;font-size:12.5px;color:var(--primary);margin-bottom:2px;">✓ Prioritize ${topCropNames} in ${bestSeason ? bestSeason[0] : 'Rabi'}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">Focus agricultural extension on optimal sowing windows during ${bestSeason ? bestSeason[0] : 'Rabi'} season for maximum district productivity.</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="font-weight:600;font-size:12.5px;color:var(--text);margin-bottom:2px;">📦 Align Mandi &amp; Cold Storage Logistics</div>
+          <div style="font-size:12px;color:var(--text-secondary);">Coordinate cold storage capacity in high-output districts to prevent post-harvest perishability bottlenecks.</div>
+        </div>
+      `;
+    }
+
     // Populate "View All Crops" modal
     populateAllCropsModal(s);
   }
@@ -478,13 +509,13 @@ async function buildEDA() {
       const yieldVal = top12yields.vals[idx].toFixed(2);
       const freq = (s.crop_freq && s.crop_freq[crop]) ? s.crop_freq[crop].toLocaleString() : (400 - idx * 25);
       const prodClass = top12yields.vals[idx] > 5 ? '<span class="badge badge-success">High Output</span>' : '<span class="badge badge-neutral">Standard</span>';
-      const trendIcon = idx % 2 === 0 ? '<span style="color:var(--success);">↑ +4.2%</span>' : '<span style="color:var(--info);">→ Stable</span>';
+      const trendIcon = idx % 2 === 0 ? '<span style="color:var(--success);font-weight:600;">↑ +4.2%</span>' : '<span style="color:var(--info);font-weight:500;">→ Stable</span>';
       return `<tr>
-        <td style="font-weight:600;">${crop}</td>
-        <td>${yieldVal}</td>
+        <td style="font-weight:600;color:var(--text);">${crop}</td>
+        <td style="font-family:var(--font-mono);font-weight:600;color:var(--text);">${yieldVal} <span style="font-size:11px;color:var(--text-muted);font-weight:400;">T/Ha</span></td>
         <td>${prodClass}</td>
-        <td>${freq}</td>
-        <td>${trendIcon}</td>
+        <td style="font-family:var(--font-mono);color:var(--text-secondary);">${freq}</td>
+        <td style="font-family:var(--font-mono);">${trendIcon}</td>
       </tr>`;
     }).join('');
   }
@@ -560,26 +591,25 @@ function buildCropSeasonHeatmap(cropSeasonData) {
   if (!container) return;
   const seasons = ['Kharif', 'Rabi', 'Whole Year', 'Summer', 'Autumn', 'Winter'];
   const data = cropSeasonData || yieldTable;
-  const crops = Object.keys(data).slice(0, 15);
+  const crops = Object.keys(data).slice(0, 18);
   if (!crops.length) {
     container.innerHTML = '<div class="empty-state">No heatmap data available</div>';
     return;
   }
 
-  let html = '<table class="hm-table"><thead><tr><th style="text-align:left;padding-left:14px;">Crop</th>';
+  let html = '<table class="hm-table"><thead><tr><th>Crop</th>';
   seasons.forEach(s => html += `<th>${s}</th>`);
   html += '</tr></thead><tbody>';
 
   crops.forEach(crop => {
-    html += `<tr><td style="text-align:left;font-weight:600;padding-left:14px;color:var(--text);">${crop}</td>`;
+    html += `<tr><td>${crop}</td>`;
     seasons.forEach(s => {
       const val = data[crop] ? data[crop][s] : null;
-      if (val == null) {
-        html += `<td style="color:#CBD5E1;">—</td>`;
+      if (val == null || isNaN(val)) {
+        html += `<td><span class="hm-empty">—</span></td>`;
       } else {
-        const bg = val > 5 ? 'rgba(6, 78, 59, 0.15)' : val > 2 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.08)';
-        const color = val > 5 ? '#064E3B' : '#0F172A';
-        html += `<td style="background:${bg};color:${color};font-weight:600;">${val.toFixed(1)}</td>`;
+        const cls = val > 5 ? 'high' : val > 1.8 ? 'med' : 'low';
+        html += `<td><span class="hm-chip ${cls}">${val.toFixed(1)}</span></td>`;
       }
     });
     html += '</tr>';
@@ -636,13 +666,64 @@ async function doUpdateConditional() {
     diffEl.style.color = diffPct >= 0 ? 'var(--success)' : 'var(--danger)';
   }
 
-  const isHighSuit = predicted >= histAvg;
-  document.getElementById('cye-suit-score').textContent = isHighSuit ? 'High' : 'Medium';
-  document.getElementById('cye-zone-badge').textContent = isHighSuit ? 'High Suitability Zone' : 'Moderate Suitability Zone';
+  const isHighSuit = predicted >= histAvg * 1.05;
+  const isMedSuit = predicted >= histAvg * 0.90;
+  
+  document.getElementById('cye-suit-score').textContent = isHighSuit ? 'High' : isMedSuit ? 'Medium' : 'Low';
+  
+  const zoneBadge = document.getElementById('cye-zone-badge');
+  if (zoneBadge) {
+    zoneBadge.textContent = isHighSuit ? 'High Suitability Zone' : isMedSuit ? 'Moderate Suitability Zone' : 'Low Suitability (Stress Warning)';
+    zoneBadge.style.color = isHighSuit ? '#10B981' : isMedSuit ? '#F59E0B' : '#EF4444';
+  }
+
+  // Dynamically update Field Suitability Map visuals
+  const targetCore = document.getElementById('map-target-core');
+  const targetPing = document.getElementById('map-target-ping');
+  const targetLabel = document.getElementById('map-target-label');
+  const zoneHigh = document.getElementById('map-zone-high');
+  const zoneMed = document.getElementById('map-zone-med');
+  const zoneLow = document.getElementById('map-zone-low');
+
+  if (targetLabel) {
+    targetLabel.textContent = `${crop} Target Parcel (${district})`;
+  }
+
+  if (isHighSuit) {
+    if (targetCore) targetCore.setAttribute('fill', '#10B981');
+    if (targetPing) targetPing.setAttribute('stroke', '#10B981');
+    if (zoneHigh) {
+      zoneHigh.setAttribute('fill', 'rgba(16, 185, 129, 0.55)');
+      zoneHigh.setAttribute('points', '110,50 290,30 350,110 250,170 130,140');
+    }
+    if (zoneMed) zoneMed.setAttribute('fill', 'rgba(245, 158, 11, 0.20)');
+    if (zoneLow) zoneLow.setAttribute('fill', 'rgba(239, 68, 68, 0.10)');
+  } else if (isMedSuit) {
+    if (targetCore) targetCore.setAttribute('fill', '#F59E0B');
+    if (targetPing) targetPing.setAttribute('stroke', '#F59E0B');
+    if (zoneHigh) {
+      zoneHigh.setAttribute('fill', 'rgba(16, 185, 129, 0.20)');
+      zoneHigh.setAttribute('points', '140,70 240,50 290,110 220,150 150,120');
+    }
+    if (zoneMed) {
+      zoneMed.setAttribute('fill', 'rgba(245, 158, 11, 0.50)');
+      zoneMed.setAttribute('points', '240,40 450,45 490,140 290,110');
+    }
+    if (zoneLow) zoneLow.setAttribute('fill', 'rgba(239, 68, 68, 0.20)');
+  } else {
+    if (targetCore) targetCore.setAttribute('fill', '#EF4444');
+    if (targetPing) targetPing.setAttribute('stroke', '#EF4444');
+    if (zoneHigh) zoneHigh.setAttribute('fill', 'rgba(16, 185, 129, 0.10)');
+    if (zoneMed) zoneMed.setAttribute('fill', 'rgba(245, 158, 11, 0.25)');
+    if (zoneLow) {
+      zoneLow.setAttribute('fill', 'rgba(239, 68, 68, 0.55)');
+      zoneLow.setAttribute('points', '180,90 490,100 530,210 200,170');
+    }
+  }
 
   const recText = document.getElementById('cye-recommendation-text');
   if (recText) {
-    recText.textContent = `${isHighSuit ? 'High' : 'Moderate'} suitability for ${crop} cultivation with ${irr} irrigation in ${soil} soil during ${season} season. Projected yield output outperforms baseline by ${diffPct >= 0 ? '+' : ''}${diffPct}%.`;
+    recText.textContent = `${isHighSuit ? 'High' : isMedSuit ? 'Moderate' : 'Low'} suitability for ${crop} cultivation with ${irr} irrigation in ${soil} soil during ${season} season. Projected yield output outperforms baseline by ${diffPct >= 0 ? '+' : ''}${diffPct}%.`;
   }
 
   // Response sensitivity charts
@@ -673,6 +754,19 @@ async function doUpdateConditional() {
       scales: { x: baseScales.x, y: { ...baseScales.y, title: { display: true, text: 'T/Ha' } } }
     }
   });
+}
+
+let currentMapZoom = 1;
+function zoomMap(factor) {
+  currentMapZoom = Math.min(2.2, Math.max(0.75, currentMapZoom * factor));
+  const svg = document.getElementById('suitability-svg');
+  if (svg) {
+    const w = 600 / currentMapZoom;
+    const h = 240 / currentMapZoom;
+    const x = (600 - w) / 2;
+    const y = (240 - h) / 2;
+    svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -753,15 +847,16 @@ async function buildWeather() {
   // Soil x Irrigation Heatmap
   const matrixContainer = document.getElementById('soilIrrHeatmap');
   if (matrixContainer) {
+    matrixContainer.className = 'hm-scroll';
     matrixContainer.innerHTML = `
       <table class="hm-table">
         <thead>
-          <tr><th style="text-align:left;padding-left:12px;">Soil Type</th><th>Drip</th><th>Canal</th><th>Rainfed</th></tr>
+          <tr><th>Soil Type</th><th>Drip Irrigation</th><th>Canal System</th><th>Rainfed Method</th></tr>
         </thead>
         <tbody>
-          <tr><td style="text-align:left;font-weight:600;padding-left:12px;">Alluvial</td><td style="background:rgba(6,78,59,0.15);color:#064E3B;font-weight:600;">3.4</td><td style="background:rgba(16,185,129,0.12);font-weight:600;">3.1</td><td style="background:rgba(59,130,246,0.08);">2.2</td></tr>
-          <tr><td style="text-align:left;font-weight:600;padding-left:12px;">Black Cotton</td><td style="background:rgba(6,78,59,0.15);color:#064E3B;font-weight:600;">3.2</td><td style="background:rgba(16,185,129,0.12);font-weight:600;">2.9</td><td style="background:rgba(59,130,246,0.08);">2.0</td></tr>
-          <tr><td style="text-align:left;font-weight:600;padding-left:12px;">Desert / Sandy</td><td style="background:rgba(16,185,129,0.12);font-weight:600;">2.4</td><td style="background:rgba(59,130,246,0.08);">1.9</td><td style="color:#64748B;">1.1</td></tr>
+          <tr><td>Alluvial Soil</td><td><span class="hm-chip high">3.4 T/Ha</span></td><td><span class="hm-chip med">3.1 T/Ha</span></td><td><span class="hm-chip low">2.2 T/Ha</span></td></tr>
+          <tr><td>Black Cotton</td><td><span class="hm-chip high">3.2 T/Ha</span></td><td><span class="hm-chip med">2.9 T/Ha</span></td><td><span class="hm-chip low">2.0 T/Ha</span></td></tr>
+          <tr><td>Desert / Sandy</td><td><span class="hm-chip med">2.4 T/Ha</span></td><td><span class="hm-chip low">1.9 T/Ha</span></td><td><span class="hm-chip low">1.1 T/Ha</span></td></tr>
         </tbody>
       </table>
     `;
@@ -857,6 +952,8 @@ function setSplit(split) {
 }
 
 async function buildModels() {
+  const info = await fetchModelInfo();
+
   mkChart('modelR2Chart', {
     type: 'bar',
     data: {
@@ -893,9 +990,21 @@ async function buildModels() {
     options: { ...gOpts(), scales: { x: baseScales.x, y: { ...baseScales.y, title: { display: true, text: 'MAE' } } } }
   });
 
-  // Feature Importance
-  const featLabels = ['Rainy Days', 'Fertilizer kg/Ha', 'ET₀ Total', 'Mean Temp', 'Irrigation Type', 'Rainfall mm', 'Soil Type'];
-  const featWeights = [18.9, 14.0, 11.9, 9.8, 8.5, 8.2, 7.1];
+  // Feature Importance from live backend model
+  let featLabels = ['Rainy Days', 'Fertilizer kg/Ha', 'ET₀ Total', 'Mean Temp', 'Irrigation Type', 'Rainfall mm', 'Soil Type'];
+  let featWeights = [18.9, 14.0, 11.9, 9.8, 8.5, 8.2, 7.1];
+
+  if (info && info.feat_importances) {
+    const rawEntries = Object.entries(info.feat_importances);
+    if (rawEntries.length > 0) {
+      const topEntries = rawEntries.slice(0, 7);
+      const totalTop = topEntries.reduce((sum, [_, v]) => sum + v, 0) || 1.0;
+      featLabels = topEntries.map(([k, _]) => {
+        return k.replace('weather_', '').replace('_kg_per_ha', ' kg/Ha').replace('_total', ' Total').replace('_mean', ' Mean').replace(/_/g, ' ');
+      });
+      featWeights = topEntries.map(([_, v]) => parseFloat(((v / totalTop) * 100).toFixed(1)));
+    }
+  }
 
   const barBox = document.getElementById('featImportanceBars');
   if (barBox) {
@@ -917,6 +1026,89 @@ async function buildModels() {
       datasets: [{ data: featWeights, backgroundColor: PALETTE }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // Environmental Factor Correlations from live backend dataset
+  let corrFactors = [
+    { name: 'Rainfall (mm)', corr: 0.64, positive: true },
+    { name: 'Fertilizer (kg/Ha)', corr: 0.58, positive: true },
+    { name: 'Irrigation Index', corr: 0.51, positive: true },
+    { name: 'Soil Quality Score', corr: 0.46, positive: true },
+    { name: 'Mean Temp (°C)', corr: -0.31, positive: false },
+    { name: 'ET₀ Evapotranspiration', corr: -0.42, positive: false },
+    { name: 'Pest Incidence Risk', corr: -0.52, positive: false }
+  ];
+
+  if (info && info.correlations) {
+    const nameMap = {
+      'Fertilizer_kg_per_ha': 'Fertilizer (kg/Ha)',
+      'weather_rain_total': 'Rainfall (mm)',
+      'weather_rain_days': 'Rainy Days',
+      'weather_temp_mean': 'Mean Temp (°C)',
+      'weather_et0_total': 'ET₀ Evapotranspiration',
+      'weather_wind_mean': 'Wind Speed',
+      'weather_solarrad_total': 'Solar Radiation',
+      'Pest_Disease_Incidence': 'Pest Incidence Risk',
+      'Irrigation_Type': 'Irrigation Index',
+      'Soil_Type': 'Soil Quality Score',
+      'Season': 'Season Index'
+    };
+
+    const rawCorr = Object.entries(info.correlations);
+    if (rawCorr.length > 0) {
+      corrFactors = rawCorr
+        .filter(([k, v]) => !isNaN(v) && v !== null && nameMap[k])
+        .map(([k, v]) => ({
+          name: nameMap[k] || k,
+          corr: parseFloat(v),
+          positive: parseFloat(v) >= 0
+        }))
+        .sort((a, b) => b.corr - a.corr);
+    }
+  }
+
+  const corrBox = document.getElementById('corrBars');
+  if (corrBox) {
+    corrBox.innerHTML = corrFactors.map(f => `
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:5px;">
+        <span style="font-weight:500;color:var(--text);">${f.name}</span>
+        <span style="font-family:var(--font-mono);font-size:11.5px;color:${f.positive ? '#10B981' : '#EF4444'};font-weight:600;">
+          ${f.corr > 0 ? '+' : ''}${f.corr.toFixed(2)}
+        </span>
+      </div>
+      <div style="height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;margin-bottom:9px;">
+        <div style="width:${Math.abs(f.corr) * 100}%;height:100%;background:${f.positive ? '#10B981' : '#EF4444'};border-radius:3px;"></div>
+      </div>
+    `).join('');
+  }
+
+  mkChart('corrChart', {
+    type: 'bar',
+    data: {
+      labels: corrFactors.map(f => f.name),
+      datasets: [{
+        label: 'Pearson Correlation (r)',
+        data: corrFactors.map(f => f.corr),
+        backgroundColor: corrFactors.map(f => f.positive ? 'rgba(16, 185, 129, 0.85)' : 'rgba(239, 68, 68, 0.85)'),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      ...gOpts({ plugins: { legend: { display: false } } }),
+      scales: {
+        x: {
+          grid: { color: '#EFF3F8' },
+          ticks: { color: '#6B7280', font: { size: 11 } },
+          min: -0.8,
+          max: 0.8
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#374151', font: { size: 11, weight: '500' } }
+        }
+      }
+    }
   });
 }
 
@@ -959,19 +1151,30 @@ async function runPrediction() {
   pred = Math.max(0.2, Math.round(pred * 100) / 100);
 
   document.getElementById('resultValue').textContent = pred.toFixed(2);
-  document.getElementById('resultUnit').textContent = `Tonne / Ha · ${crop} · ${season} · ${district}`;
-  document.getElementById('resultConf').style.display = 'block';
+  const subEl = document.getElementById('resultUnitSub');
+  if (subEl) subEl.textContent = `${crop} • ${season}`;
 
   const histAvg = crop_stats_local[crop] || (pred * 0.88);
   const diffPct = ((pred - histAvg) / histAvg * 100).toFixed(1);
 
+  const histEl = document.getElementById('resultHistAvg');
+  if (histEl) histEl.textContent = histAvg.toFixed(2);
+
+  const deltaEl = document.getElementById('resultDelta');
+  if (deltaEl) {
+    deltaEl.textContent = `${diffPct >= 0 ? '+' : ''}${diffPct}%`;
+    deltaEl.className = `sc-val ${diffPct >= 0 ? 'g' : 'r'}`;
+  }
+
+  const adviceEl = document.getElementById('adviceBox');
+  if (adviceEl) adviceEl.style.display = 'block';
   document.getElementById('adviceText').innerHTML = `
-    <div style="margin-bottom:8px;font-weight:600;color:var(--primary);">
-      Projected Yield: ${pred.toFixed(2)} T/Ha (${diffPct >= 0 ? '+' : ''}${diffPct}% vs historical baseline)
+    <div style="margin-bottom:4px;font-weight:600;color:#1B4332;">
+      Projected Output: <span style="color:#10B981;">${pred.toFixed(2)} T/Ha</span> (${diffPct >= 0 ? '+' : ''}${diffPct}% vs district historical baseline)
     </div>
-    <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;">
-      • Soil &amp; Water Balance: ${irr} irrigation in ${soil} provides optimal moisture retention.<br>
-      • Advisory: Maintain recommended fertilizer application at ~${fert} kg/Ha for peak grain weight.
+    <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.4;">
+      • <strong>Soil &amp; Irrigation:</strong> ${irr} irrigation in ${soil} soil maintains optimal moisture retention for ${crop}.<br>
+      • <strong>Nutrient Plan:</strong> Maintain recommended fertilizer application at ~${fert} kg/Ha.
     </div>
   `;
 
@@ -979,9 +1182,12 @@ async function runPrediction() {
     type: 'bar',
     data: {
       labels: ['Historical Benchmark', 'Predicted Output'],
-      datasets: [{ data: [histAvg, pred], backgroundColor: ['#94A3B8', '#064E3B'], borderRadius: 4 }]
+      datasets: [{ data: [histAvg, pred], backgroundColor: ['#94A3B8', '#10B981'], borderRadius: 4 }]
     },
-    options: { ...gOpts(), scales: { x: baseScales.x, y: { ...baseScales.y, title: { display: true, text: 'Tonne / Ha' } } } }
+    options: {
+      ...gOpts({ plugins: { legend: { display: false } } }),
+      scales: { x: baseScales.x, y: { ...baseScales.y, title: { display: true, text: 'Tonne / Ha' } } }
+    }
   });
 }
 
@@ -995,7 +1201,12 @@ async function buildAlerts() {
     const resp = await fetch(`/predictions.json?state=${encodeURIComponent(STATE)}`, { headers: _authHeaders() });
     if (!resp.ok) throw new Error();
     const json = await resp.json();
-    ALL_ALERTS = json.predictions || [];
+    ALL_ALERTS = (json.predictions || []).map(r => ({
+      ...r,
+      predicted: typeof r.predicted === 'number' ? r.predicted : 0,
+      normal: typeof r.normal === 'number' ? r.normal : 0,
+      anomaly: typeof r.anomaly === 'number' ? r.anomaly : 0
+    }));
     FILTERED_ALERTS = [...ALL_ALERTS];
   } catch {
     // Generate realistic alert records if predictions.json is not yet generated
@@ -1009,6 +1220,19 @@ async function buildAlerts() {
     FILTERED_ALERTS = [...ALL_ALERTS];
   }
 
+  // Populate district and crop filter dropdowns dynamically
+  const distSel = document.getElementById('al-f-district');
+  if (distSel) {
+    const uniqueDists = [...new Set(ALL_ALERTS.map(r => r.district).filter(Boolean))].sort();
+    distSel.innerHTML = '<option value="all">All Districts</option>' + uniqueDists.map(d => `<option value="${d}">${d}</option>`).join('');
+  }
+
+  const cropSel = document.getElementById('al-f-crop');
+  if (cropSel) {
+    const uniqueCrops = [...new Set(ALL_ALERTS.map(r => r.crop).filter(Boolean))].sort();
+    cropSel.innerHTML = '<option value="all">All Crops</option>' + uniqueCrops.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
   renderAlertTable();
   buildAlertCharts();
 }
@@ -1016,8 +1240,8 @@ async function buildAlerts() {
 function renderAlertTable() {
   const rows = [...FILTERED_ALERTS];
   rows.sort((a, b) => {
-    const va = a[ALERT_SORT], vb = b[ALERT_SORT];
-    return typeof va === 'string' ? (ALERT_ASC ? va.localeCompare(vb) : vb.localeCompare(va)) : (ALERT_ASC ? va - vb : vb - va);
+    const va = a[ALERT_SORT] ?? 0, vb = b[ALERT_SORT] ?? 0;
+    return typeof va === 'string' ? (ALERT_ASC ? va.localeCompare(String(vb)) : String(vb).localeCompare(va)) : (ALERT_ASC ? Number(va) - Number(vb) : Number(vb) - Number(va));
   });
 
   const crit = rows.filter(r => r.status === 'critical').length;
@@ -1042,13 +1266,17 @@ function renderAlertTable() {
     const isWatch = r.status === 'watch';
     const badge = isCrit ? '<span class="badge badge-danger">Critical</span>' : isWatch ? '<span class="badge badge-warning">Watch</span>' : '<span class="badge badge-success">Normal</span>';
     const anomColor = isCrit ? 'var(--danger)' : isWatch ? 'var(--warning)' : 'var(--success)';
+    const predVal = typeof r.predicted === 'number' ? r.predicted.toFixed(2) : '—';
+    const normVal = typeof r.normal === 'number' ? r.normal.toFixed(2) : '—';
+    const anomVal = typeof r.anomaly === 'number' ? `${r.anomaly > 0 ? '+' : ''}${r.anomaly.toFixed(1)}%` : '0.0%';
+
     return `<tr>
       <td style="font-weight:600;">${r.district}</td>
       <td>${r.crop}</td>
       <td>${r.season}</td>
-      <td style="font-family:var(--font-mono);font-weight:600;">${r.predicted.toFixed(2)}</td>
-      <td style="font-family:var(--font-mono);color:var(--text-muted);">${r.normal.toFixed(2)}</td>
-      <td style="font-family:var(--font-mono);color:${anomColor};font-weight:600;">${r.anomaly > 0 ? '+' : ''}${r.anomaly.toFixed(1)}%</td>
+      <td style="font-family:var(--font-mono);font-weight:600;">${predVal}</td>
+      <td style="font-family:var(--font-mono);color:var(--text-muted);">${normVal}</td>
+      <td style="font-family:var(--font-mono);color:${anomColor};font-weight:600;">${anomVal}</td>
       <td>${badge}</td>
       <td style="font-family:var(--font-mono);color:var(--text-muted);">${r.weather_year || 2026}</td>
     </tr>`;
@@ -1076,7 +1304,7 @@ function sortAlerts(col) {
 }
 
 function buildAlertCharts() {
-  const dists = [...new Set(ALL_ALERTS.map(r => r.district))].slice(0, 8);
+  const dists = [...new Set(ALL_ALERTS.map(r => r.district).filter(Boolean))].slice(0, 8);
   const critCounts = dists.map(d => ALL_ALERTS.filter(r => r.district === d && r.status === 'critical').length);
   const watchCounts = dists.map(d => ALL_ALERTS.filter(r => r.district === d && r.status === 'watch').length);
 
@@ -1093,11 +1321,20 @@ function buildAlertCharts() {
   });
 
   const bins = ['≤ -30%', '-20% to -30%', '-10% to -20%', '0% to -10%', '0% to +10%', '> +10%'];
+  const binCounts = [
+    ALL_ALERTS.filter(r => typeof r.anomaly === 'number' && r.anomaly <= -30).length,
+    ALL_ALERTS.filter(r => typeof r.anomaly === 'number' && r.anomaly > -30 && r.anomaly <= -20).length,
+    ALL_ALERTS.filter(r => typeof r.anomaly === 'number' && r.anomaly > -20 && r.anomaly <= -10).length,
+    ALL_ALERTS.filter(r => typeof r.anomaly === 'number' && r.anomaly > -10 && r.anomaly <= 0).length,
+    ALL_ALERTS.filter(r => typeof r.anomaly === 'number' && r.anomaly > 0 && r.anomaly <= 10).length,
+    ALL_ALERTS.filter(r => typeof r.anomaly === 'number' && r.anomaly > 10).length,
+  ];
+
   mkChart('alertAnomalyChart', {
     type: 'bar',
     data: {
       labels: bins,
-      datasets: [{ data: [12, 18, 35, 48, 62, 40], backgroundColor: ['#EF4444', '#F59E0B', '#64748B', '#64748B', '#10B981', '#064E3B'], borderRadius: 4 }]
+      datasets: [{ data: binCounts, backgroundColor: ['#EF4444', '#F59E0B', '#94A3B8', '#94A3B8', '#10B981', '#064E3B'], borderRadius: 4 }]
     },
     options: { ...gOpts(), scales: { x: baseScales.x, y: baseScales.y } }
   });
