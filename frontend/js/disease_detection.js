@@ -276,40 +276,47 @@ function renderResults(d) {
 
   resultsEl.innerHTML = `
     <div class="health-banner ${esc(bannerCls)}">
-      <div class="banner-icon">${bannerIcon}</div>
-
-      <div>
-        <div class="banner-crop">${esc(d.crop_detected || 'Unknown crop')}</div>
-        <div class="banner-status ${esc(bannerCls)}">${esc(d.health_status || '—')}</div>
-        <div class="banner-conf">AI confidence: ${esc(d.confidence ?? '—')}%</div>
+      <div class="banner-main-info">
+        <div class="banner-icon">${bannerIcon}</div>
+        <div>
+          <div class="banner-crop">${esc(d.crop_detected || 'Crop Analyzed')}</div>
+          <div class="banner-status ${esc(bannerCls)}">${esc(d.health_status || '—')}</div>
+          <div class="banner-conf">Diagnostic Confidence: ${esc(d.confidence ?? '—')}%</div>
+        </div>
       </div>
 
-      <div class="urgency-tag urgency-${esc(urgencyKey)}">${esc(urgency)}</div>
+      <div class="urgency-tag urgency-${esc(urgencyKey)}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Urgency: ${esc(urgency)}
+      </div>
     </div>
 
     <div class="results-grid">
 
       <div class="card ${diseases.length === 0 ? 'full' : ''}">
-        <div class="card-label">Diseases / Issues Detected</div>
+        <div class="card-label">
+          <span>Diseases &amp; Pathologies Detected</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);font-family:var(--font-mono);">${diseases.length} Detected</span>
+        </div>
 
         ${
           diseases.length === 0
-            ? '<div style="color:var(--green);font-size:13px">✅ No diseases detected — crop appears healthy.</div>'
+            ? '<div style="color:var(--success);font-size:13px;padding:12px;background:#F0FDF4;border-radius:6px;border:1px solid #BBF7D0;">✅ No active diseases detected — crop appears healthy.</div>'
             : diseases.map(dis => `
               <div class="disease-item">
-                <div class="disease-name">
-                  ${esc(dis.name)}
+                <div class="disease-header">
+                  <div class="disease-name">${esc(dis.name)}</div>
                   <span class="severity-badge severity-${esc(dis.severity)}">${esc(dis.severity)}</span>
                 </div>
 
-                <div class="disease-conf">Confidence: ${esc(dis.confidence ?? '—')}%</div>
+                <div class="disease-conf">Pathology Confidence: ${esc(dis.confidence ?? '—')}%</div>
                 <div class="disease-symptoms">${esc(dis.symptoms_observed || '')}</div>
 
                 ${
                   (dis.affected_parts || []).length
                     ? `
                       <div class="disease-parts">
-                        ${(dis.affected_parts || []).map(p => `<span class="part-tag">${esc(p)}</span>`).join('')}
+                        ${(dis.affected_parts || []).map(p => `<span class="part-tag">🍃 ${esc(p)}</span>`).join('')}
                       </div>
                     `
                     : ''
@@ -323,8 +330,13 @@ function renderResults(d) {
         diseases.length > 0
           ? `
             <div class="card">
-              <div class="card-label">Yield Impact (if untreated)</div>
-              <div class="yield-impact ${yieldGood ? 'good' : ''}">${esc(yieldImp)}</div>
+              <div class="card-label">Yield Impact (If Untreated)</div>
+              <div class="yield-impact-box ${yieldGood ? 'good' : ''}">
+                <div class="yield-impact-val">${esc(yieldImp)}</div>
+                <div class="yield-impact-sub">
+                  ${yieldGood ? 'Minimal or negligible yield reduction predicted under current conditions.' : 'Potential harvest loss without timely agronomic intervention.'}
+                </div>
+              </div>
             </div>
           `
           : ''
@@ -334,7 +346,7 @@ function renderResults(d) {
         actions.length
           ? `
             <div class="card">
-              <div class="card-label">Immediate Actions</div>
+              <div class="card-label">Immediate Recommended Actions</div>
               <ul class="action-list">
                 ${actions.map(a => `<li>${esc(a)}</li>`).join('')}
               </ul>
@@ -347,15 +359,17 @@ function renderResults(d) {
         treatments.length
           ? `
             <div class="card ${actions.length === 0 ? 'full' : ''}">
-              <div class="card-label">Recommended Treatments</div>
+              <div class="card-label">Recommended Treatment Protocols</div>
 
               ${treatments.map(t => `
-                <div class="treatment-item t-${esc(t.type)}">
-                  <div class="treatment-type">${esc(t.type)}</div>
-                  <div class="treatment-name">${esc(t.product_or_method)}</div>
+                <div class="treatment-item t-${esc((t.type || '').toLowerCase())}">
+                  <div class="treatment-header">
+                    <div class="treatment-name">${esc(t.product_or_method)}</div>
+                    <span class="treatment-type">${esc(t.type)}</span>
+                  </div>
                   <div class="treatment-detail">
                     ${esc(t.dosage_or_details || '')}
-                    ${t.timing ? ' · ' + esc(t.timing) : ''}
+                    ${t.timing ? '<br><span style="font-size:11px;color:var(--text-muted);margin-top:2px;display:inline-block;">⏱ ' + esc(t.timing) + '</span>' : ''}
                   </div>
                 </div>
               `).join('')}
@@ -368,7 +382,7 @@ function renderResults(d) {
         prevents.length
           ? `
             <div class="card full">
-              <div class="card-label">Preventive Measures</div>
+              <div class="card-label">Preventive Agronomic Measures</div>
               <ul class="prevent-list">
                 ${prevents.map(p => `<li>${esc(p)}</li>`).join('')}
               </ul>
@@ -381,7 +395,7 @@ function renderResults(d) {
         d.additional_notes
           ? `
             <div class="card full">
-              <div class="card-label">Additional Observations</div>
+              <div class="card-label">Additional Agronomic Observations</div>
               <div class="notes-box">${esc(d.additional_notes)}</div>
             </div>
           `
@@ -390,8 +404,8 @@ function renderResults(d) {
 
     </div>
 
-    <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px">
-      Model: ${esc(d.model_used || '—')} · Provider: ${esc(d.provider || '—')} · State: ${esc(d.state || STATE)}
+    <div style="font-size:10.5px;color:var(--text-muted);font-family:var(--font-mono);margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+      Model Engine: ${esc(d.model_used || 'VLM')} · Diagnostic Provider: ${esc(d.provider || 'Groq Vision')} · Jurisdiction: State of ${esc(d.state || STATE_NAME)}
     </div>
   `;
 }

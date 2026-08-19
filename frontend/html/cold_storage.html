@@ -278,6 +278,7 @@
           <thead>
             <tr>
               <th>Crop Variety</th>
+              <th>Registered Farmer Email</th>
               <th>District Total Capacity (MT)</th>
               <th>Available Storage (MT)</th>
               <th>Expected Harvest Demand (MT)</th>
@@ -286,7 +287,7 @@
           </thead>
           <tbody id="yield-production-tbody">
             <tr>
-              <td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Evaluating district crop storage feasibility…</td>
+              <td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Evaluating district crop storage feasibility…</td>
             </tr>
           </tbody>
         </table>
@@ -324,24 +325,37 @@
     }
 
     let ALL_FACILITIES = [];
+    let ALL_LANDS = [];
 
     async function loadColdStorageData() {
       try {
-        const url = `/api/cold-storage/facilities?state=${encodeURIComponent(STATE)}`;
+        const facUrl = `/api/cold-storage/facilities?state=${encodeURIComponent(STATE)}`;
+        const landsUrl = `/api/yield/lands?state=${encodeURIComponent(STATE)}`;
         const headers = AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {};
-        const resp = await fetch(url, { headers });
+
+        const [facResp, landsResp] = await Promise.all([
+          fetch(facUrl, { headers }).catch(() => null),
+          fetch(landsUrl, { headers }).catch(() => null)
+        ]);
         
-        if (resp.ok) {
-          const data = await resp.json();
+        if (facResp && facResp.ok) {
+          const data = await facResp.json();
           if (Array.isArray(data) && data.length) {
             ALL_FACILITIES = data;
+          }
+        }
+
+        if (landsResp && landsResp.ok) {
+          const landsData = await landsResp.json();
+          if (Array.isArray(landsData)) {
+            ALL_LANDS = landsData;
           }
         }
       } catch (e) {
         console.warn('[Cold Storage API]', e);
       }
 
-      // If backend offline or empty, use realistic state fallback
+      // If backend offline or empty, use realistic state fallback for facilities
       if (!ALL_FACILITIES.length) {
         if (STATE === 'rajasthan') {
           ALL_FACILITIES = [
@@ -397,21 +411,37 @@
         ? ALL_FACILITIES.filter(f => (f.district || '').toLowerCase() === selectedDist.toLowerCase())
         : ALL_FACILITIES;
 
-      // Total registered capacity — the ONLY number we have from the DB
+      const landsToRender = isFiltered
+        ? ALL_LANDS.filter(l => (l.district || '').toLowerCase() === selectedDist.toLowerCase())
+        : ALL_LANDS;
+
+      // Total registered warehouse capacity
       const totalCap = facilitiesToRender.reduce((sum, f) => sum + (Number(f.total_capacity_mt) || 0), 0);
       const coveredDists = new Set(facilitiesToRender.map(f => f.district).filter(Boolean)).size;
 
-      // Update KPI Cards — only show what we actually know
+      // Occupied Capacity computed directly from Yield Detect farmer lands (Area * Predicted Yield)
+      const occupiedCap = landsToRender.reduce((sum, l) => {
+        const area = Number(l.area_hectare) || 0;
+        const yieldVal = Number(l.predicted_yield) || 0;
+        return sum + (area * yieldVal);
+      }, 0);
+
+      const availCap = Math.max(0, totalCap - occupiedCap);
+      const occPct = totalCap > 0 ? ((occupiedCap / totalCap) * 100) : 0;
+
+      // Update KPI Cards
       document.getElementById('kpi-total-cap').innerHTML =
         `${Math.round(totalCap).toLocaleString()} <small style="font-size:12px;font-weight:500;color:var(--text-muted);">MT</small>`;
 
-      // Occupancy / Available: no snapshot data recorded yet, so show N/A
-      document.getElementById('kpi-avail-cap').innerHTML =
-        `<span style="font-size:16px;font-weight:600;color:var(--text-muted);">No Snapshots</span>`;
-      document.getElementById('kpi-avail-sub').textContent = 'Live occupancy data pending';
       document.getElementById('kpi-occ-cap').innerHTML =
-        `<span style="font-size:16px;font-weight:600;color:var(--text-muted);">No Snapshots</span>`;
-      document.getElementById('kpi-occ-sub').textContent = 'Live occupancy data pending';
+        `${occupiedCap.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} <small style="font-size:12px;font-weight:500;color:var(--text-muted);">MT</small>`;
+      document.getElementById('kpi-occ-sub').textContent =
+        `${occPct < 0.01 && occPct > 0 ? '<0.01%' : occPct.toFixed(2) + '%'} allocated from Yield Detect (${landsToRender.length} plot${landsToRender.length === 1 ? '' : 's'})`;
+
+      document.getElementById('kpi-avail-cap').innerHTML =
+        `${availCap.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} <small style="font-size:12px;font-weight:500;color:var(--text-muted);">MT</small>`;
+      document.getElementById('kpi-avail-sub').textContent =
+        `${(100 - occPct).toFixed(2)}% storage headroom available`;
 
       document.getElementById('kpi-facilities-count').innerHTML =
         `${facilitiesToRender.length} <small style="font-size:12px;font-weight:500;color:var(--text-muted);">Units</small>`;
@@ -420,19 +450,27 @@
 
       document.getElementById('facilities-badge').textContent = `${facilitiesToRender.length} Facilities Listed`;
 
-      // Meter: show total registered capacity, label as capacity (not occupancy)
+      // Utilization Meter
       const meterFill = document.getElementById('cs-meter-fill');
-      meterFill.style.width = '100%';
-      meterFill.className = 'meter-fill';
+      meterFill.style.width = `${Math.min(100, Math.max(occupiedCap > 0 ? 1 : 0, occPct))}%`;
+      meterFill.className = `meter-fill ${occPct > 85 ? 'danger' : occPct > 65 ? 'warning' : ''}`;
+      
       document.getElementById('cs-meter-label').textContent =
-        `Total Registered Capacity: ${Math.round(totalCap).toLocaleString()} MT — Live Occupancy Snapshots Not Yet Recorded`;
+        `Yield Detect Storage Demand: ${occPct.toFixed(2)}% Allocated (${availCap.toLocaleString(undefined, {maximumFractionDigits: 1})} MT Free Headroom)`;
       document.getElementById('meter-allocated').textContent =
-        `Registered Capacity: ${Math.round(totalCap).toLocaleString()} MT`;
+        `Harvest Demand (Yield Detect): ${occupiedCap.toLocaleString(undefined, {maximumFractionDigits: 2})} MT`;
       document.getElementById('meter-free').textContent =
-        `Occupancy data pending — contact NHB facility operators`;
+        `Remaining Headroom: ${availCap.toLocaleString(undefined, {maximumFractionDigits: 2})} MT`;
 
-      // Hide risk banner (no real occupancy to evaluate risk against)
-      document.getElementById('cs-risk-banner').style.display = 'none';
+      // Risk Banner if harvest demand exceeds 85% of total capacity
+      const banner = document.getElementById('cs-risk-banner');
+      if (occPct > 85) {
+        banner.style.display = 'flex';
+        document.getElementById('cs-risk-title').textContent = `Storage Headroom Alert in ${isFiltered ? selectedDist : STATE.toUpperCase()}`;
+        document.getElementById('cs-risk-desc').textContent = `Harvest yield forecasts exceed ${occPct.toFixed(1)}% of available cold storage. Advance inter-district routing is recommended.`;
+      } else {
+        banner.style.display = 'none';
+      }
 
       // Render Facilities Table
       const tbody = document.getElementById('facilities-tbody');
@@ -457,27 +495,57 @@
         }).join('');
       }
 
-      // Render Linkage Table
-      renderLinkageTable(selectedDist, totalCap);
+      // Render Linkage Table with real crop-wise yield demand
+      renderLinkageTable(selectedDist, totalCap, availCap, landsToRender);
     }
 
-    function renderLinkageTable(selectedDist, totalCap) {
+    function renderLinkageTable(selectedDist, totalCap, availCap, landsToRender) {
       const lTbody = document.getElementById('yield-production-tbody');
-      // No occupancy snapshot data in DB yet — show registered capacity vs typical crop demand
-      const crops = STATE === 'rajasthan'
-        ? ['Mustard', 'Wheat', 'Potato / Onion', 'Bajra', 'Spices & Garlic']
-        : STATE === 'meghalaya'
-        ? ['Ginger', 'Potato', 'Horticultural Produce']
-        : ['Potato', 'Bamboo Shoots', 'Vegetables'];
 
-      lTbody.innerHTML = crops.map(crop => {
-        const cap = Math.round(totalCap);
+      if (!landsToRender || !landsToRender.length) {
+        lTbody.innerHTML = `<tr>
+          <td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">
+            No farmer plots currently geofenced in <strong>${selectedDist && selectedDist !== 'all' ? selectedDist : STATE.toUpperCase()}</strong> under Yield Detect.<br>
+            Total storage capacity of <strong>${Math.round(totalCap).toLocaleString()} MT</strong> is available as free headroom.
+          </td>
+        </tr>`;
+        return;
+      }
+
+      // Group lands by crop
+      const cropMap = {};
+      landsToRender.forEach(l => {
+        const crop = l.crop || 'Unspecified Crop';
+        if (!cropMap[crop]) {
+          cropMap[crop] = { totalDemand: 0, plotCount: 0, totalArea: 0, emails: new Set() };
+        }
+        const area = Number(l.area_hectare) || 0;
+        const yieldVal = Number(l.predicted_yield) || 0;
+        cropMap[crop].totalDemand += (area * yieldVal);
+        cropMap[crop].totalArea += area;
+        cropMap[crop].plotCount += 1;
+        if (l.user_email) cropMap[crop].emails.add(l.user_email);
+      });
+
+      lTbody.innerHTML = Object.entries(cropMap).map(([crop, data]) => {
+        const demand = data.totalDemand;
+        const feasible = availCap >= demand;
+        const statusBadge = feasible
+          ? '<span class="badge badge-success">✓ Feasible · Storage Headroom Available</span>'
+          : '<span class="badge badge-danger">⚠ Deficit · Inter-District Cold Chain Required</span>';
+
+        const emailList = Array.from(data.emails);
+        const emailHtml = emailList.length
+          ? emailList.map(e => `<span style="display:inline-block;background:#F1F5F9;color:#0F172A;font-size:11.5px;padding:3px 8px;border-radius:4px;font-family:var(--font-mono);border:1px solid #E2E8F0;margin:2px 4px 2px 0;">${e}</span>`).join('')
+          : '<span style="color:var(--text-muted);font-size:12px;">—</span>';
+
         return `<tr>
-          <td style="font-weight:600;color:var(--text);">${crop}</td>
-          <td style="font-family:var(--font-mono);">${cap.toLocaleString()} MT</td>
-          <td style="font-family:var(--font-mono);color:var(--text-muted);">No Snapshot Data</td>
-          <td style="font-family:var(--font-mono);color:var(--text-muted);">No Yield Detect Lands</td>
-          <td><span class="badge badge-neutral">Pending Occupancy Data</span></td>
+          <td style="font-weight:600;color:var(--text);">${crop} <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">(${data.plotCount} plot${data.plotCount > 1 ? 's' : ''} • ${data.totalArea.toFixed(2)} ha)</span></td>
+          <td>${emailHtml}</td>
+          <td style="font-family:var(--font-mono);">${Math.round(totalCap).toLocaleString()} MT</td>
+          <td style="font-family:var(--font-mono);color:var(--accent);font-weight:600;">${availCap.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} MT</td>
+          <td style="font-family:var(--font-mono);font-weight:700;color:#1B4332;">${demand.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} MT</td>
+          <td>${statusBadge}</td>
         </tr>`;
       }).join('');
     }

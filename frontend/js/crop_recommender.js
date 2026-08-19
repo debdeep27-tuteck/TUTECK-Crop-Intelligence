@@ -39,8 +39,13 @@ checkBackend();
 setInterval(checkBackend, 5000);
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-function getChip(id) {
-  return document.querySelector(`#${id} .chip.active`)?.dataset.val || '';
+function getFormVal(id, chipId) {
+  const el = document.getElementById(id);
+  if (el && el.value) return el.value;
+  if (chipId) {
+    return document.querySelector(`#${chipId} .chip.active`)?.dataset.val || '';
+  }
+  return '';
 }
 
 function getUserInputs() {
@@ -55,10 +60,10 @@ function getUserInputs() {
     // Farm
     Fertilizer_kg_per_ha:  parseFloat(document.getElementById('fert').value),
     'Area (Hectare)':      parseFloat(document.getElementById('area').value),
-    Soil_Type:             getChip('soil-chips'),
-    Irrigation_Type:       getChip('irr-chips'),
-    Season:                getChip('season-chips'),
-    Pest_Disease_Incidence: getChip('pest-chips'),
+    Soil_Type:             getFormVal('soil-select', 'soil-chips'),
+    Irrigation_Type:       getFormVal('irr-select', 'irr-chips'),
+    Season:                getFormVal('season-select', 'season-chips'),
+    Pest_Disease_Incidence: getFormVal('pest-select', 'pest-chips'),
   };
 }
 

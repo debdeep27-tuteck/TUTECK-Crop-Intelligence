@@ -137,6 +137,272 @@
       .layout { grid-template-columns: 1fr; }
       .results-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── Disease Result Output Styles ── */
+    .health-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      box-shadow: var(--shadow-sm);
+    }
+    .health-banner.diseased {
+      background: linear-gradient(135deg, #FEF2F2 0%, #FFFBEB 100%);
+      border-color: #FECACA;
+    }
+    .health-banner.healthy {
+      background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+      border-color: #A7F3D0;
+    }
+    .health-banner.unclear {
+      background: #F8FAFC;
+      border-color: #E2E8F0;
+    }
+    .banner-main-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .banner-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+    .banner-crop {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .banner-status {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 3px;
+    }
+    .banner-status.diseased { color: #DC2626; }
+    .banner-status.healthy { color: #059669; }
+    .banner-status.unclear { color: #D97706; }
+    .banner-conf {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+    .urgency-tag {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .urgency-3days { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+    .urgency-week { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+    .urgency-Monitor, .urgency-None { background: #F0FDF4; color: #047857; border: 1px solid #BBF7D0; }
+
+    /* Cards & Labels */
+    .card-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Disease item */
+    .disease-item {
+      padding: 14px 16px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .disease-item:last-child { margin-bottom: 0; }
+    .disease-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .disease-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .severity-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+    }
+    .severity-Severe, .severity-severe { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+    .severity-Moderate, .severity-moderate { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+    .severity-Mild, .severity-mild { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+
+    .disease-conf {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .disease-symptoms {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .disease-parts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .part-tag {
+      font-size: 11px;
+      font-weight: 600;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: #334155;
+    }
+
+    /* Yield Impact */
+    .yield-impact-box {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 18px 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: calc(100% - 32px);
+    }
+    .yield-impact-box.good {
+      background: #ECFDF5;
+      border-color: #A7F3D0;
+    }
+    .yield-impact-val {
+      font-size: 28px;
+      font-weight: 800;
+      color: #DC2626;
+      font-family: var(--font-sans);
+      letter-spacing: -0.02em;
+    }
+    .yield-impact-box.good .yield-impact-val {
+      color: #059669;
+    }
+    .yield-impact-sub {
+      font-size: 11.5px;
+      color: #7F1D1D;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .yield-impact-box.good .yield-impact-sub {
+      color: #064E3B;
+    }
+
+    /* Lists */
+    .action-list, .prevent-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .action-list li, .prevent-list li {
+      position: relative;
+      padding-left: 22px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .action-list li::before {
+      content: "⚡";
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 12px;
+    }
+    .prevent-list li::before {
+      content: "🛡️";
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 12px;
+    }
+
+    /* Treatments */
+    .treatment-item {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      background: #F8FAFC;
+      margin-bottom: 10px;
+    }
+    .treatment-item:last-child { margin-bottom: 0; }
+    .treatment-item.t-biological {
+      background: #F0FDF4;
+      border-color: #BBF7D0;
+    }
+    .treatment-item.t-chemical {
+      background: #EFF6FF;
+      border-color: #BFDBFE;
+    }
+    .treatment-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .treatment-type {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .t-biological .treatment-type { color: #047857; background: #DCFCE7; }
+    .t-chemical .treatment-type { color: #1D4ED8; background: #DBEAFE; }
+    .treatment-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .treatment-detail {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.45;
+    }
+
+    .notes-box {
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
   </style>
 </head>
 

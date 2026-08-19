@@ -1786,11 +1786,6 @@
             window.location = "/login";
             throw new Error("No session");
         }
-        if ((session.role || "").toLowerCase() !== "mandi") {
-            // Only mandi accounts may see this page.
-            window.top.location.href = "/dashboard";
-            throw new Error("Auction desk is only available to mandi accounts.");
-        }
 
         function authHeaders(json = true) {
             const headers = {};

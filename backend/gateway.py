@@ -117,7 +117,10 @@ def admin_page():
 @app.route("/cold-storage")
 @app.route("/auction-mandi")
 def home():
-    return send_from_directory(str(HTML_DIR), "index.html")
+    response = send_from_directory(str(HTML_DIR), "index.html")
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 # Yield Detect's "Add Land" / "Edit Land" screen is a full standalone page
@@ -531,16 +534,6 @@ def auction_health_direct():
 @app.route("/api/cold-storage-health")
 def cold_storage_health_direct():
     return forward_request(COLD_STORAGE_API, "api/cold-storage/health")
-
-
-@app.route("/api/cold-storage/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
-def cold_storage_api(path):
-    # cold_storage_backend.py mounts its own routes under /api/cold-storage/...
-    # itself, same convention as /api/yield above — forward the full path so
-    # e.g. /api/cold-storage/districts/<d>/summary reaches the backend unchanged.
-    # (This general proxy was missing — only the /api/cold-storage-health
-    # shortcut existed, which is why every real cold-storage call 404'd.)
-    return forward_request(COLD_STORAGE_API, f"api/cold-storage/{path}")
 
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────

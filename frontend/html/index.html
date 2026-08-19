@@ -1106,6 +1106,13 @@
           <span class="nav-label">Auction Floor</span>
         </a>
 
+        <a class="gn-link" data-target="/auction-mandi" data-content="/content/auction-mandi" href="#" title="Auction Mandi">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-7h6v7"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>
+          </span>
+          <span class="nav-label">Auction Mandi</span>
+        </a>
+
         <a class="gn-link" data-target="/cold-storage" data-content="/content/cold-storage" href="#" title="Cold Storage">
           <span class="nav-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-7"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
@@ -1154,12 +1161,6 @@
         </div>
 
         <div class="header-right">
-          <!-- Live Indicator -->
-          <div class="live-indicator" title="Live data feed active">
-            <div class="live-dot"></div>
-            <span>Live</span>
-          </div>
-
           <!-- State Switcher -->
           <div class="state-menu" id="state-menu">
             <button class="state-btn" id="state-switcher" type="button" onclick="toggleStateMenu(event)" title="Select Administrative State">
@@ -1181,12 +1182,6 @@
                 <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
             </div>
-          </div>
-
-          <!-- Backend Status -->
-          <div class="status-badge offline" id="backend-status">
-            <span class="badge-dot" style="background:#94a3b8"></span>
-            <span>BACKEND</span>
           </div>
 
           <!-- Notifications -->
@@ -1346,7 +1341,16 @@
           return [];
         }
         const data = await res.json();
-        return (data.permissions && data.permissions.pages) || [];
+        const pages = (data.permissions && data.permissions.pages) || [];
+        const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
+        const isMandi = String(session.role || '').trim().toLowerCase() === 'mandi';
+        if (isAdmin && !pages.includes('/auction-mandi')) {
+          pages.push('/auction-mandi');
+        }
+        if (isMandi && !pages.includes('/auction-mandi')) {
+          pages.push('/auction-mandi');
+        }
+        return pages;
       } catch {
         return [];
       }
@@ -1354,6 +1358,18 @@
 
     function applyRoleAccess() {
       if (!session) return;
+      const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
+      const isMandi = String(session.role || '').trim().toLowerCase() === 'mandi';
+
+      if (isAdmin) {
+        document.querySelectorAll('.gn-link[data-target]').forEach(link => {
+          link.style.display = 'flex';
+        });
+        const adminNav = document.getElementById('nav-admin-link');
+        if (adminNav) adminNav.style.display = 'flex';
+        return;
+      }
+
       if (ALLOWED_PAGES.length > 0) {
         const dashGroup = document.getElementById('dashboard-nav-group');
         if (dashGroup && !ALLOWED_PAGES.includes('/dashboard')) {
@@ -1362,8 +1378,10 @@
       }
       document.querySelectorAll('.gn-link[data-target]').forEach(link => {
         const target = link.dataset.target;
-        if (ALLOWED_PAGES.length > 0 && !ALLOWED_PAGES.includes(target)) {
+        if (ALLOWED_PAGES.length > 0 && !ALLOWED_PAGES.includes(target) && !(isMandi && target === '/auction-mandi')) {
           link.style.display = 'none';
+        } else {
+          link.style.display = 'flex';
         }
       });
       
@@ -1752,6 +1770,7 @@
       '/disease': 'DISEASE DETECTION',
       '/yield-detect': 'YIELD DETECT',
       '/auction': 'AUCTION FLOOR',
+      '/auction-mandi': 'AUCTION MANDI',
       '/cold-storage': 'COLD STORAGE',
     };
 
@@ -1952,6 +1971,7 @@
     // ── BACKEND HEALTH CHECK ──
     async function checkBackend() {
       const badge = document.getElementById('backend-status');
+      if (!badge) return;
       try {
         const res = await fetch('/health', { cache: 'no-store' });
         if (res.ok) {

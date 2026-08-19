@@ -273,6 +273,10 @@ def get_user_permissions(uid, role=None):
             return {"pages": default_pages}
 
         pages = [p.strip() for p in df.loc[idx[0], "pages"].split(",") if p.strip()]
+        if str(role or "").strip().lower() == "mandi" and "/auction-mandi" not in pages:
+            pages.append("/auction-mandi")
+            df.at[idx[0], "pages"] = ",".join(pages)
+            _save_user_permissions_df(df)
         return {"pages": pages}
 
 
