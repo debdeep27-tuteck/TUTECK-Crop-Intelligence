@@ -1,253 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Crop Disease Detection</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f7f5f0; --surface: #ffffff; --surface2: #f0ede8;
-  --border: #e0ddd5; --border2: #c8c4b8;
-  --green: #4a7c59; --green-dim: #3d6b4a;
-  --amber: #c9922a; --red: #c0392b;
-  --text: #1a1a18; --text2: #6b6b5e; --text3: #a8a89a;
-  --mono: 'DM Mono', monospace; --sans: 'Outfit', sans-serif;
-  --head: 'DM Serif Display', serif;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; font-size: 14px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CropAI — Computer Vision Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/design_system.css">
+  <style>
+    body {
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+    }
 
-header {
-  border-bottom: 1px solid var(--border); padding: 0 28px; height: 52px;
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--surface); position: sticky; top: 0; z-index: 100;
-}
-.header-title { display: flex; align-items: center; gap: 12px; }
-.header-title h1 { font-family: var(--head); font-size: 20px; font-weight: 400; }
-.header-title span { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .12em; text-transform: uppercase; }
-.status-pill { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; padding: 3px 10px; border-radius: 2px; border: 1px solid var(--border2); color: var(--text3); }
-.status-pill.online { color: var(--green); border-color: rgba(74,124,89,.35); background: rgba(74,124,89,.06); }
+    header {
+      padding: 16px 28px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-.layout { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 52px); }
+    .layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      min-height: calc(100vh - 65px);
+    }
 
-/* SIDEBAR */
-.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
-.sb-label { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+    .sidebar {
+      background: #FFFFFF;
+      border-right: 1px solid var(--border);
+      padding: 24px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
 
-/* DROP ZONE */
-.drop-zone {
-  border: 2px dashed var(--border2); border-radius: 8px;
-  padding: 32px 20px; text-align: center; cursor: pointer;
-  transition: all .15s; background: var(--surface2);
-}
-.drop-zone:hover, .drop-zone.drag-over { border-color: var(--green); background: rgba(74,124,89,.04); }
-.drop-icon { font-size: 32px; margin-bottom: 10px; }
-.drop-text { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-.drop-sub { font-size: 11px; color: var(--text3); }
-.drop-zone input[type=file] { display: none; }
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--bg);
+      transition: all 0.15s ease;
+    }
 
-/* PREVIEW */
-.preview-wrap { display: none; position: relative; }
-.preview-img { width: 100%; border-radius: 6px; border: 1px solid var(--border); display: block; max-height: 220px; object-fit: cover; }
-.preview-remove {
-  position: absolute; top: 6px; right: 6px;
-  background: rgba(0,0,0,.55); color: #fff; border: none;
-  border-radius: 50%; width: 22px; height: 22px; cursor: pointer;
-  font-size: 12px; display: flex; align-items: center; justify-content: center;
-}
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
 
-/* FORM FIELDS */
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 12px; font-weight: 500; color: var(--text2); }
-.field select, .field input {
-  background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
-  font-family: var(--sans); font-size: 13px; padding: 8px 10px; border-radius: 4px;
-  width: 100%; outline: none; appearance: none; transition: border-color .15s;
-}
-.field select:focus, .field input:focus { border-color: var(--green); }
+    .preview-wrap {
+      display: none;
+      position: relative;
+    }
 
-.run-btn {
-  width: 100%; padding: 12px; background: var(--green); color: #fff;
-  font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
-  text-transform: uppercase; border: none; border-radius: 4px; cursor: pointer;
-  transition: background .15s; margin-top: 4px;
-}
-.run-btn:hover { background: var(--green-dim); }
-.run-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .preview-img {
+      width: 100%;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      max-height: 220px;
+      object-fit: cover;
+    }
 
-/* MAIN PANEL */
-.main-panel { padding: 28px 32px; overflow-y: auto; }
+    .preview-remove {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(15, 23, 42, 0.7);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
 
-/* EMPTY STATE */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 400px; color: var(--text3); text-align: center; gap: 12px;
-}
-.empty-icon { font-size: 48px; opacity: .35; }
-.empty-title { font-family: var(--head); font-size: 22px; color: var(--text2); }
-.empty-body { font-size: 13px; line-height: 1.6; max-width: 380px; }
+    .main-panel {
+      padding: 28px 32px;
+      overflow-y: auto;
+    }
 
-/* LOADING */
-.loading-state { display: none; align-items: center; justify-content: center; flex-direction: column; min-height: 400px; gap: 16px; }
-.spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: .08em; }
+    .results {
+      display: none;
+    }
 
-/* RESULTS */
-.results { display: none; }
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
 
-.health-banner {
-  border-radius: 6px; padding: 18px 22px; margin-bottom: 20px;
-  display: flex; align-items: flex-start; gap: 16px;
-  border: 1px solid var(--border);
-}
-.health-banner.healthy  { background: rgba(74,124,89,.06); border-color: rgba(74,124,89,.3); }
-.health-banner.diseased { background: rgba(192,57,43,.06); border-color: rgba(192,57,43,.3); }
-.health-banner.warning  { background: rgba(201,146,42,.06); border-color: rgba(201,146,42,.3); }
-.health-banner.unclear  { background: var(--surface2); }
-.banner-icon { font-size: 32px; flex-shrink: 0; }
-.banner-crop { font-family: var(--head); font-size: 22px; margin-bottom: 4px; }
-.banner-status { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
-.banner-status.healthy  { color: var(--green); }
-.banner-status.diseased { color: var(--red); }
-.banner-status.warning  { color: var(--amber); }
-.banner-conf { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.urgency-tag {
-  margin-left: auto; font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
-  text-transform: uppercase; padding: 4px 10px; border-radius: 2px; align-self: flex-start;
-  white-space: nowrap;
-}
-.urgency-Immediate   { background: rgba(192,57,43,.12); color: var(--red); border: 1px solid rgba(192,57,43,.3); }
-.urgency-3days       { background: rgba(201,146,42,.1); color: var(--amber); border: 1px solid rgba(201,146,42,.25); }
-.urgency-week        { background: rgba(201,146,42,.08); color: var(--amber); border: 1px solid rgba(201,146,42,.2); }
-.urgency-Monitor     { background: rgba(74,124,89,.08); color: var(--green); border: 1px solid rgba(74,124,89,.25); }
-.urgency-None        { background: rgba(74,124,89,.08); color: var(--green); border: 1px solid rgba(74,124,89,.25); }
+    .card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-xs);
+    }
 
-/* GRID SECTIONS */
-.results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px 20px; }
-.card-label { font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--text3); margin-bottom: 12px; }
-.card.full { grid-column: 1 / -1; }
+    .card.full {
+      grid-column: 1 / -1;
+    }
 
-/* DISEASE LIST */
-.disease-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
-.disease-item:last-child { border-bottom: none; }
-.disease-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-.severity-badge { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; padding: 2px 7px; border-radius: 2px; }
-.severity-Mild     { background: rgba(74,124,89,.1);   color: var(--green); }
-.severity-Moderate { background: rgba(201,146,42,.1);  color: var(--amber); }
-.severity-Severe   { background: rgba(192,57,43,.12);  color: var(--red);   }
-.disease-conf { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 4px; }
-.disease-symptoms { font-size: 12px; color: var(--text2); line-height: 1.5; }
-.disease-parts { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
-.part-tag { font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 3px; color: var(--text3); }
+    .loading-state {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      min-height: 380px;
+      gap: 14px;
+    }
 
-/* TREATMENTS */
-.treatment-item { padding: 10px 12px; border-radius: 4px; background: var(--surface2); border-left: 3px solid var(--border2); margin-bottom: 8px; }
-.treatment-type { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
-.treatment-name { font-weight: 600; font-size: 13px; color: var(--text); margin-bottom: 2px; }
-.treatment-detail { font-size: 11px; color: var(--text2); }
-.t-Chemical  { border-left-color: #e74c3c; }
-.t-Biological{ border-left-color: var(--green); }
-.t-Cultural  { border-left-color: var(--amber); }
-.t-Organic   { border-left-color: #27ae60; }
+    .spinner {
+      width: 38px;
+      height: 38px;
+      border: 3px solid #E2E8F0;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
 
-/* LISTS */
-.action-list, .prevent-list { list-style: none; }
-.action-list li, .prevent-list li {
-  padding: 7px 0; border-bottom: 1px solid var(--border);
-  font-size: 13px; color: var(--text2); line-height: 1.4;
-  display: flex; align-items: flex-start; gap: 8px;
-}
-.action-list li:last-child, .prevent-list li:last-child { border-bottom: none; }
-.action-list li::before { content: "→"; color: var(--red); font-family: var(--mono); flex-shrink: 0; }
-.prevent-list li::before { content: "✓"; color: var(--green); font-family: var(--mono); flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-/* YIELD IMPACT */
-.yield-impact { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--red); }
-.yield-impact.good { color: var(--green); }
-
-.notes-box { font-size: 13px; color: var(--text2); line-height: 1.6; padding: 14px; background: var(--surface2); border-radius: 4px; border: 1px solid var(--border); }
-
-/* ERROR */
-.error-box { padding: 16px 20px; background: rgba(192,57,43,.06); border: 1px solid rgba(192,57,43,.25); border-radius: 4px; color: var(--red); font-size: 13px; }
-</style>
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
+
 <body>
+  <header>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);line-height:1.2;">Computer Vision Disease Detection</div>
+        <div style="font-size:11px;color:var(--text-muted);" id="state-sub">AI Diagnostic Suite · Active Scoped</div>
+      </div>
+    </div>
+    <span class="badge badge-success" id="disease-status">VLM Vision Online</span>
+  </header>
 
-<header>
-  <div class="header-title">
-    <div>🔬</div>
-    <h1>Disease Detection</h1>
-    <span id="state-sub">AI · Tripura</span>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div>
+        <div class="mono-label" style="margin-bottom:8px;">Upload Crop Image</div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" accept="image/*" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <div style="font-weight:600;font-size:13px;color:var(--text);">Click or drop an image</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">JPG, PNG, WEBP — max 10MB</div>
+        </div>
+        <div class="preview-wrap" id="preview-wrap">
+          <img id="preview-img" class="preview-img" src="" alt="Preview">
+          <button class="preview-remove" onclick="clearImage()">✕</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Crop Hint (Optional)</label>
+        <select class="form-select" id="crop-hint" style="width:100%;">
+          <option value="">— Auto-Detect Crop —</option>
+          <option value="Wheat">Wheat</option>
+          <option value="Rice">Rice</option>
+          <option value="Mustard">Mustard</option>
+          <option value="Potato">Potato</option>
+          <option value="Maize">Maize</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Agronomic Notes</label>
+        <input type="text" class="form-input" id="extra-notes" placeholder="e.g. Yellow lesions on upper leaf blade" style="width:100%;">
+      </div>
+
+      <button class="btn btn-primary" id="run-btn" onclick="runDetection()" style="width:100%;height:40px;" disabled>
+        Analyze Image
+      </button>
+
+      <div style="font-size:11.5px;color:var(--text-muted);line-height:1.45;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;">
+        Vision AI Diagnostic models analyze visual morphology, chlorosis patterns, and tissue necrosis to recommend field treatment protocols.
+      </div>
+    </aside>
+
+    <!-- Main Panel -->
+    <main class="main-panel">
+      <div class="empty-state" id="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        <div class="empty-state-title">Crop Pathology &amp; Diagnostic Center</div>
+        <div class="empty-state-desc">Upload a high-resolution photo of affected leaves, stems, or fruits to initiate automated visual pathology classification.</div>
+      </div>
+
+      <div class="loading-state" id="loading-state">
+        <div class="spinner"></div>
+        <div style="font-size:12.5px;font-weight:600;color:var(--text-secondary);">Processing high-resolution visual features…</div>
+      </div>
+
+      <div class="results" id="results"></div>
+    </main>
   </div>
-  <div class="status-pill" id="disease-status">CHECKING…</div>
-</header>
 
-<div class="layout">
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div>
-      <div class="sb-label">Upload crop image</div>
-      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-        <input type="file" id="file-input" accept="image/*">
-        <div class="drop-icon">📷</div>
-        <div class="drop-text">Click or drag & drop an image</div>
-        <div class="drop-sub">JPG, PNG, WEBP — max 10MB</div>
-      </div>
-      <div class="preview-wrap" id="preview-wrap">
-        <img id="preview-img" class="preview-img" src="" alt="Preview">
-        <button class="preview-remove" onclick="clearImage()">✕</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Crop hint <span style="color:var(--text3);font-weight:400">(optional)</span></label>
-      <select id="crop-hint">
-        <option value="">— Let AI detect automatically —</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Image notes <span style="color:var(--text3);font-weight:400">(optional)</span></label>
-      <input type="text" id="extra-notes" placeholder="e.g. leaves turning yellow from base">
-    </div>
-
-    <button class="run-btn" id="run-btn" onclick="runDetection()" disabled>
-      🔬 ANALYSE IMAGE
-    </button>
-
-    <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:4px">
-      Powered by Groq · Llama 4 Scout VLM<br>
-      Results are AI-generated advisory only.<br>
-      Consult a field agronomist for confirmation.
-    </div>
-  </aside>
-
-  <!-- MAIN PANEL -->
-  <main class="main-panel">
-
-    <div class="empty-state" id="empty-state">
-      <div class="empty-icon">🌿</div>
-      <div class="empty-title">Crop Disease Detection</div>
-      <div class="empty-body">
-        Upload a clear photo of the affected crop — leaf, stem, fruit, or root.
-        The AI will identify diseases, pests, and deficiencies with treatment recommendations.
-      </div>
-    </div>
-
-    <div class="loading-state" id="loading-state">
-      <div class="spinner"></div>
-      <div class="loading-text">ANALYSING IMAGE WITH GROQ VLM…</div>
-    </div>
-
-    <div class="results" id="results"></div>
-
-  </main>
-</div>
-
-<script src="../js/disease_detection.js"></script>
+  <script src="../js/disease_detection.js"></script>
 </body>
 </html>

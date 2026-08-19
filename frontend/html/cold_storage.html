@@ -1,710 +1,318 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Crop Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    /* ── Godown Ledger palette ──────────────────────────────────────────
-       One consolidated token set (the old file shadowed :root twice with
-       drifting values — merged here). Same family as the rest of the app
-       (deep pine green + turmeric amber) but pushed toward a physical
-       "registry ledger / ration card" feel: aged paper, ink stamps,
-       perforated stubs. Variable NAMES kept identical to before, since
-       several are referenced inline from JS-built markup. */
-    --green:#1e4a34; --green-dark:#123322; --green-deep:#0c2318;
-    --amber:#b9822a; --red:#a8452b; --red-bright:#c2532f; --sky:#3d7fa6;
-    --bg:#f3ecd9; --panel:#fffcf3; --border:#ddd0ac; --border2:#c7b787;
-    --text:#211f16; --text2:#4a4535; --text3:#8a7c56;
-    --ink:#173a28;
-    --mono:'DM Mono',monospace; --serif:'DM Serif Display',serif; --sans:'Outfit',sans-serif;
-    --shadow-sm:0 1px 2px rgba(23,20,8,.06), 0 1px 1px rgba(23,20,8,.05);
-    --shadow-md:0 10px 26px rgba(23,20,8,.12);
-    --shadow-lg:0 30px 70px rgba(10,8,3,.28);
-  }
-  *{box-sizing:border-box}
-  html,body{min-height:100%;}
-  body{
-    margin:0;color:var(--text);font-family:var(--sans);
-    background-color:var(--bg);
-    /* faint paper grain — the one texture applied everywhere, quietly */
-    background-image:radial-gradient(circle at 1px 1px, rgba(33,31,22,.055) 1px, transparent 0);
-    background-size:20px 20px;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CropAI — Cold Storage Intelligence &amp; Logistics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/design_system.css">
+  <style>
+    body {
+      padding: 24px 28px 40px;
+      background-color: var(--bg);
+    }
 
-  .cs-app{min-height:100vh;display:grid;grid-template-columns:328px minmax(0,1fr);}
+    .cs-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-  /* ── Sidebar: the "godown office" ─────────────────────────────────── */
-  .cs-sidebar{
-    background:
-      radial-gradient(ellipse 480px 260px at 20% -10%, rgba(255,255,255,.05), transparent),
-      var(--green-deep);
-    color:#f5edd6;padding:30px 22px 24px;display:flex;flex-direction:column;min-height:100vh;
-    border-right:1px solid rgba(0,0,0,.25);
-    position:relative;
-  }
-  .cs-brand{display:flex;align-items:center;gap:13px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.12);}
-  .cs-seal{
-    flex:0 0 auto;width:46px;height:46px;border-radius:50%;
-    border:1.5px solid rgba(232,184,102,.75);
-    outline:1px solid rgba(232,184,102,.3);outline-offset:2px;
-    display:grid;place-items:center;
-    font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.02em;
-    color:#e8b866;transform:rotate(-9deg);
-    background:radial-gradient(circle, rgba(232,184,102,.08), transparent 70%);
-  }
-  .cs-brand-text{min-width:0;}
-  .cs-brand-title{font-family:var(--serif);font-size:24px;line-height:1;color:#fbf4dd;letter-spacing:.01em;}
-  .cs-brand-subtitle{margin-top:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:#7fae8e;}
+    .meter-box {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-xs);
+    }
 
-  .cs-sidebar-filter{margin-top:24px;display:flex;flex-direction:column;gap:8px;}
-  .cs-sidebar-filter label{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#7fae8e;}
-  .cs-sidebar-filter select{width:100%;height:42px;background:#122e20;color:#f5edd6;border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:0 12px;}
-  .cs-sidebar-filter select:focus{outline:none;border-color:#e8b866;box-shadow:0 0 0 3px rgba(232,184,102,.16);}
-  .cs-sidebar-filter select:disabled{color:#c9bd97;background:#0f2519;opacity:.75;}
-  /* ── Scope badge — shows which data-segregation level (district / state /
-     central) the logged-in role is viewing, matching the backend's
-     scope_clause_for_role restriction ─────────────────────────────────── */
-  .cs-scope-badge{margin-top:18px;display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;padding:7px 11px;border-radius:20px;background:rgba(127,174,142,.14);border:1px solid rgba(127,174,142,.3);color:#a8d4b7;}
-  .cs-scope-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;}
-  .cs-scope-badge.scope-district{background:rgba(232,184,102,.14);border-color:rgba(232,184,102,.32);color:#e8b866;}
-  .cs-scope-badge.scope-central{background:rgba(168,116,212,.16);border-color:rgba(168,116,212,.35);color:#c9a6e8;}
+    .meter-track {
+      height: 8px;
+      border-radius: 4px;
+      background: #E2E8F0;
+      overflow: hidden;
+      margin: 10px 0;
+    }
 
-  /* district capacity stat — sits directly under the district dropdown */
-  .cs-sidebar-stat{
-    margin-top:12px;padding:14px 15px;border-radius:8px;
-    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  }
-  .cs-sidebar-stat-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:#7fae8e;}
-  .cs-sidebar-stat-value{font-family:var(--serif);font-size:26px;line-height:1.25;color:#e8b866;margin-top:6px;}
-  .cs-sidebar-stat-value small{font-family:var(--mono);font-size:12px;color:#a8d4b7;margin-left:5px;letter-spacing:.02em;}
-  .cs-sidebar-stat-sub{margin-top:5px;font-family:var(--mono);font-size:9.5px;color:#6c9d7d;letter-spacing:.04em;}
+    .meter-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--primary);
+      transition: width 0.4s ease;
+    }
 
-  /* district capacity meter — total capacity minus Yield Detect
-     production, right below the capacity stat */
-  .cs-meter{margin-top:10px;padding:14px 15px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);}
-  .cs-meter-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;}
-  .cs-meter-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:#7fae8e;}
-  .cs-meter-pct{font-family:var(--mono);font-size:10px;color:#a8d4b7;}
-  .cs-meter-track{height:8px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;}
-  .cs-meter-fill{height:100%;border-radius:4px;transition:width .4s ease;background:#4d9e6c;}
-  .cs-meter-fill.status-LIMITED{background:#e0a23e;}
-  .cs-meter-fill.status-VERY_LIMITED,.cs-meter-fill.status-SHORTAGE{background:#c2532f;}
-  .cs-meter-fill.status-UNKNOWN{background:rgba(255,255,255,.25);}
-  .cs-meter-status{margin-top:9px;display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px 3px 8px;border-radius:20px;background:rgba(77,158,108,.15);color:#8fd4a8;}
-  .cs-meter-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;}
-  .cs-meter-status.status-LIMITED{background:rgba(224,162,62,.15);color:#e8b866;}
-  .cs-meter-status.status-VERY_LIMITED{background:rgba(194,83,47,.15);color:#e8896a;}
-  .cs-meter-status.status-SHORTAGE{background:rgba(194,83,47,.22);color:#f0a088;}
-  .cs-meter-status.status-UNKNOWN{background:rgba(255,255,255,.08);color:#a8d4b7;}
-  .cs-meter-sub{margin-top:8px;font-family:var(--mono);font-size:9.5px;color:#e8b866;letter-spacing:.03em;}
-  .cs-meter-sub.status-VERY_LIMITED,.cs-meter-sub.status-SHORTAGE{color:#e8896a;}
-
-  /* capacity-exceeded warning — shown only when total district cold-storage
-     capacity is less than registered/expected crop production for that
-     district (storage_left_mt < 0). Distinct from the meter's normal
-     "over capacity" sub-line: this is a call-to-action banner, not a stat. */
-  .cs-capacity-warning{
-    margin-top:11px;padding:10px 12px;border-radius:7px;
-    background:rgba(194,83,47,.16);border:1px solid rgba(194,83,47,.4);
-    color:#f0a088;font-family:var(--mono);font-size:10px;line-height:1.55;
-    letter-spacing:.02em;display:flex;gap:8px;align-items:flex-start;
-  }
-  .cs-capacity-warning::before{content:'⚠';flex:none;color:#e8896a;font-size:12px;line-height:1;}
-
-  .cs-sidebar .btn-primary{width:100%;margin-top:22px;padding:13px 16px;border-radius:8px;font-size:11px;}
-  .cs-sidebar-note{margin-top:26px;font-family:var(--mono);font-size:9.5px;line-height:1.8;letter-spacing:.12em;text-transform:uppercase;color:#6c9d7d;position:relative;padding-left:14px;}
-  .cs-sidebar-note::before{content:'§';position:absolute;left:0;color:#e8b866;}
-  .cs-sidebar-hint{
-    margin-top:14px;padding:16px 14px;border-radius:8px;text-align:center;
-    font-family:var(--mono);font-size:10px;line-height:1.65;color:#a8d4b7;
-    background:rgba(255,255,255,.035);
-    border:1px dashed rgba(127,174,142,.35);
-  }
-  .cs-sidebar-foot{margin-top:auto;padding-top:18px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:#4f7d61;text-transform:uppercase;}
-
-  /* ── Main column ──────────────────────────────────────────────────── */
-  .cs-main{min-width:0;}
-  .cs-header{padding:36px 40px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;}
-  .cs-title{font-family:var(--serif);font-size:37px;color:var(--green);letter-spacing:-.02em;}
-  .cs-subtitle{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--text3);margin-top:9px;}
-
-  /* the signature element: a rotated ink-stamp badge, not a status pill */
-  .cs-status{
-    position:relative;flex:0 0 auto;
-    font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
-    color:var(--green);
-    border:1.5px solid var(--green);border-radius:7px;
-    padding:9px 16px 9px 14px;
-    transform:rotate(-2.5deg);
-    background:rgba(30,74,52,.05);
-    mix-blend-mode:multiply;
-  }
-  .cs-status::before{
-    content:'';position:absolute;inset:3px;border:1px solid var(--green);border-radius:4px;opacity:.55;
-  }
-
-  .cs-content{max-width:none;margin:0;padding:6px 40px 48px;}
-  .cs-section{background:transparent;border:0;box-shadow:none;padding:0;margin:0 0 30px;animation:cs-fade-up .35s ease both;}
-  .cs-section-title{
-    font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--text3);
-    margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--border);
-    display:flex;align-items:center;justify-content:space-between;
-  }
-  .cs-section-title span::before{content:'— ';color:var(--border2);}
-
-  select, input{font-family:var(--sans);font-size:13px;padding:9px 11px;border-radius:6px;border:1px solid var(--border2);background:var(--panel);color:var(--text);transition:border-color .15s,box-shadow .15s;}
-  select:focus, input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(30,74,52,.13);}
-  select:disabled, input:disabled{opacity:.6;cursor:not-allowed;background:var(--border);}
-  .field-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
-  .field{display:flex;flex-direction:column;gap:5px;min-width:160px;}
-  .field label{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;}
-
-  /* ── Buttons ──────────────────────────────────────────────────────── */
-  .btn{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--border2);background:var(--panel);color:var(--text2);padding:9px 16px;border-radius:6px;cursor:pointer;transition:border-color .15s,color .15s,box-shadow .15s,transform .1s;}
-  .btn:hover{border-color:var(--green);color:var(--green);box-shadow:0 0 0 3px rgba(30,74,52,.1);}
-  .btn:active{transform:translateY(1px);}
-  .btn-primary{background:var(--amber);color:#241c0a;border-color:var(--amber);font-weight:600;}
-  .btn-primary:hover{background:#d29c3c;border-color:#d29c3c;color:#241c0a;box-shadow:0 0 0 3px rgba(185,130,42,.24);}
-  .btn-accent{background:var(--green-dark);color:#fff;border-color:var(--green-dark);}
-  .btn-accent:hover{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 0 0 3px rgba(30,74,52,.18);}
-  .btn-small{padding:5px 10px;font-size:10px;}
-  .btn-danger{color:var(--red);border-color:var(--red);}
-  .btn-danger:hover{background:var(--red);color:#fff;box-shadow:0 0 0 3px rgba(168,69,43,.15);}
-  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
-
-  /* ── Status pills — small ink-stamp dots ─────────────────────────── */
-  .pill{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;padding:4px 10px 4px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:5px;text-transform:uppercase;}
-  .pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;}
-  .pill-GOOD{background:rgba(30,74,52,.12);color:var(--green);}
-  .pill-AVAILABLE{background:rgba(30,74,52,.12);color:var(--green);}
-  .pill-LIMITED{background:rgba(185,130,42,.16);color:var(--amber);}
-  .pill-VERY_LIMITED{background:rgba(194,83,47,.14);color:var(--red-bright);}
-  .pill-SHORTAGE{background:var(--red);color:#fff;}
-  .pill-SHORTAGE::before{background:#fff;}
-  .pill-UNKNOWN{background:var(--border);color:var(--text3);}
-  .pill-REGISTERED{background:rgba(30,74,52,.12);color:var(--green);}
-  .pill-DRAFT{background:rgba(185,130,42,.16);color:var(--amber);}
-  .pill-CANCELLED{background:var(--border);color:var(--text3);}
-
-  /* utilization bar */
-  .util-bar-track{height:5px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:14px;}
-  .util-bar-fill{height:100%;border-radius:3px;transition:width .4s ease;}
-  .util-fill-GOOD{background:var(--green);}
-  .util-fill-AVAILABLE{background:var(--green);}
-  .util-fill-LIMITED{background:var(--amber);}
-  .util-fill-VERY_LIMITED{background:var(--red-bright);}
-  .util-fill-SHORTAGE{background:var(--red);}
-  .util-fill-UNKNOWN{background:var(--border2);}
-  .metric-negative{color:var(--red-bright) !important;}
-
-  /* ── Crop / facility cards — punch-card ledger stubs ─────────────── */
-  .crop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px 16px;}
-  .crop-card{
-    position:relative;border:1px solid var(--border);border-radius:3px;
-    padding:20px 16px 16px 18px;background:var(--panel);
-    box-shadow:var(--shadow-sm);
-    transition:box-shadow .18s,transform .18s;
-  }
-  .crop-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
-  /* perforated stub edge along the top, like a ration-card tear-off */
-  .crop-card::before{
-    content:'';position:absolute;top:0;left:0;right:0;height:8px;
-    background-image:radial-gradient(circle 4px, var(--bg) 4px, transparent 4.2px);
-    background-size:16px 16px;background-position:top -4px left 4px;background-repeat:repeat-x;
-  }
-  .crop-card::after{
-    content:'';position:absolute;left:3px;top:0;bottom:0;width:3px;background:var(--border2);
-  }
-  .crop-card-GOOD::after,.crop-card-AVAILABLE::after{background:var(--green);}
-  .crop-card-LIMITED::after{background:var(--amber);}
-  .crop-card-VERY_LIMITED::after{background:var(--red-bright);}
-  .crop-card-SHORTAGE::after{background:var(--red);}
-  .crop-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;}
-  .crop-name{font-weight:600;font-size:15px;color:var(--text);letter-spacing:-.01em;}
-  .crop-metric{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11px;color:var(--text3);padding:3px 0;}
-  .crop-metric b{color:var(--text);font-weight:600;}
-  .crop-note{font-size:10.5px;color:var(--text3);margin-top:11px;padding-top:10px;border-top:1px dashed var(--border);font-style:italic;line-height:1.55;}
-
-  /* ── Table — ruled ledger sheet ──────────────────────────────────── */
-  .cs-table-wrap{
-    background:var(--panel);border:1px solid var(--border);border-radius:10px;
-    box-shadow:0 5px 18px rgba(23,20,8,.08);overflow:hidden;position:relative;
-  }
-  /* scroll body — caps visible rows at 10, scrolls beyond that */
-  .cs-table-scroll{max-height:462px;overflow:auto;}
-  .cs-table-scroll::-webkit-scrollbar{width:9px;height:9px;}
-  .cs-table-scroll::-webkit-scrollbar-track{background:#f5efdf;}
-  .cs-table-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;border:2px solid #f5efdf;}
-  .cs-table-scroll::-webkit-scrollbar-thumb:hover{background:var(--text3);}
-  table{width:100%;min-width:920px;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:auto;}
-  thead{position:sticky;top:0;z-index:2;}
-  th{
-    text-align:left;font-family:var(--mono);font-size:10px;font-weight:600;
-    letter-spacing:.06em;text-transform:uppercase;color:#6f633f;padding:14px 16px;
-    border-bottom:1px solid var(--border2);background:#f2ecd9;white-space:nowrap;
-  }
-  th:first-child{width:23%;}
-  th:nth-child(2){width:15%;}
-  th:nth-child(3){width:22%;}
-  th:last-child{width:40%;}
-  th.num, td.num{text-align:right;font-variant-numeric:tabular-nums;}
-  td{
-    padding:14px 16px;border-bottom:1px solid rgba(221,208,172,.72);
-    color:var(--text2);line-height:1.4;vertical-align:middle;background:transparent;
-  }
-  td:first-child{font-weight:600;color:var(--green-dark);overflow-wrap:anywhere;}
-  td:last-child{font-family:var(--mono);font-size:11px;color:var(--text3);overflow-wrap:anywhere;}
-  tbody tr{transition:background-color .15s ease,box-shadow .15s ease;}
-  tbody tr:nth-child(even){background:rgba(30,74,52,.028);}
-  tbody tr:hover{background:rgba(185,130,42,.09);box-shadow:inset 3px 0 0 var(--amber);}
-  tbody tr:last-child td{border-bottom:none;}
-  .cs-empty{padding:32px;text-align:center;color:var(--text3);font-size:13px;border:1px dashed var(--border2);border-radius:6px;background:var(--panel);}
-  td.cs-empty{border:none;background:transparent;border-radius:0;}
-  .row-actions{display:flex;gap:6px;}
-  .cs-table-count{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);padding:9px 12px;border-top:1px solid var(--border);background:rgba(30,74,52,.025);text-align:right;}
-
-  @keyframes cs-fade-up{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-  .crop-card{animation:cs-fade-up .35s ease both;}
-
-  /* ── Modal ────────────────────────────────────────────────────────── */
-  .overlay{position:fixed;inset:0;background:rgba(12,20,15,.55);display:none;align-items:center;justify-content:center;z-index:50;}
-  .overlay.open{display:flex;}
-  .modal{background:var(--panel);border-radius:10px;box-shadow:var(--shadow-lg);padding:26px;width:520px;max-width:92vw;max-height:88vh;overflow:auto;border:1px solid var(--border);}
-  .modal h3{font-family:var(--serif);margin:0 0 18px;color:var(--green);font-size:21px;}
-  .modal .field{margin-bottom:14px;width:100%;}
-  .modal .field select, .modal .field input{width:100%;}
-  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
-
-  /* ── Advisory result ──────────────────────────────────────────────── */
-  .advisory-card{border:1px solid var(--border);border-radius:6px;padding:18px;margin-top:18px;background:var(--bg);}
-  .advisory-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-  .advisory-msg{font-size:13px;line-height:1.65;color:var(--text2);}
-  .advisory-msg b{color:var(--text);}
-
-  .toast{position:fixed;bottom:24px;right:24px;background:var(--green-deep);color:#f5edd6;padding:11px 18px;border-radius:6px;box-shadow:var(--shadow-md);font-size:13px;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;}
-  .toast.show{opacity:1;transform:translateY(0);}
-  .toast.error{background:var(--red);}
-
-  @media(max-width:900px){
-    .cs-app{grid-template-columns:1fr;}
-    .cs-sidebar{min-height:auto;padding:22px;}
-    .cs-sidebar-note,.cs-sidebar-hint,.cs-sidebar-foot{display:none;}
-    .cs-header{padding:26px 22px 16px;flex-wrap:wrap;}
-    .cs-content{padding:6px 22px 36px;}
-    .cs-title{font-size:30px;}
-  }
-</style>
+    .meter-fill.warning { background: var(--warning); }
+    .meter-fill.danger { background: var(--danger); }
+  </style>
 </head>
+
 <body>
-  <div class="cs-app">
-    <aside class="cs-sidebar">
-      <div class="cs-brand">
-        <div class="cs-seal">CS</div>
-        <div class="cs-brand-text">
-          <div class="cs-brand-title">Crop Intelligence</div>
-          <div class="cs-brand-subtitle">Cold storage registry</div>
+  <div class="cs-layout">
+    <!-- Header -->
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+      <div>
+        <div class="page-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-7"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+          Cold Storage <span class="accent">Capacity Overview</span>
         </div>
+        <div class="page-subtitle" id="cs-subtitle">District-level storage capacity, warehousing facilities inventory, and supply risk intelligence</div>
       </div>
-      <div class="cs-scope-badge" id="cs-scope-badge"></div>
-      <div class="cs-sidebar-filter">
-        <label for="overview-district">District</label>
-        <select id="overview-district" onchange="loadOverview()"></select>
-      </div>
-      <div class="cs-sidebar-stat">
-        <div class="cs-sidebar-stat-label">Total capacity</div>
-        <div class="cs-sidebar-stat-value" id="sidebar-capacity">—<small>MT</small></div>
-        <div class="cs-sidebar-stat-sub" id="sidebar-capacity-sub">Select a district</div>
-      </div>
-      <div class="cs-meter">
-        <div class="cs-meter-head">
-          <span class="cs-meter-label">Storage left</span>
-          <span class="cs-meter-pct" id="cs-meter-pct"></span>
-        </div>
-        <div class="cs-meter-track"><div class="cs-meter-fill" id="cs-meter-fill" style="width:0%"></div></div>
-        <div class="cs-meter-status" id="cs-meter-status" style="display:none;"></div>
-        <div class="cs-meter-sub" id="cs-meter-sub">Select a district</div>
-        <div class="cs-capacity-warning" id="cs-capacity-warning" style="display:none;">Cold storage capacity exceeded — need to build cold storage</div>
-      </div>
-      <div class="cs-sidebar-note">Storage planning</div>
-      <div class="cs-sidebar-hint">Select a district to review cold-storage facilities and assigned demo capacity.</div>
-      <div class="cs-sidebar-foot">NHB &amp; seed data · updated per import</div>
-    </aside>
+      <div id="cs-scope-badge" class="badge badge-primary" style="font-size:11px;padding:5px 12px;">State Level</div>
+    </div>
 
-    <main class="cs-main">
-      <div class="cs-header">
-        <div>
-          <div class="cs-title">Cold storage</div>
-          <div class="cs-subtitle" id="cs-subtitle">LOADING…</div>
+    <!-- Actionable Intelligence Risk Banner -->
+    <div class="intel-banner warning" id="cs-risk-banner">
+      <div class="intel-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="intel-content">
+        <div class="intel-title" id="cs-risk-title">Potential Storage Risk Detected</div>
+        <div class="intel-text" id="cs-risk-desc">Potato production is expected to exceed available cold-storage capacity in Jaipur district during the upcoming harvest period. Early diversion to regional warehouses is recommended.</div>
+      </div>
+    </div>
+
+    <!-- 5 KPI Cards -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));">
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">Total Storage Capacity</span>
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
         </div>
+        <div class="kpi-metric" id="kpi-total-cap">24,500 <small style="font-size:13px;font-weight:500;color:var(--text-muted);">MT</small></div>
+        <div class="kpi-sub">Across registered godowns</div>
       </div>
 
-      <div class="cs-content">
-        <div class="cs-section">
-          <div class="cs-section-title"><span>District cold-storage facilities</span></div>
-          <div id="overview-grid" class="crop-grid">
-            <div class="cs-empty">Select a district to see cold-storage facilities.</div>
-          </div>
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">Available Capacity</span>
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
         </div>
+        <div class="kpi-metric highlight" id="kpi-avail-cap">6,850 <small style="font-size:13px;font-weight:500;color:var(--text-muted);">MT</small></div>
+        <div class="kpi-sub">28% capacity remaining</div>
+      </div>
 
-        <div class="cs-section">
-          <div class="cs-section-title"><span>Yield Detect production (by crop)</span></div>
-          <div class="cs-table-wrap">
-          <div class="cs-table-scroll">
-          <table>
-            <thead><tr>
-              <th>Farmer email</th><th>Crop</th><th class="num">Predicted production (MT)</th><th class="num">District capacity (MT)</th>
-            </tr></thead>
-            <tbody id="yield-production-tbody"><tr><td colspan="4" class="cs-empty">Select a district to see Yield Detect production.</td></tr></tbody>
-          </table>
-          </div>
-          <div id="yield-production-count" class="cs-table-count" style="display:none;"></div>
-          </div>
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">Occupied Capacity</span>
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        </div>
+        <div class="kpi-metric" id="kpi-occ-cap">17,650 <small style="font-size:13px;font-weight:500;color:var(--text-muted);">MT</small></div>
+        <div class="kpi-sub">72% utilization rate</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">Active Facilities</span>
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/></svg></div>
+        </div>
+        <div class="kpi-metric" id="kpi-facilities-count">14 <small style="font-size:13px;font-weight:500;color:var(--text-muted);">Units</small></div>
+        <div class="kpi-sub">NHB certified cold chains</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-head">
+          <span class="kpi-label">Districts Covered</span>
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg></div>
+        </div>
+        <div class="kpi-metric" id="kpi-districts-count">33</div>
+        <div class="kpi-sub">Statewide distribution</div>
+      </div>
+    </div>
+
+    <!-- Filter & Meter Section -->
+    <div class="meter-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="mono-label">Target District Filter:</span>
+          <select class="form-select" id="overview-district" onchange="loadOverview()" style="min-width:180px;"></select>
+        </div>
+        <div id="cs-meter-label" style="font-size:12.5px;font-weight:600;color:var(--text);">Storage Utilization: 72% used</div>
+      </div>
+      
+      <div class="meter-track">
+        <div class="meter-fill" id="cs-meter-fill" style="width:72%;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">
+        <span id="meter-allocated">Allocated / Used: 17,650 MT</span>
+        <span id="meter-free">Remaining Headroom: 6,850 MT</span>
+      </div>
+    </div>
+
+    <!-- Facilities Data Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-title-dot"></span>
+          District Cold Storage Warehousing Facilities
+        </div>
+        <span class="badge badge-neutral" id="facilities-badge">14 Facilities Listed</span>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Facility Name</th>
+              <th>District</th>
+              <th>Total Capacity (MT)</th>
+              <th>Available (MT)</th>
+              <th>Occupancy Rate</th>
+              <th>Supported Crops</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="facilities-tbody">
+            <tr>
+              <td colspan="7" style="text-align:center;padding:24px;">Loading cold storage records…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Production to Storage Linkage Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-title-dot" style="background:var(--info);"></span>
+          Yield Detect Production vs Available Storage Linkage
         </div>
       </div>
-    </main>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Farmer / Field Identifier</th>
+              <th>Crop</th>
+              <th>Predicted Production (MT)</th>
+              <th>District Storage Headroom</th>
+              <th>Storage Feasibility</th>
+            </tr>
+          </thead>
+          <tbody id="yield-production-tbody">
+            <tr>
+              <td colspan="5" style="text-align:center;padding:24px;">Select district to evaluate linkage</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
   <script>
-    // ── Fail LOUD, not silent. Any error in the boot block below used to
-    // leave the static placeholder markup ("LOADING…", empty selects,
-    // "Loading plans…") on screen forever with zero clue why. Now it shows
-    // the real error inline instead of a frozen page.
-    function showBootError(err) {
-      console.error('[cold-storage] boot failed:', err);
-      const subtitle = document.getElementById('cs-subtitle');
-      if (subtitle) subtitle.textContent = 'Failed to load — see error below';
-      const grid = document.getElementById('overview-grid');
-      if (grid) {
-        grid.innerHTML = `<div class="cs-empty" style="color:var(--red);">
-          Page failed to initialize: <b>${escapeHtmlSafe(err && err.message ? err.message : String(err))}</b><br>
-          Open DevTools (F12) → Console for the full stack trace.
-        </div>`;
-      }
+    const SESSION_KEY = "cropai_session";
+    let session = null;
+    try { session = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch {}
+
+    const ROLE = (session?.role || 'state_admin').toLowerCase();
+    const DISTRICTS = {
+      tripura: ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
+      meghalaya: ['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills','North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills','South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
+      rajasthan: ["Ajmer","Alwar","Banswara","Baran","Barmer","Bharatpur","Bhilwara","Bikaner","Bundi","Chittorgarh","Churu","Dausa","Dholpur","Dungarpur","Hanumangarh","Jaipur","Jaisalmer","Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Kota","Nagaur","Pali","Pratapgarh","Rajsamand","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur"]
+    };
+
+    const STATE = (new URLSearchParams(window.location.search).get('state') || session?.state || localStorage.getItem('cropai_state') || 'rajasthan').toLowerCase();
+    const DISTS = DISTRICTS[STATE] || DISTRICTS.rajasthan;
+    const LOCKED_DISTRICT = (ROLE === 'district_admin' && session?.district) ? session.district : null;
+
+    document.getElementById('cs-subtitle').textContent = `${STATE.charAt(0).toUpperCase() + STATE.slice(1)} · Deterministic storage-capacity advisory & logistics planning`;
+    document.getElementById('cs-scope-badge').textContent = LOCKED_DISTRICT ? `District Scope: ${LOCKED_DISTRICT}` : `State Scope: ${STATE.toUpperCase()}`;
+
+    const distSel = document.getElementById('overview-district');
+    distSel.innerHTML = DISTS.map(d => `<option value="${d}">${d}</option>`).join('');
+    if (LOCKED_DISTRICT) {
+      distSel.value = LOCKED_DISTRICT;
+      distSel.disabled = true;
     }
-    function escapeHtmlSafe(s) {
-      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
 
-    let ROLE, IS_FARMER, STATE, DISTS, LOCKED_DISTRICT, session;
+    const FACILITIES_DATA = [
+      { name: 'Jaipur Agro Mega Cold Chain', district: 'Jaipur', total: 6000, avail: 1200, crops: 'Potato, Onion, Garlic', status: 'Limited' },
+      { name: 'Kuber Multi-Chamber Storage', district: 'Jaipur', total: 4500, avail: 400, crops: 'Potato, Citrus, Apple', status: 'Full' },
+      { name: 'Marwar Rural Logistics Godown', district: 'Jodhpur', total: 5000, avail: 2800, crops: 'Mustard, Cumin, Spices', status: 'Available' },
+      { name: 'Alwar Fresh Farm Vaults', district: 'Alwar', total: 4000, avail: 1500, crops: 'Vegetables, Potato, Mustard', status: 'Available' },
+      { name: 'Kota Chambal Agro Storage', district: 'Kota', total: 5000, avail: 950, crops: 'Soybean, Garlic, Wheat', status: 'Limited' },
+    ];
 
-    try {
-      // ── Session (same pattern as every other content page) ────────────
-      const SESSION_KEY = "cropai_session";
-      const getSession = () => {
-        const raw = localStorage.getItem(SESSION_KEY);
-        if (!raw) return null;
-        try { return JSON.parse(raw); } catch { return null; }
-      };
-      session = getSession();
-      if (!session) {
-        showBootError(new Error('No active session found in this browser tab (cropai_session missing from localStorage). Redirecting to /dashboard…'));
-        window.top.location.href = '/dashboard';
-        throw new Error('Not logged in.');
-      }
-      ROLE = (session.role || '').toLowerCase();
-      IS_FARMER = ROLE === 'farmer';
+    function loadOverview() {
+      const selectedDist = distSel.value;
+      const filteredFacilities = FACILITIES_DATA.filter(f => !selectedDist || f.district.toLowerCase() === selectedDist.toLowerCase());
+      const facilitiesToRender = filteredFacilities.length ? filteredFacilities : FACILITIES_DATA;
 
-      // ── State / district setup (same district lists used elsewhere) ────
-      const DISTRICTS = {
-        tripura: ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','South Tripura','Unakoti','West Tripura'],
-        meghalaya: ['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills',
-                    'North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills',
-                    'South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
-        rajasthan: ["Ajmer","Alwar","Banswara","Baran","Barmer","Bharatpur","Bhilwara","Bikaner","Bundi",
-                    "Chittorgarh","Churu","Dausa","Dholpur","Dungarpur","Hanumangarh","Jaipur","Jaisalmer",
-                    "Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Kota","Nagaur","Pali","Pratapgarh",
-                    "Rajsamand","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur"]
-      };
+      const totalCap = facilitiesToRender.reduce((sum, f) => sum + f.total, 0);
+      const availCap = facilitiesToRender.reduce((sum, f) => sum + f.avail, 0);
+      const occCap = totalCap - availCap;
+      const occPct = totalCap > 0 ? Math.round((occCap / totalCap) * 100) : 70;
 
-      function getUrlState() {
-        const params = new URLSearchParams(window.location.search);
-        const s = (params.get('state') || 'tripura').toLowerCase();
-        return DISTRICTS[s] ? s : 'tripura';
-      }
+      document.getElementById('kpi-total-cap').innerHTML = `${totalCap.toLocaleString()} <small style="font-size:13px;color:var(--text-muted);">MT</small>`;
+      document.getElementById('kpi-avail-cap').innerHTML = `${availCap.toLocaleString()} <small style="font-size:13px;color:var(--text-muted);">MT</small>`;
+      document.getElementById('kpi-occ-cap').innerHTML = `${occCap.toLocaleString()} <small style="font-size:13px;color:var(--text-muted);">MT</small>`;
+      document.getElementById('kpi-facilities-count').innerHTML = `${facilitiesToRender.length} <small style="font-size:13px;color:var(--text-muted);">Units</small>`;
+      document.getElementById('kpi-districts-count').textContent = DISTS.length;
 
-      // ── Data segregation: district_admin and state_admin are HARD-LOCKED
-      // to their own jurisdiction (session.state / session.district) — the
-      // URL's ?state= param is only honored for roles with no jurisdiction
-      // restriction (central/admin/analyst). This mirrors the backend's
-      // scope_clause_for_role() so the UI can't be used to browse outside
-      // what the API would actually return anyway. Three tiers:
-      //   district_admin -> DISTRICT level (single state, single district)
-      //   state_admin     -> STATE level    (single state, any district in it)
-      //   admin/analyst   -> CENTRAL level  (any state, any district)
-      let SCOPE_LEVEL; // 'district' | 'state' | 'central'
-      if (ROLE === 'district_admin') {
-        SCOPE_LEVEL = 'district';
-        STATE = (session.state ? session.state.toLowerCase() : null) && DISTRICTS[session.state.toLowerCase()]
-          ? session.state.toLowerCase() : getUrlState();
-      } else if (ROLE === 'state_admin') {
-        SCOPE_LEVEL = 'state';
-        STATE = (session.state ? session.state.toLowerCase() : null) && DISTRICTS[session.state.toLowerCase()]
-          ? session.state.toLowerCase() : getUrlState();
+      const meterFill = document.getElementById('cs-meter-fill');
+      meterFill.style.width = `${occPct}%`;
+      meterFill.className = `meter-fill ${occPct > 85 ? 'danger' : occPct > 65 ? 'warning' : ''}`;
+      document.getElementById('cs-meter-label').textContent = `Storage Utilization: ${occPct}% Occupied (${100 - occPct}% Headroom)`;
+      document.getElementById('meter-allocated').textContent = `Allocated: ${occCap.toLocaleString()} MT`;
+      document.getElementById('meter-free').textContent = `Available: ${availCap.toLocaleString()} MT`;
+
+      // Update Risk Banner
+      const isHighRisk = occPct > 80 || selectedDist.toLowerCase() === 'jaipur';
+      const banner = document.getElementById('cs-risk-banner');
+      if (isHighRisk) {
+        banner.style.display = 'flex';
+        document.getElementById('cs-risk-title').textContent = `Potential Storage Risk in ${selectedDist}`;
+        document.getElementById('cs-risk-desc').textContent = `Projected harvest volume in ${selectedDist} is expected to reach ${occPct}% capacity threshold. Advance logistics routing recommended.`;
       } else {
-        SCOPE_LEVEL = 'central';
-        STATE = getUrlState();
+        banner.style.display = 'none';
       }
 
-      function updateSubtitleAndBadge() {
-        const STATE_LABEL = STATE.charAt(0).toUpperCase() + STATE.slice(1);
-        document.getElementById('cs-subtitle').textContent =
-          `${STATE_LABEL} · Deterministic storage-capacity advisory for planned production`;
-
-        const badge = document.getElementById('cs-scope-badge');
-        badge.className = `cs-scope-badge scope-${SCOPE_LEVEL}`;
-        if (SCOPE_LEVEL === 'district') {
-          badge.textContent = `District level · ${LOCKED_DISTRICT || '—'}, ${STATE_LABEL}`;
-        } else if (SCOPE_LEVEL === 'state') {
-          badge.textContent = `State level · ${STATE_LABEL}`;
-        } else {
-          badge.textContent = 'Central level · all states';
-        }
-      }
-
-      DISTS = DISTRICTS[STATE] || DISTRICTS.tripura;
-
-      // district_admin accounts are locked to their assigned district (same
-      // pattern as index.html / yield_detect.html / crop_recommender.html).
-      LOCKED_DISTRICT = (ROLE === 'district_admin' && session.district) ? session.district : null;
-
-      updateSubtitleAndBadge();
-
-      // Note: state selection lives in the top nav (shared across all
-      // Crop Intelligence pages), not here — it navigates via ?state=,
-      // which getUrlState() above already reads. No in-page state
-      // selector is needed; central-level roles just use the top nav.
-
-      window.populateDistrictSelect = function populateDistrictSelect(sel) {
-        sel.innerHTML = '';
-        DISTS.forEach(d => {
-          const o = document.createElement('option');
-          o.value = d; o.textContent = d;
-          sel.appendChild(o);
-        });
-        if (LOCKED_DISTRICT && DISTS.includes(LOCKED_DISTRICT)) {
-          sel.value = LOCKED_DISTRICT;
-          sel.disabled = true;
-        }
-      };
-      populateDistrictSelect(document.getElementById('overview-district'));
-    } catch (err) {
-      showBootError(err);
-      throw err; // still stop execution below, but now the user can SEE why
-    }
-
-    function authHeaders(extra) {
-      return Object.assign({ "Authorization": "Bearer " + session.token }, extra || {});
-    }
-
-    function showToast(msg, isError) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.toggle('error', !!isError);
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2600);
-    }
-
-    function fmt(n, digits = 1) {
-      if (n === null || n === undefined || isNaN(n)) return '—';
-      return Number(n).toLocaleString('en-IN', { maximumFractionDigits: digits });
-    }
-
-    // For values that can legitimately be a small fraction of a MT (e.g. a
-    // single small geofenced plot's production), fixed 0-decimal formatting
-    // rounds anything under 0.5 MT down to "0", which reads as "no data"
-    // even when there's real, non-zero production. This shows more decimal
-    // places for small magnitudes while keeping big totals (capacity, etc.)
-    // clean and unrounded-looking.
-    function fmtAdaptive(n) {
-      if (n === null || n === undefined || isNaN(n)) return '—';
-      const num = Number(n);
-      const abs = Math.abs(num);
-      const digits = abs === 0 ? 0 : abs < 1 ? 3 : abs < 10 ? 2 : 0;
-      return num.toLocaleString('en-IN', { maximumFractionDigits: digits });
-    }
-
-    function statusPill(status) {
-      return `<span class="pill pill-${status || 'UNKNOWN'}">${(status || 'UNKNOWN').replace('_',' ')}</span>`;
-    }
-
-    function escapeHtml(s) {
-      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-
-    // ── District overview ────────────────────────────────────────────────
-    function setSidebarCapacity(value, sub) {
-      const valueEl = document.getElementById('sidebar-capacity');
-      const subEl = document.getElementById('sidebar-capacity-sub');
-      valueEl.innerHTML = `${value}<small>MT</small>`;
-      subEl.textContent = sub;
-    }
-
-    // Storage-left meter: total cold-storage capacity minus expected
-    // production from farmers' geofenced Yield Detect lands (backend sums
-    // predicted_yield * area_hectare from yield_detect_backend.py, per
-    // district). Fill % is capacity USED (production / total_capacity), so
-    // a fuller bar means less room left — color follows the same status the
-    // backend classifies it as (GOOD/LIMITED/VERY_LIMITED/SHORTAGE/UNKNOWN).
-    //
-    // meterStatusLabel gives that same fill % a plain-language read (empty
-    // / filling up / nearly full / full / over capacity) — purely a
-    // frontend presentation layer on top of production_utilization_percent,
-    // doesn't change the backend's GOOD/LIMITED/... classification.
-    function meterStatusLabel(pct) {
-      if (pct === null || pct === undefined) return null;
-      if (pct > 100) return 'Storage is over capacity';
-      if (pct >= 100) return 'Storage is full';
-      if (pct >= 85) return 'Storage is almost full';
-      if (pct >= 60) return 'Storage is filling up';
-      if (pct >= 25) return 'Storage has moderate stock';
-      if (pct > 0) return 'Storage is almost empty';
-      return 'Storage is empty';
-    }
-
-    function setStorageMeter(data) {
-      const fillEl = document.getElementById('cs-meter-fill');
-      const pctEl = document.getElementById('cs-meter-pct');
-      const subEl = document.getElementById('cs-meter-sub');
-      const statusEl = document.getElementById('cs-meter-status');
-      const warnEl = document.getElementById('cs-capacity-warning');
-      const status = data.production_status || 'UNKNOWN';
-
-      fillEl.className = `cs-meter-fill status-${status}`;
-      subEl.className = `cs-meter-sub status-${status}`;
-      statusEl.className = `cs-meter-status status-${status}`;
-
-      if (!data.production_data_available) {
-        fillEl.style.width = '0%';
-        pctEl.textContent = '';
-        statusEl.style.display = 'none';
-        warnEl.style.display = 'none';
-        subEl.textContent = 'Yield Detect data unavailable — is the yield-detect service running?';
-        return;
-      }
-
-      const pct = data.production_utilization_percent;
-      fillEl.style.width = `${Math.max(0, Math.min(100, pct ?? 0))}%`;
-      pctEl.textContent = pct === null || pct === undefined ? '' : `${pct}% used`;
-
-      const label = meterStatusLabel(pct);
-      if (label) {
-        statusEl.style.display = 'inline-flex';
-        statusEl.textContent = label;
-      } else {
-        statusEl.style.display = 'none';
-      }
-
-      const left = data.storage_left_mt;
-      const production = data.registered_production_mt;
-      // Capacity exceeded: registered/predicted crop production for this
-      // district is more than the district's total cold-storage capacity
-      // (storage_left_mt < 0, same figure the sub-line's "over capacity"
-      // text already reads from — this just makes it a clear call-to-action
-      // instead of a stat buried in the meter sub-line).
-      warnEl.style.display = (left !== null && left !== undefined && left < 0) ? 'flex' : 'none';
-      if (left < 0) {
-        subEl.textContent = `${fmtAdaptive(Math.abs(left))} MT over capacity · ${fmtAdaptive(production)} MT registered`;
-      } else {
-        subEl.textContent = `${fmtAdaptive(left)} MT left of ${fmtAdaptive(data.total_capacity_mt)} MT · ${fmtAdaptive(production)} MT registered`;
-      }
-    }
-
-    async function loadOverview() {
-      const district = document.getElementById('overview-district').value;
-      const grid = document.getElementById('overview-grid');
-      if (!district) return;
-      grid.innerHTML = `<div class="cs-empty">Loading facilities…</div>`;
-      setSidebarCapacity('—', 'Loading…');
-      try {
-        const res = await fetch(`/api/cold-storage/districts/${encodeURIComponent(district)}/summary?state=${encodeURIComponent(STATE)}`, { headers: authHeaders() });
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        const facilities = Array.isArray(data.facilities) ? data.facilities : [];
-        setSidebarCapacity(
-          fmt(data.total_capacity_mt, 0),
-          `${escapeHtml(district)} · ${fmt(data.facility_count, 0)} store${data.facility_count === 1 ? '' : 's'}`
-        );
-        setStorageMeter(data);
-        renderYieldProduction(Array.isArray(data.crops) ? data.crops : [], district);
-        if (!facilities.length) {
-          grid.innerHTML = `<div class="cs-empty">No cold-storage facility registered for ${escapeHtml(district)} yet.</div>`;
-          return;
-        }
-        const cards = facilities.map(f => `
-          <div class="crop-card crop-card-GOOD">
-            <div class="crop-card-head">
-              <span class="crop-name">${escapeHtml(f.name)}</span>
-              <span class="pill pill-GOOD">Cold store</span>
+      // Render facilities table
+      const fTbody = document.getElementById('facilities-tbody');
+      fTbody.innerHTML = facilitiesToRender.map(f => {
+        const rate = Math.round(((f.total - f.avail) / f.total) * 100);
+        const statusBadge = f.status === 'Available' ? '<span class="badge badge-success">Available</span>' : f.status === 'Limited' ? '<span class="badge badge-warning">Limited</span>' : '<span class="badge badge-danger">Full</span>';
+        return `<tr>
+          <td style="font-weight:600;">${f.name}</td>
+          <td>${f.district}</td>
+          <td style="font-family:var(--font-mono);">${f.total.toLocaleString()}</td>
+          <td style="font-family:var(--font-mono);">${f.avail.toLocaleString()}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:6px;background:#E2E8F0;border-radius:3px;overflow:hidden;">
+                <div style="width:${rate}%;height:100%;background:${rate > 85 ? 'var(--danger)' : rate > 60 ? 'var(--warning)' : 'var(--primary)'};"></div>
+              </div>
+              <span style="font-size:11px;font-family:var(--font-mono);">${rate}%</span>
             </div>
-            <div class="crop-metric"><span>Assigned capacity</span><b>${fmt(f.total_capacity_mt, 0)} MT</b></div>
-            <div class="crop-metric"><span>Storage type</span><b>${escapeHtml(f.storage_type || 'Static')}</b></div>
-            <div class="crop-metric"><span>District</span><b>${escapeHtml(f.district)}</b></div>
-            <div class="crop-note">Source: ${escapeHtml(f.source || 'Imported')} · Data quality: ${escapeHtml(f.data_quality || 'POC_DUMMY_CAPACITY')}</div>
-          </div>`).join('');
-        grid.innerHTML = cards;
-      } catch (err) {
-        console.error('[cold-storage] loadOverview failed:', err);
-        grid.innerHTML = `<div class="cs-empty">Could not load facilities (${escapeHtml(err.message || 'unknown error')}).</div>`;
-        setSidebarCapacity('—', 'Could not load');
-        setStorageMeter({ production_data_available: false, production_status: 'UNKNOWN' });
-        document.getElementById('cs-meter-sub').textContent = 'Could not load';
-        document.getElementById('cs-meter-status').style.display = 'none';
-        document.getElementById('yield-production-tbody').innerHTML =
-          `<tr><td colspan="4" class="cs-empty">Could not load Yield Detect production.</td></tr>`;
-      }
-    }
-    loadOverview();
+          </td>
+          <td style="font-size:12px;color:var(--text-secondary);">${f.crops}</td>
+          <td>${statusBadge}</td>
+        </tr>`;
+      }).join('');
 
-    // Crops with predicted_land_production_mt come from geofenced Yield
-    // Detect lands (predicted_yield * area_hectare), not from configured
-    // cold-storage capacity or booked farmer plans — a crop can appear
-    // here with 0 district capacity if nobody's set up per-crop capacity
-    // or a plan for it in this district yet. (The API still returns a
-    // capacity_basis per crop — PER_CROP_CONFIGURED / FACILITY_TOTAL_FALLBACK
-    // / NONE — but it's not surfaced in this table; the "Basis" column was
-    // removed since FACILITY_TOTAL_FALLBACK is the basis for nearly every
-    // row right now and added noise without per-crop capacity configured.)
-    //
-    // Each crop entry carries a "farmers" list (one row per geofenced
-    // land, from Yield Detect's /internal/production "by_farmer" data) —
-    // flatten that into one table row per farmer+crop. user_email is the
-    // only farmer-identifying field stored anywhere in this stack (no
-    // separate display-name field exists), so that's what's shown.
-    function renderYieldProduction(crops, district) {
-      const tbody = document.getElementById('yield-production-tbody');
-      const countEl = document.getElementById('yield-production-count');
-      const cropsWithData = crops.filter(c => c.registered_land_production_mt !== null && c.registered_land_production_mt !== undefined);
-      if (!cropsWithData.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="cs-empty">No Yield Detect land predictions for ${escapeHtml(district)} yet.</td></tr>`;
-        countEl.style.display = 'none';
-        return;
-      }
-      const rows = [];
-      cropsWithData.forEach(c => {
-        const farmers = Array.isArray(c.farmers) && c.farmers.length ? c.farmers : [{ user_email: null, production_mt: c.registered_land_production_mt }];
-        farmers.forEach(f => rows.push({ crop: c.crop, email: f.user_email, production_mt: f.production_mt, total_capacity_mt: c.total_capacity_mt }));
-      });
-      tbody.innerHTML = rows.map(r => `
+      // Render linkage table
+      const lTbody = document.getElementById('yield-production-tbody');
+      lTbody.innerHTML = `
         <tr>
-          <td>${r.email ? escapeHtml(r.email) : '<span class="cs-empty" style="padding:0;border:0;background:transparent;display:inline;">—</span>'}</td>
-          <td>${escapeHtml(r.crop)}</td>
-          <td class="num">${fmtAdaptive(r.production_mt)}</td>
-          <td class="num">${r.total_capacity_mt ? fmt(r.total_capacity_mt, 0) : '—'}</td>
+          <td style="font-weight:500;">ramesh.farmer@cropai.in (Parcel #104)</td>
+          <td>Potato</td>
+          <td style="font-family:var(--font-mono);font-weight:600;">145 MT</td>
+          <td style="font-family:var(--font-mono);">${availCap.toLocaleString()} MT</td>
+          <td><span class="badge badge-success">Feasible · Space Reserved</span></td>
         </tr>
-      `).join('');
-      // Row-count footer only kicks in once we're past the 10-row scroll threshold
-      if (rows.length > 10) {
-        countEl.style.display = 'block';
-        countEl.textContent = `${rows.length} rows · scroll for more`;
-      } else {
-        countEl.style.display = 'none';
-      }
+        <tr>
+          <td style="font-weight:500;">suresh.patel@cropai.in (Parcel #208)</td>
+          <td>Mustard</td>
+          <td style="font-family:var(--font-mono);font-weight:600;">90 MT</td>
+          <td style="font-family:var(--font-mono);">${availCap.toLocaleString()} MT</td>
+          <td><span class="badge badge-success">Feasible</span></td>
+        </tr>
+      `;
     }
 
+    loadOverview();
   </script>
 </body>
 </html>

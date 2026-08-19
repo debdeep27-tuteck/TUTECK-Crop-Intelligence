@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CropAI Admin Panel</title>
+    <title>CropAI — Settings &amp; Administration Console</title>
 
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400&display=swap">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/design_system.css">
 
     <style>
         *,
@@ -19,39 +21,29 @@
         }
 
         :root {
-            --bg: #f7f5f0;
-            --border: #e0ddd5;
-            --border2: #c8c4b8;
-            --leaf: #378c50;
-            --leaf-dark: #3d6a49;
-            --text: #1a1a18;
-            --text2: #33332e;
-            --text3: #8e8e0c;
-            --red: #c0392b;
-            --sky: #2f8b47;
+            --bg: #F8FAFC;
+            --border: #E2E8F0;
+            --border2: #CBD5E1;
+            --leaf: #064E3B;
+            --leaf-dark: #047857;
+            --text: #0F172A;
+            --text2: #475569;
+            --text3: #64748B;
+            --red: #EF4444;
+            --sky: #3B82F6;
             --mono: 'DM Mono', monospace;
-            --head: 'DM Serif Display', serif;
+            --head: 'Inter', sans-serif;
         }
 
         html,
         body {
             height: 100%;
             background: var(--bg);
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            padding: 30px;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(circle at 15% 20%, rgba(74, 124, 89, .08), transparent 45%),
-                radial-gradient(circle at 85% 80%, rgba(14, 165, 233, .06), transparent 45%);
-            pointer-events: none;
+            padding: 28px;
         }
 
         .page {
