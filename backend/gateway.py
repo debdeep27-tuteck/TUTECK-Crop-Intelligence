@@ -492,7 +492,21 @@ def mandi_auction_api(path=""):
     # as /api/yield and /api/unused-crops above.
     full_path = f"api/mandi/auctions/{path}".rstrip("/") if path else "api/mandi/auctions"
     return forward_request(AUCTION_API, full_path)
-
+@app.route("/api/mandi/matching-farmers", methods=["GET"])
+def mandi_matching_farmers_api():
+    # Preview endpoint auction_backend.py exposes so the mandi UI can list
+    # which farmers match a crop/state/district before choosing whether to
+    # notify all of them or a hand-picked subset. Same forwarding
+    # convention as mandi_auction_api above.
+    return forward_request(AUCTION_API, "api/mandi/matching-farmers")
+ 
+ 
+@app.route("/api/server-time", methods=["GET"])
+def auction_server_time_api():
+    # Lightweight clock-sync endpoint auction_backend.py exposes so the
+    # farmer/mandi frontends can correct for any drift between the
+    # server's clock and the browser's when computing auction countdowns.
+    return forward_request(AUCTION_API, "api/server-time")
 
 # Optional direct checks
 @app.route("/api/disease-health")

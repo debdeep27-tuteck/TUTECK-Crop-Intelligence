@@ -1046,6 +1046,38 @@ def update_bid_status(bid_id):
 
 # ── MANDI AUCTION ROUTES ─────────────────────────────────────────────────
 
+@app.route("/api/mandi/matching-farmers", methods=["GET"])
+def matching_farmers():
+    """
+    Preview of who create_auction would notify for a given crop/state/
+    district, so the mandi can decide — before the auction exists — whether
+    to notify all of them or hand-pick a subset. Includes how much each
+    farmer currently has listed of this crop, since that's the one piece
+    of context a mandi would actually want when choosing who to invite.
+    """
+    db = get_db()
+    state = request.args.get("state")
+    district = request.args.get("district")
+    crop_type = request.args.get("cropType")
+    if not all([state, district, crop_type]):
+        return jsonify({"error": "state, district and cropType are required."}), 400
+
+    rows = db.execute(
+        """
+        SELECT farmer_email, SUM(total_production - sold_production) AS available_production
+        FROM unused_crops
+        WHERE state = ? AND district = ? AND crop_type = ? AND farmer_email IS NOT NULL AND farmer_email != ''
+        GROUP BY farmer_email
+        ORDER BY farmer_email
+        """,
+        (state, district, crop_type),
+    ).fetchall()
+    return jsonify([
+        {"farmerEmail": r["farmer_email"], "availableProduction": r["available_production"] or 0}
+        for r in rows
+    ])
+
+
 @app.route("/api/mandi/auctions", methods=["POST"])
 def create_auction():
     """
@@ -1069,6 +1101,8 @@ def create_auction():
     extension_minutes = body.get("extensionMinutes", 5)
     starts_at = body.get("startsAt")  # ms epoch; defaults to now
     counter_gap = body.get("counterGap")  # optional ₹/tonne step, set once at creation
+    notify_mode = body.get("notifyMode", "all")  # "all" | "selective"
+    selected_farmer_emails = body.get("selectedFarmerEmails") or []
 
     missing = [k for k, v in {
         "mandiEmail": mandi_email, "state": state, "district": district,
@@ -1081,6 +1115,11 @@ def create_auction():
 
     if auction_type not in ("forward", "reverse"):
         return jsonify({"error": "auctionType must be 'forward' or 'reverse'."}), 400
+
+    if notify_mode not in ("all", "selective"):
+        return jsonify({"error": "notifyMode must be 'all' or 'selective'."}), 400
+    if notify_mode == "selective" and not selected_farmer_emails:
+        return jsonify({"error": "Select at least one farmer to notify, or switch to 'all matching farmers'."}), 400
 
     try:
         target_quantity = float(target_quantity)
@@ -1130,6 +1169,15 @@ def create_auction():
     serialized = serialize_auction(db, row)
 
     farmer_emails = _matching_farmer_emails(db, state, district, crop_type)
+
+    if notify_mode == "selective":
+        # Intersect with the actual match set — a mandi can only invite
+        # farmers who genuinely have this crop listed in this state/
+        # district, same as the "all" path. Silently drops anything else
+        # (e.g. a stale email from the picker) rather than erroring, since
+        # the picker itself is only ever populated from matching_farmers.
+        selected_set = set(selected_farmer_emails)
+        farmer_emails = [e for e in farmer_emails if e in selected_set]
 
     # Every matching farmer gets a pending invitation — this is what gates
     # the auction from their Live Auctions tab until they explicitly accept.
