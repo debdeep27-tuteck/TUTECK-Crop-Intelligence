@@ -30,6 +30,20 @@ CORS(app)
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────
 
+# ── CROP BACKEND (backend_2.py) STATE → PORT MAP ────────────────────────────
+# backend_2.py runs one process per state, each loading that state's own
+# model_artefacts.pkl, and exposes /valid_crops (or /api/crop/valid_crops)
+# scoped to whichever state it was launched with:
+#   python backend_2.py --state tripura   --port 5000
+#   python backend_2.py --state meghalaya --port 5002
+#   python backend_2.py --state rajasthan --port 5006
+# This must match CROP_BACKENDS in main.py.
+CROP_BACKEND_PORTS = {
+    "tripura":   5000,
+    "meghalaya": 5002,
+    "rajasthan": 5006,
+}
+
 # ── STATE-AWARE DISTRICT COORDS ────────────────────────────────────────────────
 # Add new states here as needed.
 ALL_DISTRICT_COORDS = {
@@ -607,10 +621,68 @@ def health():
     return jsonify({"status": "ok", "service": "irrigation-advisor", "crops": list(CROP_WATER_NEEDS.keys())})
 
 
+def _fetch_valid_crops_for_state(state: str):
+    """
+    Ask backend_2.py's instance for this state which crops its model was
+    actually trained on. Returns a list of crop names, or None if the
+    crop backend for this state is unreachable/unknown (caller should
+    fall back to serving every crop we have water-need data for).
+    """
+    port = CROP_BACKEND_PORTS.get(state)
+    if not port:
+        return None
+    for path in ("/api/crop/valid_crops", "/valid_crops"):
+        try:
+            resp = requests.get(f"http://127.0.0.1:{port}{path}", timeout=3)
+            if not resp.ok:
+                continue
+            data = resp.json()
+            crops = data.get("valid_crops")
+            if crops:
+                return crops
+        except Exception:
+            continue
+    return None
+
+
 @app.route("/crops", methods=["GET"])
 def crops():
+    """
+    State-aware crop list for the frontend dropdown.
+    GET /crops?state=rajasthan
+
+    Only returns crops that are BOTH:
+      1. valid for the requested state's yield model (backend_2.py), and
+      2. have FAO-56 water-need data here, since only those can actually
+         produce an irrigation schedule via /advise.
+
+    If backend_2.py isn't reachable for this state (not running yet, wrong
+    port, etc.), falls back to every crop this service has water-need data
+    for, so the dropdown still works standalone.
+    """
+    state = request.args.get("state", "").lower().strip()
+    valid_for_state = _fetch_valid_crops_for_state(state) if state else None
+
+    if valid_for_state:
+        # Match case/whitespace-insensitively against our own crop keys so
+        # small naming differences between the two backends don't silently
+        # drop a crop from the dropdown.
+        by_norm = {c.strip().lower(): c for c in CROP_WATER_NEEDS.keys()}
+        crop_names = []
+        for c in valid_for_state:
+            match = by_norm.get(str(c).strip().lower())
+            if match and match not in crop_names:
+                crop_names.append(match)
+        # If none of the state's valid crops overlap our water-need table,
+        # fall back rather than returning an empty dropdown.
+        if not crop_names:
+            crop_names = list(CROP_WATER_NEEDS.keys())
+    else:
+        crop_names = list(CROP_WATER_NEEDS.keys())
+
     out = []
-    for crop, info in CROP_WATER_NEEDS.items():
+    for crop in crop_names:
+        info = CROP_WATER_NEEDS[crop]
         out.append({
             "name":   crop,
             "stages": info["stages"],
