@@ -993,6 +993,7 @@
       { id: "/auction-mandi", name: "Mandi", title: "Mandi Trading Floor" },
       { id: "/cold-storage", name: "Storage", title: "Cold Storage Intelligence" },
       { id: "/mandi-prices", name: "Mandi Prices", title: "Daily Mandi Prices" },
+      { id: "/nearest-mandi", name: "Nearest Mandi", title: "Nearest Mandi Intelligence" },
     ];
 
     let currentUsers = [];
@@ -1037,8 +1038,8 @@
         headRow.innerHTML = `
           <th style="width:23%;">User Account</th>
           <th style="width:11%;">Role</th>
-          ${PAGE_MODULES.map(m => `<th class="col-center" title="${m.title}" style="width:6.5%;">${m.name}</th>`).join('')}
-          <th class="col-center" style="width:7.5%;">Actions</th>
+          ${PAGE_MODULES.map(m => `<th class="col-center" title="${m.title}" style="width:5.3%;">${m.name}</th>`).join('')}
+          <th class="col-center" style="width:7%;">Actions</th>
         `;
 
         const tbody = document.getElementById("usersBody");

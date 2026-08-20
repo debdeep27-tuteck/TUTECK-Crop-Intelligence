@@ -84,6 +84,9 @@ COLD_STORAGE_PORT = 5010
 # Agmarknet); gateway.py forwards /api/mandi-prices/* to this port.
 MANDI_PRICES_PORT = 5011
 
+# Nearest Mandi backend
+NEAREST_MANDI_PORT = 5012
+
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
 GREEN = "\033[92m"
@@ -209,6 +212,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-cold-storage", action="store_true", help="Skip cold storage intelligence backend")
     parser.add_argument("--no-auction", action="store_true", help="Skip auction backend")
     parser.add_argument("--no-mandi-prices", action="store_true", help="Skip mandi prices backend")
+    parser.add_argument("--no-nearest-mandi", action="store_true", help="Skip nearest mandi backend")
 
     return parser.parse_args()
 
@@ -285,6 +289,7 @@ def main() -> None:
     auction_script = find_script(base_dir, "auction_backend.py")
     cold_storage_script = find_script(base_dir, "cold_storage_backend.py")
     mandi_prices_script = find_script(base_dir, "mandi_prices_backend.py")
+    nearest_mandi_script = find_script(base_dir, "nearest_mandi_backend.py")
     gateway_script = find_script(base_dir, "gateway.py")
 
     if not backend_script:
@@ -398,6 +403,20 @@ def main() -> None:
         )
     else:
         log(RED, "mandi-prices", "mandi_prices_backend.py not found; Mandi Prices tab will show BACKEND OFFLINE.")
+
+    # 3f) Start nearest-mandi backend.
+    if args.no_nearest_mandi:
+        log(YELLOW, "nearest-mandi", "Skipped by --no-nearest-mandi")
+    elif nearest_mandi_script:
+        start_if_needed(
+            label="nearest-mandi",
+            script=nearest_mandi_script,
+            cmd_args=[],
+            port=NEAREST_MANDI_PORT,
+            timeout=args.ready_timeout,
+        )
+    else:
+        log(RED, "nearest-mandi", "nearest_mandi_backend.py not found; Nearest Mandi tab will show BACKEND OFFLINE.")
 
     # 4) Start gateway last, after internal services are up.
     start_if_needed(

@@ -1118,6 +1118,13 @@
           <span class="nav-label">Market Prices</span>
         </a>
 
+        <a class="gn-link" data-target="/nearest-mandi" data-content="/content/nearest-mandi" href="#" title="Nearest Mandi">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          <span class="nav-label">Nearest Mandi</span>
+        </a>
+
         <!-- ── GROUP: SYSTEM ── -->
         <div class="nav-section-title" id="system-section-title">System</div>
 
@@ -1443,15 +1450,6 @@
       const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
       const isMandi = String(session.role || '').trim().toLowerCase() === 'mandi';
 
-      if (isAdmin) {
-        document.querySelectorAll('.gn-link[data-target]').forEach(link => {
-          link.style.display = 'flex';
-        });
-        const adminNav = document.getElementById('nav-admin-link');
-        if (adminNav) adminNav.style.display = 'flex';
-        return;
-      }
-
       if (ALLOWED_PAGES.length > 0) {
         const dashGroup = document.getElementById('dashboard-nav-group');
         if (dashGroup && !ALLOWED_PAGES.includes('/dashboard')) {
@@ -1468,7 +1466,7 @@
       });
       
       const adminNav = document.getElementById('nav-admin-link');
-      if (session.role === 'admin') {
+      if (isAdmin) {
         if (adminNav) adminNav.style.display = 'flex';
       }
     }

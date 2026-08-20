@@ -37,6 +37,9 @@ COLD_STORAGE_API = "http://127.0.0.1:5010"
 # (Agmarknet); gateway.py forwards /api/mandi-prices/* to this port.
 MANDI_PRICES_API = "http://127.0.0.1:5011"
 
+# Nearest Mandi API
+NEAREST_MANDI_API = "http://127.0.0.1:5012"
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -121,6 +124,7 @@ def admin_page():
 @app.route("/cold-storage")
 @app.route("/auction-mandi")
 @app.route("/mandi-prices")
+@app.route("/nearest-mandi")
 def home():
     response = send_from_directory(str(HTML_DIR), "index.html")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -185,6 +189,11 @@ def content_auction_mandi():
 @app.route("/content/mandi-prices")
 def content_mandi_prices():
     return send_from_directory(str(HTML_DIR), "mandi_prices.html")
+
+
+@app.route("/content/nearest-mandi")
+def content_nearest_mandi():
+    return send_from_directory(str(HTML_DIR), "nearest_mandi.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -491,6 +500,11 @@ def mandi_prices_api(path):
     return forward_request(MANDI_PRICES_API, f"api/mandi-prices/{path}")
 
 
+@app.route("/api/nearest-mandi/<path:path>", methods=["GET", "POST"])
+def nearest_mandi_api(path):
+    return forward_request(NEAREST_MANDI_API, f"api/nearest-mandi/{path}")
+
+
 @app.route("/api/unused-crops", methods=["GET", "POST"])
 @app.route("/api/unused-crops/<path:path>", methods=["GET", "PATCH", "DELETE", "POST"])
 def auction_crops_api(path=""):
@@ -580,7 +594,8 @@ def health():
                 "yield_detect": YIELD_API,
                 "cold_storage": COLD_STORAGE_API,
                 "auction": AUCTION_API,
-                "mandi_prices": MANDI_PRICES_API
+                "mandi_prices": MANDI_PRICES_API,
+                "nearest_mandi": NEAREST_MANDI_API
             }
         }
     })

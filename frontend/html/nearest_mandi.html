@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CropAI — Nearest Mandi Intelligence</title>
+  
+  <!-- Google Fonts & Design System -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/design_system.css">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+  
+  <style>
+    :root {
+      --primary: #1B4332;
+      --primary-hover: #2D6A4F;
+      --primary-dark: #0D2B1F;
+      --accent: #10B981;
+      --primary-light: #ECFDF5;
+      --bg: #F5F7FA;
+      --surface: #FFFFFF;
+      --border: #E4E9EF;
+      --border-subtle: #EFF3F8;
+      --text: #111827;
+      --text-secondary: #4B5563;
+      --text-muted: #6B7280;
+      --shadow-xs: 0 1px 2px rgba(17, 24, 39, 0.05);
+      --shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.07), 0 1px 2px rgba(17, 24, 39, 0.04);
+      --shadow-md: 0 4px 12px rgba(17, 24, 39, 0.08), 0 2px 4px rgba(17, 24, 39, 0.04);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      padding: 24px 28px 28px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    .nm-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+      gap: 16px;
+    }
+
+    .nm-title-area {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nm-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nm-title .accent {
+      color: var(--accent);
+    }
+
+    .nm-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .nm-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Radius Filter Pills */
+    .radius-group {
+      display: flex;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .radius-btn {
+      border: none;
+      background: transparent;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .radius-btn:hover {
+      color: var(--primary);
+      background: var(--border-subtle);
+    }
+
+    .radius-btn.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(27, 67, 50, 0.2);
+    }
+
+    /* Primary Action Buttons */
+    .btn-locate {
+      background: var(--primary);
+      color: #FFFFFF;
+      border: 1px solid var(--primary-dark);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(27, 67, 50, 0.15);
+    }
+
+    .btn-locate:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(27, 67, 50, 0.2);
+    }
+
+    .btn-locate:active {
+      transform: translateY(0);
+    }
+
+    .btn-locate:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Quick Preset Selector */
+    .location-preset-select {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      box-shadow: var(--shadow-xs);
+      transition: border-color 0.15s;
+    }
+
+    .location-preset-select:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── STATS STRIP / KPI CARDS ── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .kpi-value {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .kpi-value.emerald {
+      color: var(--success, #059669);
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono, monospace);
+    }
+
+    .kpi-icon-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── MAIN WORKSPACE GRID ── */
+    .nm-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── LEFT DIRECTORY PANEL ── */
+    .directory-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .directory-head {
+      padding: 12px 14px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .directory-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .directory-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-badge {
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono, monospace);
+      padding: 2px 8px;
+      border-radius: var(--radius-full, 9999px);
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    /* Search & Filter Bar */
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px 7px 30px;
+      font-size: 12.5px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.15s;
+    }
+
+    .search-input:focus {
+      background: #FFFFFF;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 9px;
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Directory List */
+    .mandi-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mandi-list::-webkit-scrollbar {
+      width: 5px;
+    }
+    .mandi-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .mandi-list::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+
+    /* Mandi Item Card */
+    .mandi-item {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .mandi-item:hover {
+      border-color: #B5C4D4;
+      box-shadow: var(--shadow-xs);
+      transform: translateY(-1px);
+    }
+
+    .mandi-item.active {
+      background: #F0FDF4;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), var(--shadow-xs);
+    }
+
+    .mandi-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mandi-name-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mandi-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mandi-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mandi-item.active .mandi-name {
+      color: var(--primary);
+    }
+
+    .distance-chip {
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono, monospace);
+      background: #ECFDF5;
+      color: #047857;
+      border: 1px solid #A7F3D0;
+      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .mandi-meta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mandi-type-tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: #475569;
+      background: #F1F5F9;
+      border-radius: 4px;
+      padding: 1px 6px;
+      width: fit-content;
+    }
+
+    .mandi-address {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.35;
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    .mandi-address svg {
+      width: 13px;
+      height: 13px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .mandi-actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 2px;
+    }
+
+    .mandi-link-btn {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+      background: transparent;
+      border: none;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+
+    .mandi-link-btn:hover {
+      background: var(--primary-light);
+    }
+
+    .mandi-link-btn.directions {
+      color: #2563EB;
+    }
+
+    .mandi-link-btn.directions:hover {
+      background: #EFF6FF;
+    }
+
+    /* ── RIGHT MAP PANEL ── */
+    .map-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #E5E7EB;
+      z-index: 1;
+    }
+
+    /* Floating Map Status Overlay */
+    .status-overlay {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      z-index: 1000;
+      box-shadow: var(--shadow-md);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(4px);
+    }
+
+    .status-overlay.active {
+      display: flex;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    }
+
+    /* Floating Map Controls */
+    .map-tools {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 1000;
+    }
+
+    .map-tool-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .map-tool-btn:hover {
+      color: var(--primary);
+      background: var(--bg);
+    }
+
+    /* Empty and Loading States */
+    .empty-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      gap: 12px;
+      margin: auto;
+    }
+
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .empty-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      max-width: 260px;
+      line-height: 1.4;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      border-top-color: #FFFFFF;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .spinner.dark {
+      border-color: rgba(27, 67, 50, 0.2);
+      border-top-color: var(--primary);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── CUSTOM LEAFLET POPUP STYLING ── */
+    .leaflet-popup-content-wrapper {
+      background: #FFFFFF;
+      border-radius: 10px;
+      padding: 0;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .leaflet-popup-content {
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .mandi-popup-card {
+      font-family: var(--font-sans, 'Inter', sans-serif);
+      width: 230px;
+      padding: 12px 14px;
+    }
+
+    .popup-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--primary);
+      background: var(--primary-light);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-bottom: 4px;
+    }
+
+    .popup-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 3px;
+      line-height: 1.25;
+    }
+
+    .popup-addr {
+      font-size: 11.5px;
+      color: #6B7280;
+      margin-bottom: 10px;
+    }
+
+    .popup-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #F1F5F9;
+      padding-top: 8px;
+    }
+
+    .popup-dist {
+      font-size: 11px;
+      font-weight: 700;
+      color: #059669;
+      font-family: var(--font-mono, monospace);
+    }
+
+    .popup-btn {
+      font-size: 11px;
+      font-weight: 600;
+      color: #FFFFFF;
+      background: var(--primary);
+      text-decoration: none;
+      padding: 4px 9px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* Custom CSS Markers */
+    .custom-mandi-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: #1B4332;
+      border: 2px solid #FFFFFF;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .custom-mandi-pin:hover {
+      transform: rotate(-45deg) scale(1.15);
+      background: #10B981;
+    }
+
+    .custom-mandi-pin svg {
+      transform: rotate(45deg);
+      width: 14px;
+      height: 14px;
+      color: #FFFFFF;
+    }
+
+    .custom-user-pin {
+      width: 20px;
+      height: 20px;
+      background: #2563EB;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25), 0 3px 6px rgba(0,0,0,0.2);
+      animation: userPulse 2s infinite;
+    }
+
+    @keyframes userPulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+      70% { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding: 16px;
+        overflow-y: auto;
+        height: auto;
+      }
+      .kpi-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .nm-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 360px 420px;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOP HEADER ── -->
+  <header class="nm-header">
+    <div class="nm-title-area">
+      <h1 class="nm-title">
+        Nearest Mandi <span class="accent">Intelligence</span>
+      </h1>
+      <p class="nm-subtitle">Real-time geospatial locator for agricultural markets, APMC yards &amp; rural haats</p>
+    </div>
+
+    <div class="nm-header-actions">
+      <!-- Search Radius Pills -->
+      <div class="radius-group" title="Set search radius">
+        <button class="radius-btn" onclick="setRadius(1000, this)">1 km</button>
+        <button class="radius-btn active" onclick="setRadius(5000, this)">5 km</button>
+      </div>
+
+
+      <!-- Primary Locate Button -->
+      <button class="btn-locate" id="btn-locate" onclick="locateUser()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Locate Nearest Mandis</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── KPI METRICS RIBBON ── -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <span class="kpi-label">Mandis Discovered</span>
+        <span class="kpi-value emerald" id="kpi-count">0</span>
+        <span class="kpi-sub">Within active radius</span>
+      </div>
+      <div class="kpi-icon-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <span class="kpi-label">Nearest Market</span>
+        <span class="kpi-value" id="kpi-closest">—</span>
+        <span class="kpi-sub" id="kpi-closest-sub">Awaiting GPS</span>
+      </div>
+      <div class="kpi-icon-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <span class="kpi-label">Scan Boundary</span>
+        <span class="kpi-value" id="kpi-radius">5 km</span>
+        <span class="kpi-sub">Radial coverage</span>
+      </div>
+      <div class="kpi-icon-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-info">
+        <span class="kpi-label">Coordinates</span>
+        <span class="kpi-value" id="kpi-coords" style="font-size:14px;">—</span>
+        <span class="kpi-sub" id="kpi-coords-sub">Latitude, Longitude</span>
+      </div>
+      <div class="kpi-icon-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN WORKSPACE ── -->
+  <div class="nm-grid">
+    <!-- Left Market Directory Panel -->
+    <section class="directory-panel">
+      <div class="directory-head">
+        <div class="directory-title-row">
+          <div class="directory-title">
+            <span>Nearby Markets</span>
+            <span class="result-badge" id="result-badge">0 Mandis</span>
+          </div>
+        </div>
+
+        <div class="search-box">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" class="search-input" id="search-input" placeholder="Filter by market name, locality..." oninput="filterMandis(this.value)">
+        </div>
+      </div>
+
+      <ul class="mandi-list" id="mandi-list">
+        <div class="empty-container">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div class="empty-title">Find Agricultural Markets</div>
+          <div class="empty-desc">Click "Locate Nearest Mandis" or choose a location preset to discover nearby APMC yards and bazaars.</div>
+        </div>
+      </ul>
+    </section>
+
+    <!-- Right Interactive Map Panel -->
+    <section class="map-panel">
+      <div class="status-overlay" id="status-overlay">
+        <div class="status-dot"></div>
+        <span id="status-text">Locating position...</span>
+      </div>
+
+      <div class="map-tools">
+        <button class="map-tool-btn" onclick="recenterMap()" title="Recenter Map">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="map-tool-btn" onclick="fitAllMandis()" title="Fit All Mandis">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg>
+        </button>
+      </div>
+
+      <div id="map"></div>
+    </section>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+
+  <script>
+    let map;
+    let markersLayer;
+    let userMarker;
+    let userLatLng = null;
+    let currentRadius = 5000;
+    let allMandis = [];
+    let activeMandiIndex = null;
+
+    const PRESETS = {
+      kolkata: { lat: 22.5726, lon: 88.3639, name: "Kolkata, WB" },
+      agartala: { lat: 23.8315, lon: 91.2868, name: "Agartala, Tripura" },
+      shillong: { lat: 25.5788, lon: 91.8933, name: "Shillong, Meghalaya" },
+      jaipur: { lat: 26.9124, lon: 75.7873, name: "Jaipur, Rajasthan" },
+      delhi: { lat: 28.7041, lon: 77.1025, name: "Azadpur Mandi, Delhi" }
+    };
+
+    function initMap() {
+      // Initialize map centered in India with high quality light tiles
+      map = L.map('map', { zoomControl: true }).setView([22.9734, 78.6569], 5);
+      
+      // Clean modern OpenStreetMap / CartoDB Voyager tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function createMandiMarkerIcon() {
+      return L.divIcon({
+        className: 'custom-mandi-pin-wrap',
+        html: `
+          <div class="custom-mandi-pin">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -30]
+      });
+    }
+
+    function createUserMarkerIcon() {
+      return L.divIcon({
+        className: 'custom-user-pin-wrap',
+        html: `<div class="custom-user-pin" title="Your Location"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        popupAnchor: [0, -10]
+      });
+    }
+
+    function showStatus(text, autoHide = false) {
+      const banner = document.getElementById('status-overlay');
+      const textEl = document.getElementById('status-text');
+      textEl.textContent = text;
+      banner.classList.add('active');
+      
+      if (autoHide) {
+        setTimeout(() => {
+          banner.classList.remove('active');
+        }, 3500);
+      }
+    }
+
+    function setRadius(meters, btn) {
+      document.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRadius = meters;
+      document.getElementById('kpi-radius').textContent = `${meters / 1000} km`;
+    }
+
+    function applyPresetLocation(key) {
+      if (key === "gps") {
+        locateUser();
+        return;
+      }
+      const preset = PRESETS[key];
+      if (preset) {
+        setUserPosition(preset.lat, preset.lon, preset.name);
+      }
+    }
+
+    function locateUser() {
+      const btn = document.getElementById('btn-locate');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> <span>Locating GPS...</span>';
+      btn.disabled = true;
+
+      showStatus("Detecting your exact GPS coordinates...");
+
+      if (!navigator.geolocation) {
+        showStatus("Geolocation not supported by browser. Using default zone.", true);
+        setUserPosition(PRESETS.kolkata.lat, PRESETS.kolkata.lon, "Kolkata (Default)");
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+          setUserPosition(position.coords.latitude, position.coords.longitude, "Your Location");
+        },
+        (err) => {
+          console.warn("Geolocation fallback:", err);
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+          showStatus("GPS permission denied or timeout. Switching to Kolkata.", true);
+          setUserPosition(PRESETS.kolkata.lat, PRESETS.kolkata.lon, "Kolkata Region");
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function setUserPosition(lat, lon, label = "Current Location") {
+      userLatLng = { lat, lon };
+
+      // Update KPI
+      document.getElementById('kpi-coords').textContent = `${lat.toFixed(3)}°, ${lon.toFixed(3)}°`;
+      document.getElementById('kpi-coords-sub').textContent = label;
+
+      if (userMarker) {
+        map.removeLayer(userMarker);
+      }
+
+      userMarker = L.marker([lat, lon], { icon: createUserMarkerIcon() })
+        .bindPopup(`
+          <div style="padding:6px 8px; font-family:Inter; font-size:12px;">
+            <strong style="color:#1B4332;">📍 ${label}</strong><br>
+            <span style="color:#6B7280; font-size:11px;">Search origin point</span>
+          </div>
+        `)
+        .addTo(map);
+
+      map.setView([lat, lon], 12);
+      fetchMandis(lat, lon);
+    }
+
+    async function fetchMandis(lat, lon) {
+      showStatus("Scanning for regional mandis & APMC yards...");
+      const listContainer = document.getElementById('mandi-list');
+      
+      listContainer.innerHTML = `
+        <div class="empty-container">
+          <div class="spinner dark" style="width:24px; height:24px;"></div>
+          <div class="empty-title">Scanning Map Data</div>
+          <div class="empty-desc">Querying OpenStreetMap and agricultural registry within ${currentRadius/1000}km...</div>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`/api/nearest-mandi/locate?lat=${lat}&lon=${lon}&radius=${currentRadius}`);
+        if (!res.ok) throw new Error("API request returned status " + res.status);
+        
+        const data = await res.json();
+        if (data.status === "success") {
+          allMandis = data.mandis || [];
+          renderMandis(allMandis);
+          showStatus(`Found ${allMandis.length} agricultural markets`, true);
+        } else {
+          throw new Error(data.error || "Failed to retrieve mandi records");
+        }
+      } catch (err) {
+        console.error("Mandi fetch error:", err);
+        showStatus("Failed to load markets: " + err.message, true);
+        listContainer.innerHTML = `
+          <div class="empty-container">
+            <div class="empty-icon" style="color:#DC2626; background:#FEF2F2;">✕</div>
+            <div class="empty-title">Unable to Load Markets</div>
+            <div class="empty-desc">${err.message}</div>
+            <button class="btn-locate" style="padding:6px 12px; font-size:12px; margin-top:8px;" onclick="locateUser()">Retry Search</button>
+          </div>
+        `;
+      }
+    }
+
+    function renderMandis(mandis) {
+      const listContainer = document.getElementById('mandi-list');
+      const countEl = document.getElementById('kpi-count');
+      const badgeEl = document.getElementById('result-badge');
+      const closestEl = document.getElementById('kpi-closest');
+      const closestSubEl = document.getElementById('kpi-closest-sub');
+
+      countEl.textContent = mandis.length;
+      badgeEl.textContent = `${mandis.length} Mandis`;
+
+      markersLayer.clearLayers();
+
+      if (mandis.length === 0) {
+        closestEl.textContent = 'None';
+        closestSubEl.textContent = `Within ${currentRadius/1000}km`;
+        listContainer.innerHTML = `
+          <div class="empty-container">
+            <div class="empty-icon">📍</div>
+            <div class="empty-title">No Mandis Found</div>
+            <div class="empty-desc">No agricultural markets detected within ${currentRadius/1000}km. Try expanding search radius to 50km.</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Nearest mandi info
+      closestEl.textContent = `${mandis[0].distance_km} km`;
+      closestSubEl.textContent = mandis[0].name;
+
+      listContainer.innerHTML = '';
+      const bounds = L.latLngBounds([userMarker.getLatLng()]);
+
+      mandis.forEach((mandi, idx) => {
+        // List Card
+        const li = document.createElement('li');
+        li.className = 'mandi-item' + (idx === 0 ? ' active' : '');
+        li.id = `mandi-item-${idx}`;
+        li.onclick = () => focusMandi(idx);
+
+        li.innerHTML = `
+          <div class="mandi-card-top">
+            <div class="mandi-name-wrap">
+              <div class="mandi-avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <div style="min-width:0; flex:1;">
+                <div class="mandi-name" title="${mandi.name}">${mandi.name}</div>
+              </div>
+            </div>
+            <span class="distance-chip">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              ${mandi.distance_km} km
+            </span>
+          </div>
+
+          <div class="mandi-meta-row">
+            <span class="mandi-type-tag">${mandi.market_type || 'APMC / Krishi Mandi'}</span>
+            <div class="mandi-address">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>${mandi.address}</span>
+            </div>
+          </div>
+
+          <div class="mandi-actions-row">
+            <button class="mandi-link-btn" onclick="event.stopPropagation(); focusMandi(${idx})">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/></svg>
+              View on Map
+            </button>
+            <a class="mandi-link-btn directions" href="https://www.google.com/maps/dir/?api=1&destination=${mandi.lat},${mandi.lon}" target="_blank" onclick="event.stopPropagation()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              Directions
+            </a>
+          </div>
+        `;
+        listContainer.appendChild(li);
+
+        // Custom Leaflet Marker
+        const marker = L.marker([mandi.lat, mandi.lon], { icon: createMandiMarkerIcon() })
+          .bindPopup(`
+            <div class="mandi-popup-card">
+              <span class="popup-badge">${mandi.market_type || 'APMC Market'}</span>
+              <div class="popup-title">${mandi.name}</div>
+              <div class="popup-addr">${mandi.address}</div>
+              <div class="popup-footer">
+                <span class="popup-dist">${mandi.distance_km} km away</span>
+                <a class="popup-btn" href="https://www.google.com/maps/dir/?api=1&destination=${mandi.lat},${mandi.lon}" target="_blank">
+                  Directions &rarr;
+                </a>
+              </div>
+            </div>
+          `);
+
+        marker.mandiIndex = idx;
+        marker.on('click', () => focusMandi(idx, false));
+        markersLayer.addLayer(marker);
+
+        bounds.extend([mandi.lat, mandi.lon]);
+      });
+
+      if (mandis.length > 0) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    function focusMandi(index, flyMap = true) {
+      activeMandiIndex = index;
+      const items = document.querySelectorAll('.mandi-item');
+      items.forEach(el => el.classList.remove('active'));
+
+      const targetEl = document.getElementById(`mandi-item-${index}`);
+      if (targetEl) {
+        targetEl.classList.add('active');
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      const mandi = allMandis[index];
+      if (!mandi) return;
+
+      let targetMarker = null;
+      markersLayer.eachLayer(layer => {
+        if (layer.mandiIndex === index) {
+          targetMarker = layer;
+        }
+      });
+
+      if (targetMarker) {
+        if (flyMap) {
+          map.flyTo([mandi.lat, mandi.lon], 14, { duration: 0.6 });
+        }
+        targetMarker.openPopup();
+      }
+    }
+
+    function filterMandis(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        renderMandis(allMandis);
+        return;
+      }
+      const filtered = allMandis.filter(m => 
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.address && m.address.toLowerCase().includes(q)) ||
+        (m.market_type && m.market_type.toLowerCase().includes(q))
+      );
+      renderMandis(filtered);
+    }
+
+    function recenterMap() {
+      if (userLatLng) {
+        map.flyTo([userLatLng.lat, userLatLng.lon], 13, { duration: 0.5 });
+      }
+    }
+
+    function fitAllMandis() {
+      if (markersLayer.getLayers().length > 0 && userMarker) {
+        const bounds = L.latLngBounds([userMarker.getLatLng()]);
+        markersLayer.eachLayer(l => bounds.extend(l.getLatLng()));
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    // Init on load
+    document.addEventListener('DOMContentLoaded', initMap);
+  </script>
+</body>
+</html>
