@@ -7,25 +7,30 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# ---- Install system deps (uncomment if any package needs build tools) ----
-# RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+# ---- Install system dependencies (curl for healthchecks, gcc if packages need C extensions) ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# ---- Install Python deps first (better layer caching) ----
+# ---- Install Python dependencies first (leverages Docker layer caching) ----
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# ---- Copy application code ----
+# ---- Copy application code & data models ----
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 COPY data_and_model/ ./data_and_model/
 COPY data_and_model_meghalaya/ ./data_and_model_meghalaya/
 COPY data_and_model_rajasthan/ ./data_and_model_rajasthan/
 
-# NOTE: .env and api_keys.txt are NOT copied here on purpose — pass secrets
-# at runtime via `docker run --env-file` or a Docker secret, don't bake them in.
+# Gateway entry port
+EXPOSE 8085
 
-# Flask default port (change if your main.py binds elsewhere)
-EXPOSE 5000
+# Container healthcheck via the gateway disease health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:8085/api/disease/health?state=tripura || exit 1
 
-# ---- Run the app ----
-CMD ["python", "backend/main.py"]
+# ---- Run the unified launcher in headless container mode ----
+CMD ["python", "backend/main.py", "--no-browser"]

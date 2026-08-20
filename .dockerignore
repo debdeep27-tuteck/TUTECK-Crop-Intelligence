@@ -1,0 +1,27 @@
+# Secrets - never bake into the image
+.env
+*.env
+backend/.env
+api_keys.txt
+
+# VCS / editor
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+env/
+
+# Miscellaneous
+README.md
+scripts/
+*.log
