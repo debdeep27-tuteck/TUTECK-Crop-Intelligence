@@ -769,6 +769,9 @@ def health():
 
 
 @app.route("/crop_trends", methods=["GET"])
+@app.route("/stats/trends", methods=["GET"])
+@app.route("/api/crop/crop_trends", methods=["GET"])
+@app.route("/api/crop/stats/trends", methods=["GET"])
 def crop_trends():
     """
     Returns real year-by-year median yield for each crop from df_history.

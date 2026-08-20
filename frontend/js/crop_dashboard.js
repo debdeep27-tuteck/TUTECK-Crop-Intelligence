@@ -139,7 +139,10 @@ async function populateCropSelectors() {
 async function loadTrendData() {
   if (TREND_DATA) return TREND_DATA;
   try {
-    const res = await fetchJson('/stats/trends', { timeout: 8000 });
+    let res = await fetchJson('/stats/trends', { timeout: 8000 });
+    if (!res || !res.years) {
+      res = await fetchJson('/crop_trends', { timeout: 8000 });
+    }
     if (res && res.years) {
       TREND_DATA = res;
       return TREND_DATA;
