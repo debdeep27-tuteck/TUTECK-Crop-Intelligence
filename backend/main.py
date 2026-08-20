@@ -10,6 +10,7 @@ Starts:
 • backend_2.py Rajasthan       -> http://127.0.0.1:5006 (crop yield / stats API)
   • irrigation_backend2.py       -> http://127.0.0.1:5001 (irrigation advisory API, if present)
   • disease_backend.py           -> http://127.0.0.1:5004 (crop disease detection API)
+  • mandi_prices_backend.py      -> http://127.0.0.1:5011 (daily mandi price API, data.gov.in)
 
 Public URLs:
   http://localhost:8085/dashboard
@@ -19,6 +20,7 @@ Public URLs:
   http://localhost:8085/disease
   http://localhost:8085/auction
   http://localhost:8085/auction-mandi
+  http://localhost:8085/mandi-prices
 
 Usage:
   python main.py                         # launch all services
@@ -77,6 +79,10 @@ AUCTION_PORT = 5009
 # Cold Storage Intelligence backend (deterministic storage-capacity
 # advisory); gateway.py forwards /api/cold-storage/* to this port.
 COLD_STORAGE_PORT = 5010
+
+# Mandi Prices backend (daily commodity market prices from data.gov.in /
+# Agmarknet); gateway.py forwards /api/mandi-prices/* to this port.
+MANDI_PRICES_PORT = 5011
 
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
@@ -202,6 +208,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-yield-detect", action="store_true", help="Skip yield detect (geofencing) backend")
     parser.add_argument("--no-cold-storage", action="store_true", help="Skip cold storage intelligence backend")
     parser.add_argument("--no-auction", action="store_true", help="Skip auction backend")
+    parser.add_argument("--no-mandi-prices", action="store_true", help="Skip mandi prices backend")
 
     return parser.parse_args()
 
@@ -277,6 +284,7 @@ def main() -> None:
     yield_detect_script = find_script(base_dir, "yield_detect_backend.py")
     auction_script = find_script(base_dir, "auction_backend.py")
     cold_storage_script = find_script(base_dir, "cold_storage_backend.py")
+    mandi_prices_script = find_script(base_dir, "mandi_prices_backend.py")
     gateway_script = find_script(base_dir, "gateway.py")
 
     if not backend_script:
@@ -376,6 +384,20 @@ def main() -> None:
         )
     else:
         log(RED, "cold-storage", "cold_storage_backend.py not found; Cold Storage Intelligence API will be unavailable.")
+
+    # 3e) Start mandi-prices backend (daily commodity market prices).
+    if args.no_mandi_prices:
+        log(YELLOW, "mandi-prices", "Skipped by --no-mandi-prices")
+    elif mandi_prices_script:
+        start_if_needed(
+            label="mandi-prices",
+            script=mandi_prices_script,
+            cmd_args=[],
+            port=MANDI_PRICES_PORT,
+            timeout=args.ready_timeout,
+        )
+    else:
+        log(RED, "mandi-prices", "mandi_prices_backend.py not found; Mandi Prices tab will show BACKEND OFFLINE.")
 
     # 4) Start gateway last, after internal services are up.
     start_if_needed(

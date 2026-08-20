@@ -54,7 +54,7 @@ EXCEL_FILE = BASE_DIR / "users.xlsx"
 PERMISSIONS_FILE = BASE_DIR / "permissions.xlsx"
 USER_PERMISSIONS_FILE = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/cold-storage", "/auction", "/auction-mandi"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices"]
 
 PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separated string
 USER_PERMISSIONS_COLUMNS = ["uid", "pages"]  # per-user page overrides, comma-separated
@@ -76,23 +76,23 @@ DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
 # editable live from the admin panel (see /api/permissions routes below).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices"],
         "crud": True,
     },
     "analyst": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction", "/auction-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices"],
         "crud": False,
     },
     "farmer": {
-        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction"],
+        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction", "/mandi-prices"],
         "crud": False,
     },
     "state_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices"],
         "crud": False,
     },
     "district_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect","/cold-storage", "/auction", "/auction-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect","/cold-storage", "/auction", "/auction-mandi", "/mandi-prices"],
         "crud": False,
     },
     "mandi": {
