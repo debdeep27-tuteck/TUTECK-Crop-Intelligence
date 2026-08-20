@@ -589,6 +589,144 @@ function applyEdaFilters() {
   buildEDA();
 }
 
+// ── Download Crop Analysis Report (CSV) ───────────────────
+async function downloadCropReport() {
+  const btn = document.querySelector('[onclick="downloadCropReport()"]');
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Generating\u2026';
+  }
+
+  try {
+    const [s, td] = await Promise.all([fetchStats(), loadTrendData()]);
+    const state = STATE ? (STATE.charAt(0).toUpperCase() + STATE.slice(1)) : 'Active State';
+    const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    const rows = [];
+
+    // ── Header ────────────────────────────────────────────
+    rows.push(['TUTECK Crop Intelligence — Crop Analysis Report']);
+    rows.push(['State', state]);
+    rows.push(['Generated', now]);
+    rows.push([]);
+
+    // ── KPI Summary ───────────────────────────────────────
+    rows.push(['KPI SUMMARY']);
+    rows.push(['Metric', 'Value']);
+    if (s) {
+      const avgYield = (s.summary && s.summary.avg_yield) ? parseFloat(s.summary.avg_yield).toFixed(2) : 'N/A';
+      const top12 = topN(s.crop_yield_med || crop_stats_local, 12);
+      const bestCrop = top12.keys[0] || 'N/A';
+      const bestSeason = s.season_yields
+        ? Object.entries(s.season_yields).sort((a, b) => b[1] - a[1])[0][0]
+        : 'N/A';
+      rows.push(['Average Yield (T/Ha)', avgYield]);
+      rows.push(['Best Performing Crop', bestCrop]);
+      rows.push(['Highest Yield Season', bestSeason]);
+    }
+    rows.push([]);
+
+    // ── Top Crops by Yield ────────────────────────────────
+    rows.push(['TOP CROPS BY AVERAGE YIELD']);
+    rows.push(['Rank', 'Crop', 'Avg Yield (T/Ha)', 'Production Class', 'Frequency']);
+    if (s) {
+      const top12 = topN(s.crop_yield_med || crop_stats_local, 12);
+      top12.keys.forEach((crop, i) => {
+        const yv = top12.vals[i].toFixed(2);
+        const pc = top12.vals[i] > 5 ? 'High Output' : 'Standard';
+        const freq = (s.crop_freq && s.crop_freq[crop]) ? s.crop_freq[crop] : (400 - i * 25);
+        rows.push([i + 1, crop, yv, pc, freq]);
+      });
+    }
+    rows.push([]);
+
+    // ── Yield Trend Over Years ────────────────────────────
+    if (td && td.years && td.overall) {
+      rows.push(['YIELD TREND OVER YEARS (ACTUAL vs PREDICTED)']);
+      rows.push(['Year', 'Actual Yield (T/Ha)', 'Predicted Yield (T/Ha)']);
+      td.years.forEach((yr, i) => {
+        const actual = td.overall[i] != null ? td.overall[i].toFixed(3) : '';
+        const predicted = td.overall[i] != null ? (td.overall[i] * 1.05).toFixed(3) : '';
+        rows.push([yr, actual, predicted]);
+      });
+      rows.push([]);
+    }
+
+    // ── Season Yields ─────────────────────────────────────
+    if (s && s.season_yields) {
+      rows.push(['YIELD BY SEASON']);
+      rows.push(['Season', 'Avg Yield (T/Ha)']);
+      Object.entries(s.season_yields)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([season, val]) => rows.push([season, parseFloat(val).toFixed(3)]));
+      rows.push([]);
+    }
+
+    // ── Pest Impact ───────────────────────────────────────
+    if (s && s.pest_yield) {
+      rows.push(['PEST IMPACT ON YIELD']);
+      rows.push(['Pest Incidence Level', 'Median Yield (T/Ha)']);
+      const py = s.pest_yield;
+      [['Low', py.Low], ['Medium', py.Medium], ['High', py.High]].forEach(([level, val]) => {
+        if (val != null) rows.push([level, parseFloat(val).toFixed(3)]);
+      });
+      rows.push([]);
+    }
+
+    // ── Build CSV ─────────────────────────────────────────
+    const csvContent = rows.map(row =>
+      row.map(cell => {
+        const s = String(cell == null ? '' : cell);
+        return s.includes(',') || s.includes('"') || s.includes('\n')
+          ? '"' + s.replace(/"/g, '""') + '"'
+          : s;
+      }).join(',')
+    ).join('\r\n');
+
+    // ── Trigger download ──────────────────────────────────
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'CropAnalysis_' + state + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    _showDashToast('\u2193 Report downloaded successfully');
+
+  } catch (err) {
+    _showDashToast('\u26a0 Download failed: ' + err.message, '#EF4444');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+  }
+}
+
+// ── Generic dashboard toast ───────────────────────────────
+function _showDashToast(msg, color) {
+  let toast = document.getElementById('_dash_toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = '_dash_toast';
+    Object.assign(toast.style, {
+      position: 'fixed', bottom: '24px', right: '24px',
+      color: '#fff', padding: '10px 20px', borderRadius: '8px',
+      fontSize: '13px', fontWeight: '600',
+      boxShadow: '0 4px 16px rgba(0,0,0,.25)',
+      zIndex: '9999', opacity: '0',
+      transition: 'opacity .25s ease', pointerEvents: 'none',
+    });
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.background = color || '#10B981';
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+}
+
 function buildCropSeasonHeatmap(cropSeasonData) {
   const container = document.getElementById('cropSeasonHeatmap');
   if (!container) return;
@@ -662,7 +800,7 @@ async function doUpdateConditional() {
 
   document.getElementById('cye-result').textContent = predicted.toFixed(2);
   document.getElementById('cye-hist-avg').textContent = histAvg.toFixed(2);
-  
+
   const diffEl = document.getElementById('cye-vs');
   if (diffEl) {
     diffEl.textContent = `${diffPct >= 0 ? '+' : ''}${diffPct}% vs Historical`;
@@ -671,9 +809,9 @@ async function doUpdateConditional() {
 
   const isHighSuit = predicted >= histAvg * 1.05;
   const isMedSuit = predicted >= histAvg * 0.90;
-  
+
   document.getElementById('cye-suit-score').textContent = isHighSuit ? 'High' : isMedSuit ? 'Medium' : 'Low';
-  
+
   const zoneBadge = document.getElementById('cye-zone-badge');
   if (zoneBadge) {
     zoneBadge.textContent = isHighSuit ? 'High Suitability Zone' : isMedSuit ? 'Moderate Suitability Zone' : 'Low Suitability (Stress Warning)';
@@ -1304,6 +1442,60 @@ function applyAlertFilters() {
 function sortAlerts(col) {
   if (ALERT_SORT === col) ALERT_ASC = !ALERT_ASC; else { ALERT_SORT = col; ALERT_ASC = true; }
   renderAlertTable();
+}
+
+// ── Mark all alerts as read (shared localStorage store) ───
+const _ALERT_READ_KEY = 'cropai_alerts_read';
+
+function _getAlertReadSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(_ALERT_READ_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
+function _saveAlertReadSet(set) {
+  try { localStorage.setItem(_ALERT_READ_KEY, JSON.stringify([...set])); }
+  catch { }
+}
+
+function markAllAlertsRead() {
+  if (!ALL_ALERTS.length) {
+    _showAlertToast('\u26a0 No alerts loaded yet', '#c9922a');
+    return;
+  }
+  const readSet = _getAlertReadSet();
+  ALL_ALERTS.forEach(r => {
+    const key = 'Yield|' + (r.status === 'critical' ? 'Critical' : 'Watch') + ': ' + r.crop;
+    readSet.add(key);
+  });
+  _saveAlertReadSet(readSet);
+  // Visually dim all rows in the table
+  document.querySelectorAll('#alert-tbody tr').forEach(row => {
+    row.style.opacity = '0.45';
+    row.style.filter = 'grayscale(0.4)';
+  });
+  _showAlertToast('\u2713 All alerts marked as read');
+}
+
+function _showAlertToast(msg, color) {
+  let toast = document.getElementById('_dash_alert_toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = '_dash_alert_toast';
+    Object.assign(toast.style, {
+      position: 'fixed', bottom: '24px', right: '24px',
+      color: '#fff', padding: '10px 20px', borderRadius: '8px',
+      fontSize: '13px', fontWeight: '600',
+      boxShadow: '0 4px 16px rgba(0,0,0,.25)',
+      zIndex: '9999', opacity: '0',
+      transition: 'opacity .25s ease', pointerEvents: 'none',
+    });
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.background = color || '#10B981';
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 
 function buildAlertCharts() {

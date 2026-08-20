@@ -6,147 +6,308 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CropAI — Auction Floor</title>
 
-<link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600&display=swap">
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/design_system.css">
 
 <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-        --bg: #f6f4ee;
-        --surface: #ffffff;
-        --border: #e4e0d5;
-        --border2: #cfc9b8;
-        --leaf: #3c9457;
-        --leaf-dark: #276b40;
-        --leaf-darker: #1e5432;
-        --leaf-pale: rgba(60, 148, 87, .1);
-        --leaf-pale2: rgba(60, 148, 87, .16);
-        --ink: #1c1f19;
-        --ink2: #4c5044;
-        --ink3: #8b8a78;
-        --gold: #c08f34;
-        --gold-dark: #93691f;
-        --gold-pale: rgba(192, 143, 52, .13);
-        --red: #b7402f;
-        --red-pale: #fbe6e2;
-        --panel: #142218;
-        --panel2: #1d3323;
-        --shadow-sm: 0 1px 2px rgba(20, 30, 20, .05), 0 1px 1px rgba(20, 30, 20, .04);
-        --shadow-md: 0 6px 16px rgba(20, 34, 22, .07), 0 2px 5px rgba(20, 34, 22, .05);
-        --shadow-lg: 0 22px 48px rgba(14, 24, 16, .14), 0 6px 16px rgba(14, 24, 16, .08);
-        --ease: cubic-bezier(.22, .8, .32, 1);
-        --mono: 'DM Mono', monospace;
-        --head: 'DM Serif Display', serif;
-        --body: 'Outfit', sans-serif;
+        --primary: #1B4332;
+        --primary-hover: #2D6A4F;
+        --primary-dark: #0D2B1F;
+        --primary-light: #ECFDF5;
+        --primary-glow: rgba(16, 185, 129, 0.14);
+        --accent: #10B981;
+        --accent-hover: #059669;
+
+        --bg: #F8FAFC;
+        --surface: #FFFFFF;
+        --surface-hover: #F1F5F9;
+        --surface-subtle: #F8FAFC;
+        --border: #E2E8F0;
+        --border-subtle: #EDF2F7;
+        --border-focus: #10B981;
+
+        --text: #0F172A;
+        --text-secondary: #475569;
+        --text-muted: #64748B;
+        --text-faint: #94A3B8;
+
+        --success: #059669;
+        --success-bg: #ECFDF5;
+        --success-border: #A7F3D0;
+
+        --warning: #D97706;
+        --warning-bg: #FFFBEB;
+        --warning-border: #FDE68A;
+
+        --danger: #DC2626;
+        --danger-bg: #FEF2F2;
+        --danger-border: #FECACA;
+
+        --info: #2563EB;
+        --info-bg: #EFF6FF;
+        --info-border: #BFDBFE;
+
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: 'DM Mono', monospace;
+
+        --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+        --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+        --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+        --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.09), 0 4px 10px rgba(15, 23, 42, 0.04);
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --radius-xl: 16px;
+        --radius-full: 9999px;
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+        *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
     }
 
-    ::selection { background: var(--leaf-pale2); color: var(--leaf-darker); }
-    :focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; border-radius: 2px; }
+    ::selection { background: var(--primary-light); color: var(--primary-dark); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    html, body {
+        height: 100vh;
+        background: var(--bg);
+        font-family: var(--font-sans);
+        color: var(--text);
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+        font-size: 13.5px;
+    }
 
-    html, body { height: 100%; background: var(--bg); font-family: var(--body); color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
-
-    body { display: grid; grid-template-columns: 336px 1fr; height: 100vh; overflow: hidden; }
-
-    /* ───────────────────────── SIDEBAR ───────────────────────── */
-
-    .sidebar {
-        position: relative;
-        background:
-            radial-gradient(560px 320px at 100% 0%, rgba(255,255,255,.05), transparent 60%),
-            linear-gradient(175deg, var(--panel) 0%, var(--leaf-darker) 100%);
-        color: #ecf3ec;
-        padding: 26px 20px 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+    body {
+        display: grid;
+        grid-template-columns: 340px 1fr;
         height: 100vh;
         overflow: hidden;
-        border-right: 1px solid rgba(0,0,0,.15);
     }
 
-    .sidebar-top {
+    /* ───────────────────────── LEFT SIDEBAR (SELLER PANEL) ───────────────────────── */
+
+    .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+        z-index: 10;
+    }
+
+    .sidebar-header {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex-shrink: 0;
+        background: var(--surface);
+    }
+
+    .sidebar-brand-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .brand-icon-box {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-md);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
     }
 
+    .brand-icon-box svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .brand-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brand-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+    }
+
+    .brand-sub {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    /* Farmer identity chip */
+    .farmer-chip {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 10px 12px;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .farmer-chip:hover {
+        border-color: #CBD5E1;
+        background: #F1F5F9;
+    }
+
+    .farmer-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-xs);
+    }
+
+    .farmer-meta {
+        line-height: 1.3;
+        overflow: hidden;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .farmer-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .farmer-role-wrap {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 1px;
+    }
+
+    .farmer-role {
+        font-size: 11px;
+        color: var(--success);
+        font-weight: 600;
+    }
+
+    .role-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--success);
+    }
+
+    /* Action button: Add Crop Listing */
+    .add-btn {
+        width: 100%;
+        height: 40px;
+        border: none;
+        border-radius: var(--radius-md);
+        background: var(--primary);
+        color: #FFFFFF;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: var(--shadow-xs);
+    }
+
+    .add-btn:hover {
+        background: var(--primary-hover);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    .add-btn:active {
+        transform: translateY(0);
+    }
+
+    .add-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2.2;
+    }
+
+    .add-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Listings Panel */
     .listings-panel {
         flex: 1 1 auto;
         min-height: 0;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        padding: 16px 18px 12px;
+        background: var(--surface);
     }
 
-    .brand { display: flex; align-items: center; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.09); }
-    .brand-icon {
-        width: 32px; height: 30px; border-radius: 8px; flex-shrink: 0;
-        /* background: linear-gradient(155deg, var(--leaf) 0%, var(--leaf-darker) 100%); */
-        display: flex; align-items: center; justify-content: center;
-        /* box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 3px 8px rgba(0,0,0,.25); */
-    }
-    .brand-icon svg { width: 16px; height: 16px; color: #eaf5ec; }
-    .brand-text { display: flex; flex-direction: column; gap: 1px; }
-    .brand-mark { font-family: var(--head); font-size: 21px; color: #e8f0e5; letter-spacing: .01em; line-height: 1.1; }
-    .brand-sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: #7fa088; }
-    .brand-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: calc(contain, cover);
-            border-radius: 6px;
-        }
-
-    .farmer-chip {
-        display: flex; align-items: center; gap: 10px;
-        background: rgba(255,255,255,.045);
-        border: 1px solid rgba(255,255,255,.09);
-        border-radius: 10px; padding: 10px 12px;
-        transition: background .18s var(--ease), border-color .18s var(--ease);
-    }
-    .farmer-chip:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); }
-    .farmer-avatar {
-        width: 32px; height: 32px; border-radius: 50%;
-        background: linear-gradient(150deg, #d1a04a, var(--gold-dark));
-        display: flex; align-items: center; justify-content: center;
-        font-family: var(--mono); font-weight: 600; font-size: 13px; color: #241a08;
+    .sidebar-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
         flex-shrink: 0;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.3);
     }
-    .farmer-meta { line-height: 1.3; overflow: hidden; }
-    .farmer-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .farmer-role { font-family: var(--mono); font-size: 9.5px; color: #8fae95; text-transform: uppercase; letter-spacing: .07em; }
-
-    .add-btn {
-        width: 100%; height: 46px; border: none; border-radius: 8px;
-        background: linear-gradient(155deg, var(--leaf), var(--leaf));
-        color: #241a08;
-        font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-        cursor: pointer;
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        transition: transform .15s var(--ease), box-shadow .15s var(--ease), filter .15s var(--ease);
-        box-shadow: var(--shadow-sm);
-    }
-    .add-btn:hover { filter: brightness(1.06); box-shadow: var(--shadow-md); transform: translateY(-1px); }
-    .add-btn:active { transform: translateY(0); }
-    .add-btn svg { width: 16px; height: 16px; }
-    .add-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
     .sidebar-section-title {
-        font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
-        color: #7fa088; display: flex; align-items: center; justify-content: space-between; margin-top: 2px;
-        flex-shrink: 0;
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
-    .count-pill { background: rgba(255,255,255,.08); border-radius: 20px; padding: 1px 9px; font-size: 10px; color: #d9e8dc; font-family: var(--mono); }
+
+    .count-pill {
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid var(--success-border);
+        border-radius: var(--radius-full);
+        padding: 1px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: var(--font-mono);
+    }
 
     .listings-scroll {
         display: flex;
@@ -155,123 +316,366 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        margin: 0 -6px;
-        padding: 2px 6px 4px;
-        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%);
-        mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), transparent 100%);
+        padding-right: 4px;
     }
-    .listings-scroll::-webkit-scrollbar { display: none; }
 
-    .sidebar-footer {
-        flex-shrink: 0;
-        padding-top: 16px;
-        border-top: 1px solid rgba(255,255,255,.09);
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+    .listings-scroll::-webkit-scrollbar {
+        width: 4px;
     }
-    .sidebar-footer-stats { display: flex; gap: 18px; }
-    .sidebar-footer-stat { display: flex; flex-direction: column; gap: 2px; }
-    .sidebar-footer-stat .val { font-family: var(--head); font-size: 18px; color: #eef3ea; line-height: 1; }
-    .sidebar-footer-stat .lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--bg); }
-    .sidebar-footer-tag { font-family: var(--mono); font-size: 9px; letter-spacing: .07em; color: #6f8f78; }
+    .listings-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .listings-scroll::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 4px;
+    }
 
-    /* Crop ticket card — perforated "lot tag" motif */
+    /* Crop ticket card in sidebar */
     .crop-ticket {
         position: relative;
-        background: rgba(255,255,255,.035);
-        border: 1px solid rgba(255,255,255,.1);
-        border-left: 3px solid rgba(255,255,255,.16);
-        border-radius: 6px;
-        padding: 12px 13px 11px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--primary);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
         cursor: pointer;
-        transition: border-color .16s var(--ease), background .16s var(--ease), transform .16s var(--ease);
-        animation: fadeUp .32s var(--ease) both;
+        transition: all 0.16s var(--ease);
+        box-shadow: var(--shadow-xs);
     }
-    .crop-ticket:hover { border-left-color: var(--gold); background: rgba(192,143,52,.09); transform: translateX(1px); }
+
+    .crop-ticket:hover {
+        border-color: #CBD5E1;
+        border-left-color: var(--accent);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+        background: var(--surface-subtle);
+    }
 
     .ticket-top {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 8px;
         gap: 8px;
+        margin-bottom: 8px;
     }
 
     .ticket-crop {
-        font-family: var(--head);
-        font-size: 15.5px;
-        color: #eef3ea;
-        line-height: 1.15;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.2;
     }
 
     .ticket-loc {
-        font-family: var(--mono);
-        font-size: 9.5px;
-        color: #8fae95;
-        margin-top: 3px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .status-tag {
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: .06em;
+        font-family: var(--font-sans);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
-        padding: 3px 8px;
-        border-radius: 20px;
+        padding: 2px 7px;
+        border-radius: var(--radius-full);
         white-space: nowrap;
-        border: 1px solid transparent;
         flex-shrink: 0;
     }
-    .status-tag.open { background: var(--leaf-pale2); color: #90e2a6; border-color: rgba(142,224,163,.32); }
-    .status-tag.partial { background: rgba(192,143,52,.18); color: #f0c374; }
-    .status-tag.sold { background: rgba(255,255,255,.07); color: #9d9d94; }
+
+    .status-tag.open {
+        background: var(--success-bg);
+        color: var(--success);
+        border: 1px solid var(--success-border);
+    }
+
+    .status-tag.partial {
+        background: var(--warning-bg);
+        color: var(--warning);
+        border: 1px solid var(--warning-border);
+    }
+
+    .status-tag.sold {
+        background: #F1F5F9;
+        color: var(--text-muted);
+        border: 1px solid #E2E8F0;
+    }
 
     .ticket-bar-track {
-        height: 6px;
-        border-radius: 4px;
-        background: rgba(255,255,255,.08);
+        height: 5px;
+        border-radius: 3px;
+        background: #E2E8F0;
         overflow: hidden;
-        margin: 9px 0 8px;
+        margin: 8px 0 7px;
     }
+
     .ticket-bar-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--gold), #e0a83f);
-        border-radius: 4px;
+        background: linear-gradient(90deg, var(--accent), #059669);
+        border-radius: 3px;
+        transition: width 0.3s ease;
     }
 
     .ticket-bottom {
         display: flex;
         justify-content: space-between;
-        font-family: var(--mono);
-        font-size: 11px;
-        color: #cdd9cd;
+        font-size: 11.5px;
+        color: var(--text-secondary);
     }
-    .ticket-bottom b { color: #fff; font-weight: 600; }
+
+    .ticket-bottom b {
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-weight: 600;
+    }
 
     .empty-note {
-        font-family: var(--mono);
-        font-size: 11.5px;
-        color: #8fae95;
+        font-size: 12px;
+        color: var(--text-muted);
         text-align: center;
-        padding: 18px 8px;
-        border: 1px dashed rgba(255,255,255,.15);
-        border-radius: 10px;
+        padding: 24px 14px;
+        border: 1px dashed var(--border);
+        border-radius: var(--radius-md);
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
     }
 
-    /* ───────────────────────── MAIN ───────────────────────── */
+    .empty-note svg {
+        width: 28px;
+        height: 28px;
+        color: var(--text-faint);
+    }
+
+    /* Sidebar Footer KPI Stats */
+    .sidebar-footer {
+        flex-shrink: 0;
+        padding: 14px 18px 16px;
+        border-top: 1px solid var(--border);
+        background: var(--surface-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .sidebar-footer-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .sidebar-footer-stat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 7px 6px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .sidebar-footer-stat .val {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--primary);
+        font-family: var(--font-sans);
+        line-height: 1.1;
+    }
+
+    .sidebar-footer-stat .lbl {
+        font-size: 9.5px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .sidebar-footer-tag {
+        font-size: 10px;
+        color: var(--text-faint);
+        text-align: center;
+        letter-spacing: 0.02em;
+    }
+
+    /* ───────────────────────── MAIN CONTENT ───────────────────────── */
 
     .main {
-        padding: 32px 40px 0; max-width: 1180px; height: 100vh;
-        display: flex; flex-direction: column;
+        padding: 24px 32px 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
+        background: var(--bg);
     }
 
-    .main-top { flex-shrink: 0; }
+    .main-top {
+        flex-shrink: 0;
+    }
 
+    .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        gap: 16px;
+    }
+
+    .page-title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .page-badge {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--primary);
+        background: var(--primary-light);
+        border: 1px solid var(--success-border);
+        padding: 3px 9px;
+        border-radius: var(--radius-full);
+    }
+
+    .page-sub {
+        font-size: 13px;
+        color: var(--text-muted);
+        font-weight: 400;
+    }
+
+    /* Modern Tabs Bar */
+    .tab-bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 18px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 2px;
+    }
+
+    .tab-btn {
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 9px 16px;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.16s var(--ease);
+        position: relative;
+    }
+
+    .tab-btn:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.6);
+    }
+
+    .tab-btn.active {
+        color: var(--primary);
+        background: var(--surface);
+        box-shadow: 0 -1px 2px rgba(0,0,0,0.02);
+    }
+
+    .tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary);
+        border-radius: 2px;
+    }
+
+    .tab-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: inline-block;
+        box-shadow: 0 0 0 2px var(--primary-light);
+        animation: pulseLive 2s infinite;
+    }
+
+    @keyframes pulseLive {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .tab-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: var(--danger);
+        color: #FFFFFF;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .tab-btn.active .tab-badge {
+        background: var(--danger);
+    }
+
+    /* Alerts / Toast Messages */
+    .msg {
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        border-radius: var(--radius-md);
+        display: none;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        box-shadow: var(--shadow-xs);
+        animation: fadeIn 0.2s ease forwards;
+    }
+
+    .msg.show {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .msg.error {
+        background: var(--danger-bg);
+        color: var(--danger);
+        border-color: var(--danger-border);
+    }
+
+    .msg.success {
+        background: var(--success-bg);
+        color: var(--success);
+        border-color: var(--success-border);
+    }
+
+    /* Main Scrollable Area */
     .main-scroll-wrap {
         flex: 1 1 auto;
         min-height: 0;
@@ -280,503 +684,981 @@
     .main-scroll {
         height: 100%;
         overflow-y: auto;
-        padding: 0 0 40px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
-        mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+        padding: 4px 4px 40px 0;
     }
-    .main-scroll::-webkit-scrollbar { display: none; }
 
-    .main-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-family: var(--head); font-size: 32px; color: var(--leaf-darker); letter-spacing: -.01em; }
-    .page-sub { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin-top: 5px; }
-
-    .tab-bar { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
-    .tab-btn {
-        font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
-        color: var(--ink3); background: transparent; border: none; cursor: pointer;
-        padding: 12px 4px; margin-right: 26px; margin-bottom: -2px;
-        border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 8px;
-        transition: color .16s var(--ease), border-color .16s var(--ease);
+    .main-scroll::-webkit-scrollbar {
+        width: 6px;
     }
-    .tab-btn:hover { color: var(--ink); }
-    .tab-btn.active { color: var(--leaf-darker); border-bottom-color: var(--leaf-darker); }
-    .tab-count { background: var(--border); color: var(--ink2); border-radius: 20px; padding: 1px 7px; font-size: 9.5px; font-family: var(--mono); }
-    .tab-btn.active .tab-count { background: var(--leaf-pale2); color: var(--leaf-darker); }
-    .tab-btn[data-tab="bids"] .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); display: inline-block; box-shadow: 0 0 0 3px var(--leaf-pale); }
-
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    .msg {
-        margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; display: none;
-        font-family: var(--mono); font-size: 12px; border: 1px solid transparent;
-        animation: fadeUp .28s var(--ease) both;
+    .main-scroll::-webkit-scrollbar-track {
+        background: transparent;
     }
-    .msg.show { display: block; }
-    .msg.error { background: var(--red-pale); color: var(--red); border-color: rgba(183,64,47,.18); }
-    .msg.success { background: var(--leaf-pale); color: var(--leaf-darker); border-color: rgba(60,148,87,.2); }
+    .main-scroll::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 4px;
+    }
 
-    /* Bid cards */
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    /* Section Subheadings */
+    .round-title {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 20px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .round-title:first-child {
+        margin-top: 0;
+    }
+
+    .round-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+
+    /* ───────────────────────── BID CARDS & AUCTION CARDS ───────────────────────── */
+
     .bid-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-        gap: 18px;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
     }
 
     .bid-card {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-top: 3px solid var(--leaf-dark);
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: var(--shadow-md);
+        border-top: 3px solid var(--primary);
+        border-radius: var(--radius-lg);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-xs);
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        transition: box-shadow .2s var(--ease), transform .2s var(--ease);
-        animation: fadeUp .32s var(--ease) both;
+        gap: 14px;
+        transition: all 0.2s var(--ease);
     }
-    .bid-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+    .bid-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: #CBD5E1;
+        transform: translateY(-2px);
+    }
 
     .bid-card-top {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        gap: 10px;
     }
 
     .bid-crop {
-        font-family: var(--head);
-        font-size: 20px;
-        color: var(--ink);
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
     }
 
     .bid-loc {
-        font-family: var(--mono);
-        font-size: 10.5px;
-        color: var(--ink3);
-        margin-top: 3px;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
     }
 
     .bid-status {
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: .07em;
+        font-family: var(--font-sans);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
-        padding: 4px 10px;
-        border-radius: 20px;
+        padding: 3px 9px;
+        border-radius: var(--radius-full);
         white-space: nowrap;
     }
-    .bid-status.leading { background: var(--leaf-pale); color: var(--leaf-dark); }
-    .bid-status.outbid { background: var(--red-pale); color: var(--red); }
-    .bid-status.won { background: var(--gold-pale); color: var(--gold-dark); }
+
+    .bid-status.leading {
+        background: var(--success-bg);
+        color: var(--success);
+        border: 1px solid var(--success-border);
+    }
+
+    .bid-status.won {
+        background: var(--warning-bg);
+        color: var(--warning);
+        border: 1px solid var(--warning-border);
+    }
+
+    .bid-status.outbid {
+        background: var(--danger-bg);
+        color: var(--danger);
+        border: 1px solid var(--danger-border);
+    }
 
     .bid-stats {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        padding: 12px 0;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--bg);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-subtle);
     }
 
     .bid-stat-label {
-        font-family: var(--mono);
-        font-size: 9.5px;
-        letter-spacing: .08em;
+        font-size: 10px;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--ink3);
-        margin-bottom: 3px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 2px;
     }
-    .bid-stat-value { font-size: 16px; font-weight: 500; }
-    .bid-stat-value.gold { color: var(--gold-dark); font-family: var(--mono); }
+
+    .bid-stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        font-family: var(--font-mono);
+    }
+
+    .bid-stat-value.gold {
+        color: var(--primary);
+    }
 
     .bid-buyer-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-family: var(--mono);
-        font-size: 11.5px;
-        color: var(--ink2);
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .bid-buyer-row b {
+        color: var(--text);
     }
 
     .countdown {
-        color: var(--red);
-        font-weight: 600;
+        color: var(--danger);
+        font-weight: 700;
+        font-family: var(--font-mono);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .sim-sale-btn {
         margin-top: 4px;
         height: 38px;
-        border: 1px solid var(--gold);
-        background: var(--gold-pale);
-        color: var(--gold-dark);
-        border-radius: 7px;
-        font-family: var(--mono);
-        font-size: 11.5px;
+        border: 1px solid var(--warning-border);
+        background: var(--warning-bg);
+        color: #92400E;
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+        font-size: 12px;
+        font-weight: 600;
         cursor: pointer;
-        transition: .15s;
-    }
-    .sim-sale-btn:hover { background: var(--gold); color: #241a08; }
-    .sim-sale-btn:disabled {
-        opacity: .45;
-        cursor: not-allowed;
-        filter: blur(.3px);
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
     }
 
-    /* Live mandi auctions (buy-side auctions the farmer can bid into) */
+    .sim-sale-btn:hover {
+        background: #FDE68A;
+        color: #78350F;
+    }
+
+    .sim-sale-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #F1F5F9;
+        color: var(--text-muted);
+        border-color: #E2E8F0;
+    }
+
+    /* Mandi Auction Card */
     .auction-card {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-top: 3px solid var(--leaf-dark);
-        border-radius: 10px;
-        padding: 22px;
+        border-top: 3px solid var(--primary);
+        border-radius: var(--radius-lg);
+        padding: 20px 22px;
+        box-shadow: var(--shadow-xs);
+        transition: all 0.2s var(--ease);
+        margin-bottom: 18px;
+    }
+
+    .auction-card:hover {
         box-shadow: var(--shadow-md);
-        transition: box-shadow .2s var(--ease), transform .2s var(--ease);
-        animation: fadeUp .32s var(--ease) both;
+        border-color: #CBD5E1;
     }
-    .auction-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-    .ac-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-    .ac-name { font-family: var(--head); font-size: 21px; color: var(--ink); letter-spacing: -.005em; }
-    .ac-loc { font-family: var(--mono); font-size: 10.5px; color: var(--ink3); margin-top: 4px; letter-spacing: .03em; }
-    .ac-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+    .ac-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .ac-name {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.01em;
+    }
+
+    .ac-loc {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin-top: 3px;
+    }
+
+    .ac-badges {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
     .badge {
-        font-family: var(--mono); font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
-        padding: 4px 9px; border-radius: 20px; white-space: nowrap; border: 1px solid transparent;
+        font-family: var(--font-sans);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        padding: 3px 10px;
+        border-radius: var(--radius-full);
+        white-space: nowrap;
+        border: 1px solid transparent;
     }
-    .badge.forward { background: var(--leaf-pale); color: var(--leaf-dark); border-color: rgba(60,148,87,.28); }
-    .badge.reverse { background: var(--gold-pale); color: var(--gold-dark); border-color: rgba(192,143,52,.28); }
-    .badge.active { background: var(--leaf); color: #fff; box-shadow: 0 0 0 3px var(--leaf-pale); }
-    .badge.closed { background: #ece9e2; color: var(--ink3); border-color: var(--border2); }
+
+    .badge.forward {
+        background: var(--success-bg);
+        color: var(--success);
+        border-color: var(--success-border);
+    }
+
+    .badge.reverse {
+        background: var(--warning-bg);
+        color: var(--warning);
+        border-color: var(--warning-border);
+    }
+
+    .badge.active {
+        background: var(--primary);
+        color: #FFFFFF;
+    }
+
+    .badge.closed {
+        background: #F1F5F9;
+        color: var(--text-muted);
+        border-color: var(--border);
+    }
 
     .ac-stats {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-        padding: 15px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-        margin-bottom: 14px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--bg);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 16px;
     }
-    .ac-stat-label { font-family: var(--mono); font-size: 8.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; }
-    .ac-stat-value { font-size: 16px; font-weight: 500; font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-    .ac-stat-value.gold { color: var(--gold-dark); font-family: var(--mono); }
-    .ac-stat-value.countdown { color: var(--red); font-family: var(--mono); font-weight: 600; }
-    .ac-stat-value.countdown.ended { color: var(--ink3); }
+
+    .ac-stat-label {
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+    }
+
+    .ac-stat-value {
+        font-size: 15px;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        color: var(--text);
+        letter-spacing: -0.01em;
+    }
+
+    .ac-stat-value.gold {
+        color: var(--primary);
+    }
+
+    .ac-stat-value.countdown {
+        color: var(--danger);
+        font-weight: 700;
+    }
+
+    .ac-stat-value.countdown.ended {
+        color: var(--text-muted);
+    }
 
     .my-bid-note {
-        font-family: var(--mono); font-size: 11.5px; padding: 8px 10px; border-radius: 7px; margin-bottom: 12px;
+        font-size: 12.5px;
+        font-weight: 500;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        margin-bottom: 14px;
+        border: 1px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    .my-bid-note.pending { background: var(--gold-pale); color: var(--gold-dark); }
-    .my-bid-note.accepted { background: var(--leaf-pale); color: var(--leaf-darker); }
-    .my-bid-note.rejected, .my-bid-note.expired, .my-bid-note.auto_rejected { background: var(--red-pale); color: var(--red); }
 
+    .my-bid-note.pending {
+        background: var(--warning-bg);
+        color: #92400E;
+        border-color: var(--warning-border);
+    }
+
+    .my-bid-note.accepted {
+        background: var(--success-bg);
+        color: var(--success);
+        border-color: var(--success-border);
+    }
+
+    .my-bid-note.rejected,
+    .my-bid-note.expired,
+    .my-bid-note.auto_rejected {
+        background: var(--danger-bg);
+        color: var(--danger);
+        border-color: var(--danger-border);
+    }
+
+    /* Place Bid Form inside Auction Card */
     .bid-panel {
-        background: var(--leaf-pale); border: 1px solid rgba(60, 148, 87, .28); border-radius: 10px;
-        padding: 14px 16px; margin-top: 4px;
+        background: #F0FDF4;
+        border: 1px solid #BBF7D0;
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        margin-top: 8px;
+        margin-bottom: 14px;
     }
+
     .bid-panel-title {
-        font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
-        color: var(--leaf-darker); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
-    .bid-form-row { display: flex; gap: 8px; align-items: flex-end; }
-    .bid-field { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+
+    .bid-form-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .bid-field {
+        flex: 1;
+        min-width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
     .bid-field-label {
-        font-family: var(--mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3);
+        font-size: 10.5px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--text-secondary);
     }
+
     .bid-form-row select,
     .bid-form-row input {
-        width: 100%; height: 42px; border: 1px solid var(--border2); border-radius: 7px; padding: 0 12px;
-        font-family: var(--body); font-size: 14px; background: #fff; color: var(--ink); box-sizing: border-box;
-        transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+        width: 100%;
+        height: 38px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 0 12px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        background: #FFFFFF;
+        color: var(--text);
+        transition: all 0.15s ease;
     }
-    .bid-price-wrap { position: relative; }
-    .bid-price-wrap input { padding-left: 26px; padding-right: 58px; }
-    .bid-price-wrap .price-prefix {
-        position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-        font-family: var(--mono); font-size: 13px; color: var(--ink3); pointer-events: none;
-    }
-    .bid-price-wrap .price-suffix {
-        position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
-        font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; color: var(--ink3); pointer-events: none;
-    }
-    .bid-form-row select:hover,
-    .bid-form-row input:hover { border-color: #a9a290; }
+
     .bid-form-row select:focus,
-    .bid-form-row input:focus { outline: none; border-color: var(--leaf); box-shadow: 0 0 0 3px var(--leaf-pale); }
+    .bid-form-row input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .bid-price-wrap {
+        position: relative;
+    }
+
+    .bid-price-wrap input {
+        padding-left: 24px;
+        padding-right: 56px;
+        font-family: var(--font-mono);
+    }
+
+    .bid-price-wrap .price-prefix {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 13px;
+        color: var(--text-muted);
+        pointer-events: none;
+        font-family: var(--font-mono);
+    }
+
+    .bid-price-wrap .price-suffix {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 11px;
+        color: var(--text-muted);
+        pointer-events: none;
+        font-family: var(--font-sans);
+    }
+
     .bid-form-row button {
-        height: 42px; padding: 0 18px; border: none; border-radius: 7px; background: var(--leaf); color: #fff;
-        font-family: var(--mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; white-space: nowrap;
-        transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+        height: 38px;
+        padding: 0 18px;
+        border: none;
+        border-radius: var(--radius-md);
+        background: var(--primary);
+        color: #FFFFFF;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+        box-shadow: var(--shadow-xs);
     }
-    .bid-form-row button:hover { background: var(--leaf-dark); box-shadow: var(--shadow-sm); }
-    .bid-form-row button:active { transform: scale(.98); }
-    .bid-form-row button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    .bid-form-row button:hover {
+        background: var(--primary-hover);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .bid-form-row button:active {
+        transform: translateY(1px);
+    }
+
+    .bid-form-row button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
     .bid-hint {
-        font-family: var(--mono); font-size: 10.5px; color: var(--leaf-darker); margin-top: 8px; opacity: .85;
+        font-size: 11.5px;
+        color: #15803D;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 500;
     }
 
-    .round-title { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin: 14px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .round-list { display: flex; flex-direction: column; gap: 6px; }
+    /* Round Timeline / Rows */
+    .round-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
     .round-row {
-        display: flex; justify-content: space-between; align-items: center; gap: 10px;
-        padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--border2); border-radius: 6px; font-size: 12.5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 14px;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 12.5px;
         background: var(--surface);
-        transition: border-color .16s var(--ease), background .16s var(--ease);
+        transition: all 0.15s ease;
     }
-    .round-row.mine { border-left-color: var(--leaf); background: var(--leaf-pale); }
-    .round-row.accepted { border-left-color: var(--gold); background: var(--gold-pale); }
-    .round-row.rejected, .round-row.expired, .round-row.auto_rejected { opacity: .55; }
-    .round-row .round-who { font-family: var(--mono); font-size: 11px; color: var(--ink2); }
-    .round-row .round-price { font-family: var(--mono); font-weight: 600; }
-    .round-row .round-status { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--ink3); }
 
-    .tab-badge {
-        display: inline-block; min-width: 18px; padding: 1px 7px;
-        border-radius: 20px; background: var(--red); color: #fff;
-        font-family: var(--mono); font-size: 9.5px; line-height: 16px; text-align: center;
+    .round-row.mine {
+        border-left-color: var(--accent);
+        background: #F0FDF4;
+        border-color: #BBF7D0;
     }
-    .tab-btn.active .tab-badge { background: var(--leaf-pale2); color: var(--leaf-darker); }
 
-    .invite-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .round-row.accepted {
+        border-left-color: var(--warning);
+        background: var(--warning-bg);
+        border-color: var(--warning-border);
+    }
+
+    .round-row.rejected,
+    .round-row.expired,
+    .round-row.auto_rejected {
+        opacity: 0.65;
+        background: #F8FAFC;
+    }
+
+    .round-row .round-who {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .round-row .round-price {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .round-row .round-status {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.03em;
+    }
+
+    /* Invitations action buttons */
+    .invite-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
     .invite-actions button {
-        flex: 1; height: 42px; border-radius: 7px; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; border: none;
-        transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+        flex: 1;
+        height: 38px;
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s ease;
     }
-    .invite-actions button:active { transform: scale(.98); }
-    .invite-accept-btn { background: var(--leaf); color: #fff; }
-    .invite-accept-btn:hover { background: var(--leaf-dark); box-shadow: var(--shadow-sm); }
-    .invite-decline-btn { background: #fff; color: var(--ink3); border: 1px solid var(--border2) !important; }
-    .invite-decline-btn:hover { background: var(--red-pale); color: var(--red); }
+
+    .invite-accept-btn {
+        background: var(--primary);
+        color: #FFFFFF;
+        box-shadow: var(--shadow-xs);
+    }
+
+    .invite-accept-btn:hover {
+        background: var(--primary-hover);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .invite-decline-btn {
+        background: #FFFFFF;
+        color: var(--text-secondary);
+        border: 1px solid var(--border) !important;
+    }
+
+    .invite-decline-btn:hover {
+        background: var(--danger-bg);
+        color: var(--danger);
+        border-color: var(--danger-border) !important;
+    }
 
     /* ───────────────────────── MODALS ───────────────────────── */
 
     .modal-overlay {
-        display: none; position: fixed; inset: 0; background: rgba(12, 18, 13, .52); backdrop-filter: blur(3px);
-        align-items: center; justify-content: center; z-index: 1000; padding: 20px;
-        animation: fadeIn .18s var(--ease) both;
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        animation: fadeIn 0.18s ease forwards;
     }
-    .modal-overlay.show { display: flex; }
+
+    .modal-overlay.show {
+        display: flex;
+    }
 
     .modal-card {
-        background: #fff; border-radius: 16px; width: 460px; max-width: 100%;
+        background: var(--surface);
+        border-radius: var(--radius-xl);
+        width: 480px;
+        max-width: 100%;
         max-height: calc(100vh - 60px);
         overflow: hidden;
-        display: flex; flex-direction: column;
+        display: flex;
+        flex-direction: column;
         box-shadow: var(--shadow-lg);
-        animation: popIn .22s var(--ease) both;
+        border: 1px solid var(--border);
+        animation: modalPop 0.22s var(--ease) forwards;
+    }
+
+    @keyframes modalPop {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     .modal-header {
         flex-shrink: 0;
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 20px 26px;
-        background: linear-gradient(175deg, var(--panel) 0%, var(--leaf-dark) 100%);
-        color: #ecf3ec;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 24px;
+        background: #FFFFFF;
+        border-bottom: 1px solid var(--border);
     }
-    .modal-header-text { display: flex; flex-direction: column; gap: 3px; }
-    .modal-title { font-family: var(--head); font-size: 21px; color: #eef3ea; letter-spacing: -.005em; }
-    .modal-subtitle { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #9db89f; }
+
+    .modal-header-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .modal-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.01em;
+    }
+
+    .modal-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
     .modal-close {
-        border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); cursor: pointer;
-        font-size: 18px; color: #ecf3ec; width: 30px; height: 30px; line-height: 1; border-radius: 8px;
-        display: flex; align-items: center; justify-content: center;
-        transition: background .15s, border-color .15s;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        cursor: pointer;
+        font-size: 18px;
+        color: var(--text-muted);
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
     }
-    .modal-close:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
+
+    .modal-close:hover {
+        background: #F1F5F9;
+        color: var(--text);
+        border-color: #CBD5E1;
+    }
 
     .modal-scroll {
         flex: 1 1 auto;
         overflow-y: auto;
         min-height: 0;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        padding: 20px 24px;
     }
-    .modal-scroll::-webkit-scrollbar { display: none; }
 
-    .modal-body { padding: 22px 26px 6px; }
+    .modal-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+    .modal-scroll::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 4px;
+    }
 
-    .form-section { margin-bottom: 18px; }
-    .form-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .form-section {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+    }
+
+    .form-section-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
     .form-section-icon {
-        width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
-        background: var(--leaf-pale); color: var(--leaf-dark);
-        display: flex; align-items: center; justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm);
+        background: var(--primary-light);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-    .form-section-icon svg { width: 13px; height: 13px; }
-    .form-section-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); }
-    .form-section-body { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
 
-    .field-group { margin-bottom: 14px; }
-    .field-group:last-child { margin-bottom: 0; }
+    .form-section-icon svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .form-section-title {
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .field-group {
+        margin-bottom: 12px;
+    }
+
+    .field-group:last-child {
+        margin-bottom: 0;
+    }
+
     .field-label {
         display: block;
-        font-family: var(--mono);
-        font-size: 10.5px;
-        letter-spacing: .05em;
-        text-transform: uppercase;
-        color: var(--ink2);
-        margin-bottom: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
     }
+
     .input, .select {
         width: 100%;
-        height: 42px;
-        border: 1px solid var(--border2);
-        border-radius: 7px;
+        height: 38px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
         padding: 0 12px;
-        font-size: 14px;
-        font-family: var(--body);
-        background: #fff;
-        color: var(--ink);
-        transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+        font-size: 13px;
+        font-family: var(--font-sans);
+        background: #FFFFFF;
+        color: var(--text);
+        transition: all 0.15s ease;
     }
-    .input:hover, .select:hover { border-color: #a9a290; }
-    .input:focus, .select:focus { outline: none; border-color: var(--leaf); box-shadow: 0 0 0 3px var(--leaf-pale); }
+
+    .input:focus, .select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--primary-glow);
+    }
 
     .modal-footer {
         flex-shrink: 0;
         display: flex;
         justify-content: flex-end;
         gap: 10px;
-        padding: 16px 26px 20px;
+        padding: 14px 24px;
         border-top: 1px solid var(--border);
-        background: #fff;
+        background: #FFFFFF;
     }
 
     .btn {
-        height: 42px;
+        height: 38px;
         border: none;
-        background: var(--leaf);
-        color: #fff;
-        border-radius: 7px;
+        background: var(--primary);
+        color: #FFFFFF;
+        border-radius: var(--radius-md);
         padding: 0 18px;
-        font-family: var(--mono);
-        font-size: 12px;
-        letter-spacing: .04em;
-        text-transform: uppercase;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
         cursor: pointer;
-        transition: background .15s var(--ease), transform .1s var(--ease), box-shadow .15s var(--ease);
+        transition: all 0.15s ease;
+        box-shadow: var(--shadow-xs);
     }
-    .btn:hover { background: var(--leaf-dark); box-shadow: var(--shadow-sm); }
-    .btn:active { transform: scale(.98); }
-    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-    .btn-secondary {
-        height: 42px;
-        border: 1px solid var(--border2);
-        background: transparent;
-        color: var(--ink2);
-        border-radius: 7px;
-        padding: 0 18px;
-        font-family: var(--mono);
-        font-size: 12px;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: background .15s var(--ease), border-color .15s var(--ease);
-    }
-    .btn-secondary:hover { background: rgba(0,0,0,.04); border-color: #a9a290; }
 
-    /* Detail modal */
+    .btn:hover {
+        background: var(--primary-hover);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:active {
+        transform: translateY(1px);
+    }
+
+    .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        height: 38px;
+        border: 1px solid var(--border);
+        background: #FFFFFF;
+        color: var(--text-secondary);
+        border-radius: var(--radius-md);
+        padding: 0 16px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg);
+        border-color: #CBD5E1;
+        color: var(--text);
+    }
+
+    /* Detail Modal Elements */
     .detail-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 14px 18px;
-        margin-bottom: 18px;
+        gap: 12px 16px;
+        margin-bottom: 16px;
+        background: var(--bg);
+        padding: 14px 16px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
     }
-    
+
     .detail-label {
-        font-family: var(--mono);
-        font-size: 9.5px;
-        letter-spacing: .08em;
+        font-size: 10.5px;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: var(--ink3);
-        margin-bottom: 3px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 2px;
     }
-    .detail-value { font-size: 15px; font-weight: 500; }
-    .detail-value.mono { font-family: var(--mono); }
+
+    .detail-value {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .detail-value.mono {
+        font-family: var(--font-mono);
+    }
 
     .detail-bar-track {
-        height: 10px;
-        border-radius: 6px;
-        background: var(--bg);
-        border: 1px solid var(--border);
+        height: 8px;
+        border-radius: 4px;
+        background: #E2E8F0;
         overflow: hidden;
         margin-bottom: 6px;
     }
+
     .detail-bar-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--gold), #e0a83f);
+        background: linear-gradient(90deg, var(--accent), #059669);
+        border-radius: 4px;
     }
+
     .detail-bar-caption {
         display: flex;
         justify-content: space-between;
-        font-family: var(--mono);
-        font-size: 10.5px;
-        color: var(--ink3);
-        margin-bottom: 18px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+        font-family: var(--font-mono);
     }
 
     .bid-history-title {
-        font-family: var(--mono);
-        font-size: 10.5px;
-        letter-spacing: .08em;
+        font-size: 11.5px;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--ink3);
+        font-weight: 700;
+        color: var(--text-muted);
         margin-bottom: 8px;
     }
+
     .bid-history-row {
         display: flex;
         justify-content: space-between;
-        padding: 8px 0;
+        padding: 8px 12px;
         border-bottom: 1px solid var(--border);
-        font-size: 13px;
+        font-size: 12.5px;
+        background: var(--bg);
+        border-radius: var(--radius-sm);
+        margin-bottom: 4px;
     }
-    .bid-history-row:last-child { border-bottom: none; }
-    .bid-history-row .bh-amt { font-family: var(--mono); color: var(--gold-dark); }
+
+    .bid-history-row:last-child {
+        border-bottom: none;
+    }
+
+    .bid-history-row .bh-amt {
+        font-family: var(--font-mono);
+        color: var(--primary);
+        font-weight: 700;
+    }
+
     .bh-none {
-        font-family: var(--mono);
         font-size: 12px;
-        color: var(--ink3);
-        padding: 10px 0;
+        color: var(--text-muted);
+        padding: 12px;
+        text-align: center;
+        background: var(--bg);
+        border-radius: var(--radius-md);
     }
 
     .loading-note {
-        font-family: var(--mono);
-        font-size: 11px;
-        color: var(--ink3);
+        font-size: 12.5px;
+        color: var(--text-muted);
         text-align: center;
-        padding: 30px 8px;
+        padding: 36px 16px;
         grid-column: 1 / -1;
-        animation: fadeIn .25s var(--ease) both;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 960px) {
         body { grid-template-columns: 1fr; height: auto; overflow: visible; }
-        .sidebar { position: relative; height: auto; overflow: visible; }
-        .listings-scroll { max-height: 340px; -webkit-mask-image: none; mask-image: none; }
-        .main { padding: 24px 18px 50px; height: auto; overflow: visible; display: block; }
-        .main-scroll { overflow-y: visible; -webkit-mask-image: none; mask-image: none; padding-bottom: 0; }
+        .sidebar { height: auto; overflow: visible; }
+        .listings-scroll { max-height: 320px; }
+        .main { padding: 20px 16px 40px; height: auto; overflow: visible; }
+        .main-scroll { overflow-y: visible; padding-bottom: 0; }
         .ac-stats { grid-template-columns: repeat(2, 1fr); }
-        .bid-stats { grid-template-columns: repeat(2, 1fr); }
-        .modal-card { width: 100%; }
     }
 </style>
 </head>
 
 <body>
 
-<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<!-- ═══════════════════ LEFT SIDEBAR (SELLER PANEL) ═══════════════════ -->
 <aside class="sidebar">
 
-    <div class="sidebar-top">
-        <div class="brand">
-            <div class="brand-icon">
-                <!-- <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="sidebar-header">
+        <div class="sidebar-brand-badge">
+            <div class="brand-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3v18M7 8c0 4 2.5 5 5 5s5-1 5-5c0-2-2-3-5-3s-5 1-5 3z"/>
                     <path d="M8 21h8"/>
-                </svg> -->
-                <img src="/static/tuteck_logo.png" alt="Crop Intelligence" style="width: 26px; height: 26px;">
+                </svg>
             </div>
-            <div class="brand-text">
-                <div class="brand-mark">Crop Intelligence</div>
-                <div class="brand-sub">Farmer Auction Floor</div>
+            <div class="brand-info">
+                <div class="brand-title">Farmer Marketplace</div>
+                <div class="brand-sub">Unused Crops Desk</div>
             </div>
         </div>
 
@@ -784,7 +1666,10 @@
             <div class="farmer-avatar" id="farmerInitial">F</div>
             <div class="farmer-meta">
                 <div class="farmer-name" id="farmerName">Farmer</div>
-                <div class="farmer-role">Registered Seller</div>
+                <div class="farmer-role-wrap">
+                    <span class="role-dot"></span>
+                    <span class="farmer-role">Registered Seller</span>
+                </div>
             </div>
         </div>
 
@@ -792,18 +1677,25 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 5v14M5 12h14"/>
             </svg>
-            Add crop listing
+            Add Crop Listing
         </button>
     </div>
 
     <div class="listings-panel">
-        <div class="sidebar-section-title">
-            Submitted listings
+        <div class="sidebar-section-head">
+            <div class="sidebar-section-title">
+                Submitted Listings
+            </div>
             <span class="count-pill" id="listingCount">0</span>
         </div>
 
         <div class="listings-scroll" id="listingsScroll">
-            <div class="empty-note">Loading listings…</div>
+            <div class="empty-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                Loading listings…
+            </div>
         </div>
     </div>
 
@@ -815,26 +1707,29 @@
             </div>
             <div class="sidebar-footer-stat">
                 <div class="val" id="footerSoldCount">0</div>
-                <div class="lbl">Sold out</div>
+                <div class="lbl">Sold Out</div>
             </div>
             <div class="sidebar-footer-stat">
                 <div class="val" id="footerTotalCount">0</div>
-                <div class="lbl">Total listed</div>
+                <div class="lbl">Total</div>
             </div>
         </div>
-        <div class="sidebar-footer-tag">Crop Intelligence · Farmer Auction Floor</div>
+        <div class="sidebar-footer-tag">CropAI Intelligence · Farmer Auction Floor</div>
     </div>
 
 </aside>
 
-<!-- ═══════════════════ MAIN ═══════════════════ -->
+<!-- ═══════════════════ MAIN VIEWPORT ═══════════════════ -->
 <main class="main">
 
     <div class="main-top">
         <div class="main-header">
-            <div>
-                <div class="page-title">Auction floor</div>
-                <div class="page-sub">Unused Crops Marketplace</div>
+            <div class="page-title-wrap">
+                <div class="page-title">
+                    Auction Floor
+                    <span class="page-badge">Live Market</span>
+                </div>
+                <div class="page-sub">Direct B2B Marketplace &amp; Live Mandi Procurement Desk for Unused Harvests</div>
             </div>
         </div>
 
@@ -843,44 +1738,49 @@
 
         <div class="tab-bar">
             <button class="tab-btn active" data-tab="bids" onclick="switchTab('bids')">
-                <span class="tab-dot"></span> Active bids
+                <span class="tab-dot"></span> Active Bids
             </button>
             <button class="tab-btn" data-tab="invitations" onclick="switchTab('invitations')">
                 Invitations <span id="inviteBadge" class="tab-badge" style="display:none;">0</span>
             </button>
-            <button class="tab-btn" data-tab="auctions" onclick="switchTab('auctions')">Live auctions</button>
-            <button class="tab-btn" data-tab="participated" onclick="switchTab('participated')">Participated</button>
+            <button class="tab-btn" data-tab="auctions" onclick="switchTab('auctions')">Live Mandi Auctions</button>
+            <button class="tab-btn" data-tab="participated" onclick="switchTab('participated')">History &amp; Participated</button>
         </div>
     </div>
 
     <div class="main-scroll-wrap">
     <div class="main-scroll">
 
+    <!-- TAB 1: ACTIVE BIDS -->
     <div class="tab-panel active" id="tab-bids">
-        <div class="round-title" style="margin-top:0;">Your crop offers</div>
+        <div class="round-title">Your Crop Offers (Buyer Bids on Your Listings)</div>
         <div class="bid-grid" id="bidGrid">
             <div class="loading-note">Loading active bids…</div>
         </div>
-        <div class="round-title">Your live auction bids</div>
-        <div id="auctionBidsGrid" style="display:flex; flex-direction:column; gap:18px;">
+
+        <div class="round-title" style="margin-top:28px;">Your Live Mandi Auction Bids</div>
+        <div id="auctionBidsGrid" style="display:flex; flex-direction:column; gap:16px;">
             <div class="loading-note">Loading auction bids…</div>
         </div>
     </div>
 
+    <!-- TAB 2: INVITATIONS -->
     <div class="tab-panel" id="tab-invitations">
-        <div id="invitationsGrid" style="display:flex; flex-direction:column; gap:18px;">
+        <div id="invitationsGrid" style="display:flex; flex-direction:column; gap:16px;">
             <div class="loading-note">Loading invitations…</div>
         </div>
     </div>
 
+    <!-- TAB 3: LIVE AUCTIONS -->
     <div class="tab-panel" id="tab-auctions">
-        <div id="liveAuctionsGrid" style="display:flex; flex-direction:column; gap:18px;">
+        <div id="liveAuctionsGrid" style="display:flex; flex-direction:column; gap:16px;">
             <div class="loading-note">Loading live auctions…</div>
         </div>
     </div>
 
+    <!-- TAB 4: PARTICIPATED -->
     <div class="tab-panel" id="tab-participated">
-        <div id="participatedGrid" style="display:flex; flex-direction:column; gap:18px;">
+        <div id="participatedGrid" style="display:flex; flex-direction:column; gap:16px;">
             <div class="loading-note">Loading participated auctions…</div>
         </div>
     </div>
@@ -895,59 +1795,62 @@
     <div class="modal-card">
         <div class="modal-header">
             <div class="modal-header-text">
-                <div class="modal-title">Add crop listing</div>
-                <div class="modal-subtitle">List unused production for buyers to bid on</div>
+                <div class="modal-title">Add Crop Listing</div>
+                <div class="modal-subtitle">List unused production for buyers and mandis to bid on</div>
             </div>
             <button class="modal-close" onclick="closeAddModal()">&times;</button>
         </div>
         <div class="modal-scroll">
         <div class="modal-body">
 
-            <!-- Production -->
+            <!-- Production Section -->
             <div class="form-section">
                 <div class="form-section-head">
                     <div class="form-section-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8c0 4 2.5 5 5 5s5-1 5-5c0-2-2-3-5-3s-5 1-5 3z"/><path d="M8 21h8"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3v18M7 8c0 4 2.5 5 5 5s5-1 5-5c0-2-2-3-5-3s-5 1-5 3z"/>
+                            <path d="M8 21h8"/>
+                        </svg>
                     </div>
-                    <div class="form-section-title">Production</div>
+                    <div class="form-section-title">Production Amount</div>
                 </div>
-                <div class="form-section-body">
-                    <div class="field-group" style="margin-bottom:0;">
-                        <label class="field-label">Total production (tonnes)</label>
-                        <input class="input" id="formProduction" type="number" min="0.1" step="0.1" placeholder="e.g. 20">
-                    </div>
+                <div class="field-group" style="margin-bottom:0;">
+                    <label class="field-label">Total Production (Tonnes)</label>
+                    <input class="input" id="formProduction" type="number" min="0.1" step="0.1" placeholder="e.g. 20.5">
                 </div>
             </div>
 
-            <!-- Location -->
+            <!-- Location & Crop Section -->
             <div class="form-section">
                 <div class="form-section-head">
                     <div class="form-section-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 1 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
                     </div>
-                    <div class="form-section-title">Location &amp; crop</div>
+                    <div class="form-section-title">Location &amp; Crop Details</div>
                 </div>
-                <div class="form-section-body">
-                    <div class="field-group">
-                        <label class="field-label">State</label>
-                        <select class="select" id="formState" onchange="onFormStateChange()">
-                            <option value="">Select a state</option>
-                        </select>
-                    </div>
 
-                    <div class="field-group">
-                        <label class="field-label">Crop type</label>
-                        <select class="select" id="formCropType">
-                            <option value="">Select a state first</option>
-                        </select>
-                    </div>
+                <div class="field-group">
+                    <label class="field-label">Target State</label>
+                    <select class="select" id="formState" onchange="onFormStateChange()">
+                        <option value="">Select a state</option>
+                    </select>
+                </div>
 
-                    <div class="field-group" style="margin-bottom:0;">
-                        <label class="field-label">District</label>
-                        <select class="select" id="formDistrict">
-                            <option value="">Select a state first</option>
-                        </select>
-                    </div>
+                <div class="field-group">
+                    <label class="field-label">Crop Type</label>
+                    <select class="select" id="formCropType">
+                        <option value="">Select a state first</option>
+                    </select>
+                </div>
+
+                <div class="field-group" style="margin-bottom:0;">
+                    <label class="field-label">District</label>
+                    <select class="select" id="formDistrict">
+                        <option value="">Select a state first</option>
+                    </select>
                 </div>
             </div>
 
@@ -955,7 +1858,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeAddModal()">Cancel</button>
-            <button class="btn" id="submitListingBtn" onclick="submitListing()">Submit listing</button>
+            <button class="btn" id="submitListingBtn" onclick="submitListing()">Submit Listing</button>
         </div>
     </div>
 </div>
@@ -965,8 +1868,8 @@
     <div class="modal-card">
         <div class="modal-header">
             <div class="modal-header-text">
-                <div class="modal-title" id="detailCropTitle">Crop listing</div>
-                <div class="modal-subtitle">Listing detail &amp; sale history</div>
+                <div class="modal-title" id="detailCropTitle">Crop Listing Details</div>
+                <div class="modal-subtitle">Listing breakdown &amp; recorded sale history</div>
             </div>
             <button class="modal-close" onclick="closeDetailModal()">&times;</button>
         </div>
@@ -975,7 +1878,7 @@
 
             <div class="detail-grid">
                 <div class="detail-item">
-                    <div class="detail-label">Crop type</div>
+                    <div class="detail-label">Crop Type</div>
                     <div class="detail-value" id="detailCropType">—</div>
                 </div>
                 <div class="detail-item">
@@ -991,7 +1894,7 @@
                     <div class="detail-value" id="detailDistrict">—</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Submitted on</div>
+                    <div class="detail-label">Submitted On</div>
                     <div class="detail-value mono" id="detailSubmitted">—</div>
                 </div>
                 <div class="detail-item">
@@ -1008,7 +1911,7 @@
                 <span id="detailTotalCaption">of 0 tonnes total</span>
             </div>
 
-            <div class="bid-history-title">Sale history</div>
+            <div class="bid-history-title">Sale History</div>
             <div id="detailSaleHistory"></div>
 
         </div>
@@ -1022,12 +1925,7 @@
 <script>
 
     // ═══════════════════════════════════════════════════════════
-    //  Backend wiring — talks to gateway.py, which proxies:
-    //    /api/unused-crops/...  ->  auction_backend.py (unused_crops table)
-    //    /api/bids/...          ->  auction_backend.py (active_bids table)
-    //  All paths below are relative, so this page works whether the
-    //  gateway is on the same origin (served via /content/auction) or
-    //  opened directly against it.
+    //  Backend wiring — talks to gateway.py proxy
     // ═══════════════════════════════════════════════════════════
 
     const SESSION_KEY = "cropai_session";
@@ -1043,7 +1941,6 @@
     const session = loadSession();
 
     if (!session) {
-        // No session at all -> send back to login, same as admin.html does.
         window.location = "/login";
         throw new Error("No session");
     }
@@ -1074,11 +1971,6 @@
     }
 
     // ── Clock sync ──────────────────────────────────────────────
-    // Auction countdowns are computed against absolute timestamps the
-    // server stamped using its own clock. If that clock has drifted from
-    // this machine's clock, every countdown looks off by the same fixed
-    // amount. clockOffsetMs corrects for that: nowMs() below is what
-    // "now" is according to the server, not blindly this browser's clock.
     let clockOffsetMs = 0;
     async function syncClock() {
         try {
@@ -1100,15 +1992,6 @@
     }
 
     // ── State / crop / district data ───────────────────────────────
-    // Crop and district lists are pulled live from the same backend the
-    // Yield Detect editor uses (/api/yield/valid_crops, /api/yield/valid_districts)
-    // instead of being hardcoded here. Crop and District_Name are one-hot
-    // trained features on the yield model — a listing whose crop/district
-    // string doesn't exactly match one of the model's trained values would
-    // silently be treated differently downstream, so the "original" (real,
-    // trained) lists are fetched straight from the source of truth rather
-    // than kept as a second, possibly-stale hardcoded copy here.
-
     const STATES = ['tripura', 'meghalaya', 'rajasthan'];
 
     function populateStateOptions() {
@@ -1159,32 +2042,30 @@
     }
 
     // ── Header / identity ──────────────────────────────────────
-
     document.getElementById("farmerName").innerText = session.email || "Farmer";
     document.getElementById("farmerInitial").innerText = (session.email || "F").charAt(0).toUpperCase();
 
     // ── Messaging ───────────────────────────────────────────────
-
     function showError(m) {
         const e = document.getElementById("errorBox");
-        e.innerText = m; e.classList.add("show");
+        e.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${m}`;
+        e.classList.add("show");
         setTimeout(() => e.classList.remove("show"), 4500);
     }
     function showSuccess(m) {
         const e = document.getElementById("successBox");
-        e.innerText = m; e.classList.add("show");
+        e.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${m}`;
+        e.classList.add("show");
         setTimeout(() => e.classList.remove("show"), 4500);
     }
 
-    // ── Tabs (kept simple — one tab today, room to add more) ──────
-
+    // ── Tabs ───────────────────────────────────────────────────
     function switchTab(name) {
         document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
         document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "tab-" + name));
     }
 
     // ── Add listing modal ──────────────────────────────────────
-
     function openAddModal() {
         populateStateOptions();
         document.getElementById("formProduction").value = "";
@@ -1222,7 +2103,7 @@
             showSuccess(
                 result.newInvitations > 0
                     ? `Crop listing submitted — invited to ${result.newInvitations} live auction${result.newInvitations > 1 ? "s" : ""} already running for it.`
-                    : "Crop listing submitted."
+                    : "Crop listing submitted successfully."
             );
             await Promise.all([renderListings(), renderBids(), renderInvitations()]);
         } catch (err) {
@@ -1232,8 +2113,7 @@
         }
     }
 
-    // ── Sidebar: submitted listings (unused_crops rows, via backend) ─────
-
+    // ── Sidebar: submitted listings ────────────────────────────
     let currentCrops = [];
 
     async function fetchCrops() {
@@ -1260,7 +2140,15 @@
         document.getElementById("footerTotalCount").innerText = currentCrops.length;
 
         if (currentCrops.length === 0) {
-            scroll.innerHTML = `<div class="empty-note">No listings yet — add your first crop to enter the auction.</div>`;
+            scroll.innerHTML = `
+                <div class="empty-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    <span>No crop listings yet.</span>
+                    <span style="font-size:11px;color:var(--text-faint);">Add your unused harvest to receive live buyer bids.</span>
+                </div>
+            `;
             return;
         }
 
@@ -1268,22 +2156,25 @@
             const remaining = c.remainingProduction;
             const pctSold = c.totalProduction > 0 ? Math.min(100, (c.soldProduction / c.totalProduction) * 100) : 0;
             let statusClass = "open", statusLabel = "Open";
-            if (c.status === "sold") { statusClass = "sold"; statusLabel = "Sold out"; }
-            else if (c.status === "partial") { statusClass = "partial"; statusLabel = "Partially sold"; }
+            if (c.status === "sold") { statusClass = "sold"; statusLabel = "Sold Out"; }
+            else if (c.status === "partial") { statusClass = "partial"; statusLabel = "Partial"; }
 
             return `
                 <div class="crop-ticket" onclick="openDetailModal('${c.id}')">
                     <div class="ticket-top">
                         <div>
                             <div class="ticket-crop">${c.cropType}</div>
-                            <div class="ticket-loc">${c.district}, ${c.state.charAt(0).toUpperCase()+c.state.slice(1)}</div>
+                            <div class="ticket-loc">
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                ${c.district}, ${c.state.charAt(0).toUpperCase()+c.state.slice(1)}
+                            </div>
                         </div>
                         <span class="status-tag ${statusClass}">${statusLabel}</span>
                     </div>
                     <div class="ticket-bar-track"><div class="ticket-bar-fill" style="width:${pctSold}%"></div></div>
                     <div class="ticket-bottom">
                         <span>Remaining <b>${fmtTonnes(remaining)} tonnes</b></span>
-                        <span>of ${fmtTonnes(c.totalProduction)} tonnes</span>
+                        <span>Total ${fmtTonnes(c.totalProduction)}t</span>
                     </div>
                 </div>
             `;
@@ -1291,7 +2182,6 @@
     }
 
     // ── Detail modal ──────────────────────────────────────────────
-
     async function openDetailModal(cropId) {
         let crop;
         try {
@@ -1304,7 +2194,7 @@
         const remaining = crop.remainingProduction;
         const pctSold = crop.totalProduction > 0 ? Math.min(100, (crop.soldProduction / crop.totalProduction) * 100) : 0;
 
-        document.getElementById("detailCropTitle").innerText = crop.cropType + " listing";
+        document.getElementById("detailCropTitle").innerText = crop.cropType + " Listing";
         document.getElementById("detailCropType").innerText = crop.cropType;
         document.getElementById("detailState").innerText = crop.state.charAt(0).toUpperCase() + crop.state.slice(1);
         document.getElementById("detailDistrict").innerText = crop.district;
@@ -1312,8 +2202,8 @@
         document.getElementById("detailId").innerText = crop.id;
 
         let statusLabel = "Open";
-        if (crop.status === "sold") statusLabel = "Sold out";
-        else if (crop.status === "partial") statusLabel = "Partially sold";
+        if (crop.status === "sold") statusLabel = "Sold Out";
+        else if (crop.status === "partial") statusLabel = "Partially Sold";
         document.getElementById("detailStatus").innerText = statusLabel;
 
         document.getElementById("detailBarFill").style.width = pctSold + "%";
@@ -1326,7 +2216,7 @@
         } else {
             historyEl.innerHTML = crop.saleHistory.map(s => `
                 <div class="bid-history-row">
-                    <span>${s.buyer} — ${fmtTonnes(s.quantity)} tonnes on ${fmtDate(s.soldAt)}</span>
+                    <span>${s.buyer} — ${fmtTonnes(s.quantity)} tonnes (${fmtDate(s.soldAt)})</span>
                     <span class="bh-amt">₹${s.pricePerTonne}/tonne</span>
                 </div>
             `).join("");
@@ -1338,8 +2228,7 @@
         document.getElementById("detailModalOverlay").classList.remove("show");
     }
 
-    // ── Main: active bids (via backend) ────────────────────────────
-
+    // ── Main: active bids ─────────────────────────────────────────
     function timeLeftLabel(endsAt) {
         const diff = endsAt - nowMs();
         if (diff <= 0) return "Auction closed";
@@ -1348,9 +2237,6 @@
         return `${hrs}h ${mins}m left`;
     }
 
-    // All auctions this farmer has ever joined (invitation accepted),
-    // active or closed — shared by the "Active bids" and "Participated"
-    // tabs so we only fetch it once per refresh.
     let participatedAuctions = [];
 
     async function fetchParticipatedAuctions() {
@@ -1367,11 +2253,6 @@
         const grid = document.getElementById("auctionBidsGrid");
         participatedAuctions = await fetchParticipatedAuctions();
 
-        // If any auction we're in just flipped active -> closed, an
-        // accepted bid may have just consumed production off the matching
-        // crop listing — refresh listings now instead of waiting for the
-        // farmer to manually reload the page to see the updated remaining
-        // quantity.
         let justClosed = false;
         participatedAuctions.forEach(a => {
             if (knownAuctionStatus[a.id] === "active" && a.status === "closed") justClosed = true;
@@ -1379,24 +2260,18 @@
         });
         if (justClosed) renderListings();
 
-        // "Active bids" only means auctions still running where this
-        // farmer has actually placed a bid — the round view (base offer,
-        // mandi's counter, every farmer's bid + status) is the same card
-        // used on the Live Auctions tab, so it stays live and consistent.
         const inProgress = participatedAuctions.filter(a =>
             a.status === "active" && (a.bids || []).some(b => b.farmerEmail === session.email)
         );
 
         if (inProgress.length === 0) {
-            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">No auction bids in progress right now.</div>`;
+            grid.innerHTML = `<div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">No live auction bids currently in progress.</div>`;
             return;
         }
 
         grid.innerHTML = inProgress.map(a => renderLiveAuctionCard(a, false)).join("");
     }
 
-    // Compact history row for the Participated tab — one line per auction
-    // the farmer joined, plus whatever the outcome was once it closed.
     function renderParticipatedRow(a) {
         const myBids = (a.bids || []).filter(b => b.farmerEmail === session.email);
         const anyAccepted = (a.bids || []).some(b => b.status === "accepted");
@@ -1404,8 +2279,8 @@
 
         let outcome, rowClass;
         if (a.status === "active") {
-            outcome = myBids.length > 0 ? "Auction in progress — your bid is in" : "Auction in progress — no bid placed yet";
-            rowClass = "pending";
+            outcome = myBids.length > 0 ? "Auction in progress — bid submitted" : "Auction in progress — no bid placed yet";
+            rowClass = "mine";
         } else if (myAcceptedBid) {
             outcome = `Your bid was accepted — ${fmtTonnes(myAcceptedBid.acceptedQuantity)} tonnes at ₹${myAcceptedBid.pricePerTonne}/tonne`;
             rowClass = "accepted";
@@ -1421,7 +2296,7 @@
             <div class="round-row ${rowClass}">
                 <span class="round-who">${a.auctionName} — ${a.cropType}, ${a.district}</span>
                 <span class="round-price">${outcome}</span>
-                <span class="round-status">${a.status === "active" ? "Live" : (a.outcome === "sold_out" ? "Sold out" : "Not sold out")}</span>
+                <span class="round-status">${a.status === "active" ? "Live" : (a.outcome === "sold_out" ? "Sold out" : "Closed")}</span>
             </div>
         `;
     }
@@ -1431,7 +2306,7 @@
         participatedAuctions = await fetchParticipatedAuctions();
 
         if (participatedAuctions.length === 0) {
-            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">You haven't joined any auctions yet — accept an invitation to get started.</div>`;
+            grid.innerHTML = `<div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">You haven't joined any mandi auctions yet. Accept an invitation from the Invitations tab to get started.</div>`;
             return;
         }
 
@@ -1448,14 +2323,22 @@
                 fetchCrops()
             ]);
         } catch (err) {
-            grid.innerHTML = `<div class="empty-note" style="grid-column:1/-1;color:var(--ink3);border-color:var(--border2)">Couldn't load bids — ${err.message}</div>`;
+            grid.innerHTML = `<div class="empty-note" style="grid-column:1/-1;color:var(--text-muted);border-color:var(--border)">Couldn't load bids — ${err.message}</div>`;
             return;
         }
 
         currentCrops = crops;
 
         if (!bids || bids.length === 0) {
-            grid.innerHTML = `<div class="empty-note" style="grid-column:1/-1;color:var(--ink3);border-color:var(--border2)">No active bids on your listings yet.</div>`;
+            grid.innerHTML = `
+                <div class="empty-note" style="grid-column:1/-1;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>No active buyer bids on your listings yet.</span>
+                    <span style="font-size:11px;color:var(--text-faint);">When buyers place offers on your unused crops, they will appear here.</span>
+                </div>
+            `;
             return;
         }
 
@@ -1472,38 +2355,38 @@
                             <div class="bid-crop">${crop.cropType}</div>
                             <div class="bid-loc">${crop.district}, ${crop.state.charAt(0).toUpperCase()+crop.state.slice(1)}</div>
                         </div>
-                        <span class="bid-status ${b.status}">${b.status === "leading" ? "Leading" : b.status === "won" ? "Won" : "Outbid"}</span>
+                        <span class="bid-status ${b.status}">${b.status === "leading" ? "Leading Offer" : b.status === "won" ? "Won" : "Outbid"}</span>
                     </div>
 
                     <div class="bid-stats">
                         <div>
-                            <div class="bid-stat-label">Bid price</div>
-                            <div class="bid-stat-value gold">₹${b.pricePerTonne}/tonne</div>
+                            <div class="bid-stat-label">Bid Price</div>
+                            <div class="bid-stat-value gold">₹${b.pricePerTonne}<span style="font-size:11px;font-weight:400;color:var(--text-muted);">/t</span></div>
                         </div>
                         <div>
-                            <div class="bid-stat-label">Quantity bid</div>
-                            <div class="bid-stat-value">${fmtTonnes(b.quantity)} tonnes</div>
+                            <div class="bid-stat-label">Quantity</div>
+                            <div class="bid-stat-value">${fmtTonnes(b.quantity)}<span style="font-size:11px;font-weight:400;color:var(--text-muted);"> tonnes</span></div>
                         </div>
                     </div>
 
                     <div class="bid-buyer-row">
                         <span>Buyer: <b>${b.buyer}</b></span>
-                        <span class="countdown">${timeLeftLabel(b.endsAt)}</span>
+                        <span class="countdown">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            ${timeLeftLabel(b.endsAt)}
+                        </span>
                     </div>
 
                     <button class="sim-sale-btn" ${closed || remaining < b.quantity ? "disabled" : ""}
                         onclick="simulateSale('${b.id}')">
-                        ${b.status === "won" ? "Sale completed" : "Simulate auction win → deduct stock"}
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        ${b.status === "won" ? "Sale Completed" : "Accept Offer & Deduct Stock"}
                     </button>
                 </div>
             `;
         }).join("");
     }
 
-    // Calls the backend's /sell endpoint — this is what a real "auction
-    // closed, bid won" job should call too. The backend deducts the sold
-    // quantity from the matching unused_crops row and logs the sale;
-    // this button just demonstrates that flow on demand.
     async function simulateSale(bidId) {
         const bids = await apiGet(`/api/bids`).catch(() => []);
         const bid = (Array.isArray(bids) ? bids : []).find(b => b.id === bidId);
@@ -1534,12 +2417,7 @@
         }
     }
 
-    // ── Live mandi auctions (buy-side auctions the farmer can bid into) ──
-    // Matched against the farmer's own listings: any active auction whose
-    // state + district + cropType matches something this farmer has
-    // listed shows up here, same matching rule the backend uses to decide
-    // who gets the "auction started" email.
-
+    // ── Live mandi auctions ────────────────────────────────────
     let liveAuctions = [];
 
     function auctionTimeLeftLabel(endsAt) {
@@ -1552,13 +2430,6 @@
         return { text, ended: false };
     }
 
-    // The price a farmer's bid must clear right now. This ratchets: it's
-    // computed server-side off whichever is more binding — the best live
-    // bid already on the auction, or the mandi's last counter-offer — plus
-    // the fixed counter gap, so each new bid or counter-offer raises (or
-    // for reverse auctions, lowers) the bar for the next one. Falls back
-    // to a local calc off basePrice only if an older cached auction object
-    // doesn't have the server-computed field yet.
     function requiredBidPrice(a) {
         if (a.requiredBidPrice != null) return a.requiredBidPrice;
         const baseline = a.mandiPrice != null ? a.mandiPrice : a.basePrice;
@@ -1567,7 +2438,6 @@
     }
 
     async function fetchLiveAuctions() {
-        // Unique (state, district, cropType) combos across this farmer's listings.
         const combos = new Map();
         currentCrops.forEach(c => {
             const key = `${c.state}|${c.district}|${c.cropType}`;
@@ -1590,8 +2460,7 @@
         return Array.from(byId.values());
     }
 
-    // ── Invitations (must be accepted before an auction shows up above) ──
-
+    // ── Invitations ────────────────────────────────────────────
     let pendingInvitations = [];
 
     async function fetchAllInvitations() {
@@ -1604,7 +2473,7 @@
 
     function renderInvitationCard(inv) {
         const a = inv.auction;
-        const typeLabel = a.auctionType === "forward" ? "Forward — highest wins" : "Reverse — lowest wins";
+        const typeLabel = a.auctionType === "forward" ? "Forward — Highest Wins" : "Reverse — Lowest Wins";
         return `
             <div class="auction-card">
                 <div class="ac-top">
@@ -1618,24 +2487,20 @@
                 </div>
 
                 <div class="ac-stats">
-                    <div><div class="ac-stat-label">Target</div><div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div></div>
-                    <div><div class="ac-stat-label">Base price</div><div class="ac-stat-value">₹${a.basePrice}/tonne</div></div>
-                    <div><div class="ac-stat-label">Time left</div><div class="ac-stat-value countdown" data-ends-at="${a.endsAt}">${auctionTimeLeftLabel(a.endsAt).text}</div></div>
-                    <div><div class="ac-stat-label">Mandi</div><div class="ac-stat-value" style="font-size:12px;">${a.mandiEmail}</div></div>
+                    <div><div class="ac-stat-label">Target Quantity</div><div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div></div>
+                    <div><div class="ac-stat-label">Base Price</div><div class="ac-stat-value">₹${a.basePrice}/tonne</div></div>
+                    <div><div class="ac-stat-label">Time Remaining</div><div class="ac-stat-value countdown" data-ends-at="${a.endsAt}">${auctionTimeLeftLabel(a.endsAt).text}</div></div>
+                    <div><div class="ac-stat-label">Mandi Contact</div><div class="ac-stat-value" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;">${a.mandiEmail}</div></div>
                 </div>
 
                 <div class="invite-actions">
-                    <button class="invite-accept-btn" onclick="respondToInvitation('${a.id}', 'accept')">Accept &amp; join auction</button>
+                    <button class="invite-accept-btn" onclick="respondToInvitation('${a.id}', 'accept')">Accept &amp; Join Auction</button>
                     <button class="invite-decline-btn" onclick="respondToInvitation('${a.id}', 'decline')">Decline</button>
                 </div>
             </div>
         `;
     }
 
-    // Compact history row for an invitation the farmer already acted on
-    // (or that auto-resolved to declined once the auction closed without a
-    // response). For accepted invitations we also surface whether this
-    // farmer's own bid ended up accepted or not.
     function renderInvitationHistoryRow(inv) {
         const a = inv.auction;
         let statusLabel, rowClass;
@@ -1644,17 +2509,16 @@
             statusLabel = "Declined";
             rowClass = "rejected";
         } else {
-            // accepted — figure out the bid outcome from this auction's bids
             const myBids = (a.bids || []).filter(b => b.farmerEmail === session.email);
             const myAccepted = myBids.find(b => b.status === "accepted");
             if (myAccepted) {
-                statusLabel = `Bid accepted — ${fmtTonnes(myAccepted.acceptedQuantity)} tonnes at ₹${myAccepted.pricePerTonne}/tonne`;
+                statusLabel = `Bid Accepted — ${fmtTonnes(myAccepted.acceptedQuantity)} tonnes at ₹${myAccepted.pricePerTonne}/tonne`;
                 rowClass = "accepted";
             } else if (a.status === "active") {
-                statusLabel = myBids.length > 0 ? "In progress — bid pending" : "Accepted — no bid placed yet";
-                rowClass = "pending";
+                statusLabel = myBids.length > 0 ? "In progress — bid submitted" : "Accepted — no bid placed yet";
+                rowClass = "mine";
             } else if (myBids.length > 0) {
-                statusLabel = "Bid declined";
+                statusLabel = "Bid not accepted";
                 rowClass = "rejected";
             } else {
                 statusLabel = "Closed — no bid placed";
@@ -1677,7 +2541,7 @@
         try {
             allInvitations = await fetchAllInvitations();
         } catch (err) {
-            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">Couldn't load invitations — ${err.message}</div>`;
+            grid.innerHTML = `<div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">Couldn't load invitations — ${err.message}</div>`;
             return;
         }
 
@@ -1686,20 +2550,20 @@
 
         const badge = document.getElementById("inviteBadge");
         if (pendingInvitations.length > 0) {
-            badge.style.display = "inline-block";
+            badge.style.display = "inline-flex";
             badge.textContent = pendingInvitations.length;
         } else {
             badge.style.display = "none";
         }
 
         if (allInvitations.length === 0) {
-            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">No invitations yet. When a mandi opens an auction matching one of your listings, it'll show up here to accept.</div>`;
+            grid.innerHTML = `<div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">No mandi invitations yet. When a registered mandi launches an auction matching your crops and district, it will appear here.</div>`;
             return;
         }
 
         const pendingHtml = pendingInvitations.map(renderInvitationCard).join("");
         const historyHtml = resolvedInvitations.length > 0 ? `
-            <div class="round-title" style="margin-top:${pendingInvitations.length > 0 ? '10px' : '0'};">Past invitations</div>
+            <div class="round-title" style="margin-top:${pendingInvitations.length > 0 ? '20px' : '0'};">Past Invitations</div>
             <div class="round-list">${resolvedInvitations.map(renderInvitationHistoryRow).join("")}</div>
         ` : "";
 
@@ -1712,7 +2576,7 @@
                 farmerEmail: session.email,
                 action,
             });
-            showSuccess(action === "accept" ? "Invitation accepted — auction added to Live auctions." : "Invitation declined.");
+            showSuccess(action === "accept" ? "Invitation accepted — auction added to Live Mandi Auctions." : "Invitation declined.");
             await Promise.all([renderInvitations(), renderLiveAuctions()]);
             if (action === "accept") switchTab("auctions");
         } catch (err) {
@@ -1722,71 +2586,68 @@
 
     function renderLiveAuctionCard(a, showForm = true) {
         const t = a.status === "closed" ? { text: "Closed", ended: true } : auctionTimeLeftLabel(a.endsAt);
-        const typeLabel = a.auctionType === "forward" ? "Forward — highest wins" : "Reverse — lowest wins";
+        const typeLabel = a.auctionType === "forward" ? "Forward — Highest Wins" : "Reverse — Lowest Wins";
         const myBids = (a.bids || []).filter(b => b.farmerEmail === session.email);
         const myLatest = myBids[myBids.length - 1];
 
         let myNote = "";
         if (myLatest) {
             const labelMap = {
-                pending: "Your last bid is pending the mandi's decision — you can still place another.",
+                pending: "Your bid is pending the mandi's review — you can submit an updated price anytime.",
                 accepted: `Your bid was accepted — ${fmtTonnes(myLatest.acceptedQuantity)} tonnes at ₹${myLatest.pricePerTonne}/tonne.`,
-                rejected: "Your last bid was rejected — you can bid again while time remains.",
+                rejected: "Your last bid was rejected — you can place another bid before time runs out.",
                 expired: "Your bid expired when the auction closed.",
-                auto_rejected: "The target was met by other bids before yours was actioned.",
+                auto_rejected: "Target quantity was fulfilled by prior bids.",
             };
             myNote = `<div class="my-bid-note ${myLatest.status}">Your last bid: ${labelMap[myLatest.status] || myLatest.status}</div>`;
         }
 
-        // A farmer can place more than one bid on the same auction (e.g. to
-        // improve their price), as long as time remains and they still have
-        // a matching crop listing with production left to offer.
         const myCrops = currentCrops.filter(c =>
             c.cropType === a.cropType && c.state === a.state && c.district === a.district && c.remainingProduction > 0
         );
         const canBid = showForm && a.status === "active" && !t.ended && myCrops.length > 0;
 
         const cropOptions = myCrops.map(c =>
-            `<option value="${c.id}">${fmtTonnes(c.remainingProduction)} tonnes left (listed ${fmtTonnes(c.totalProduction)} tonnes)</option>`
+            `<option value="${c.id}">${fmtTonnes(c.remainingProduction)} tonnes left (listed ${fmtTonnes(c.totalProduction)}t)</option>`
         ).join("");
 
         const bidForm = canBid ? `
             <div class="bid-panel">
-                <div class="bid-panel-title">Place your bid</div>
+                <div class="bid-panel-title">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    Place Your Mandi Bid
+                </div>
                 <div class="bid-form-row">
                     <div class="bid-field">
-                        <span class="bid-field-label">Crop listing</span>
+                        <span class="bid-field-label">Crop Listing</span>
                         <select id="bidCrop-${a.id}">${cropOptions}</select>
                     </div>
                     <div class="bid-field">
-                        <span class="bid-field-label">Price per tonne</span>
+                        <span class="bid-field-label">Offer Price / Tonne</span>
                         <div class="bid-price-wrap">
                             <span class="price-prefix">₹</span>
                             <input type="number" min="0.01" step="0.01" placeholder="${a.requiredBidPrice != null ? `${a.auctionType === 'forward' ? '≥' : '≤'} ${requiredBidPrice(a)}` : 'Enter price'}" id="bidPrice-${a.id}">
                             <span class="price-suffix">/ tonne</span>
                         </div>
                     </div>
-                    <button onclick="placeBidOnAuction('${a.id}')">Place bid</button>
+                    <button onclick="placeBidOnAuction('${a.id}')">Submit Bid</button>
                 </div>
-                ${a.requiredBidPrice != null ? `<div class="bid-hint">Mandi requires a price ${a.auctionType === 'forward' ? 'of at least' : 'of at most'} ₹${requiredBidPrice(a)} per tonne.</div>` : ""}
+                ${a.requiredBidPrice != null ? `<div class="bid-hint"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Mandi requires a price ${a.auctionType === 'forward' ? 'of at least' : 'of at most'} ₹${requiredBidPrice(a)} per tonne.</div>` : ""}
             </div>
         ` : (showForm && a.status === "active" && !t.ended ? `
-            <div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">
-                No production left on a matching listing — add a new crop listing to bid again.
+            <div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">
+                No remaining production available on a matching listing. Add a new crop listing to participate.
             </div>
         ` : "");
 
         const outcomeBadge = a.status === "closed"
-            ? `<span class="badge ${a.outcome === 'sold_out' ? 'active' : 'closed'}">${a.outcome === 'sold_out' ? 'Sold out' : 'Not sold out'}</span>`
+            ? `<span class="badge ${a.outcome === 'sold_out' ? 'active' : 'closed'}">${a.outcome === 'sold_out' ? 'Sold Out' : 'Closed'}</span>`
             : "";
 
-        // Full round view: the base offer plus every bid placed on this
-        // auction by any farmer, best-ordered the same way the mandi sees
-        // it, so a farmer can follow how the round has moved.
         const roundRows = (a.bids || []).map(b => {
-            const statusLabelMap = { pending: "Pending", accepted: "Accepted", rejected: "Rejected", expired: "Expired", auto_rejected: "Target met" };
+            const statusLabelMap = { pending: "Pending", accepted: "Accepted", rejected: "Rejected", expired: "Expired", auto_rejected: "Target Met" };
             const rowClass = [b.status, b.farmerEmail === session.email ? "mine" : ""].filter(Boolean).join(" ");
-            const who = b.farmerEmail === session.email ? "You" : "Another farmer";
+            const who = b.farmerEmail === session.email ? "You" : "Another Farmer";
             const qty = b.status === "accepted" ? fmtTonnes(b.acceptedQuantity) : fmtTonnes(b.quantity);
             return `
                 <div class="round-row ${rowClass}">
@@ -1798,20 +2659,20 @@
         }).join("");
 
         const roundView = `
-            <div class="round-title">This round</div>
+            <div class="round-title">Live Round Breakdown</div>
             <div class="round-list">
                 <div class="round-row">
-                    <span class="round-who">Base offer</span>
+                    <span class="round-who">Mandi Base Offer</span>
                     <span class="round-price">₹${a.basePrice}/tonne</span>
-                    <span class="round-status"></span>
+                    <span class="round-status">Base</span>
                 </div>
                 ${a.mandiPrice != null ? `
-                <div class="round-row mine" style="border-color:var(--gold);background:var(--gold-pale);">
-                    <span class="round-who">Mandi's counter</span>
-                    <span class="round-price">₹${a.mandiPrice}/tonne</span>
-                    <span class="round-status"></span>
+                <div class="round-row mine" style="border-color:var(--warning-border);background:var(--warning-bg);">
+                    <span class="round-who">Mandi's Current Counter</span>
+                    <span class="round-price" style="color:#92400E;">₹${a.mandiPrice}/tonne</span>
+                    <span class="round-status" style="color:#92400E;">Counter</span>
                 </div>` : ""}
-                ${roundRows || `<div class="round-row"><span class="round-who">No bids yet</span><span class="round-price"></span><span class="round-status"></span></div>`}
+                ${roundRows || `<div class="round-row"><span class="round-who">No bids submitted yet</span><span class="round-price"></span><span class="round-status">—</span></div>`}
             </div>
         `;
 
@@ -1829,13 +2690,10 @@
                 </div>
 
                 <div class="ac-stats">
-                    <div><div class="ac-stat-label">Target</div><div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div></div>
-                    <div><div class="ac-stat-label">Remaining</div><div class="ac-stat-value gold">${fmtTonnes(a.remainingQuantity)} tonnes</div></div>
-                    <div><div class="ac-stat-label">${a.mandiPrice != null ? "Mandi's counter" : "Base price"}</div><div class="ac-stat-value${a.mandiPrice != null ? ' gold' : ''}">₹${a.mandiPrice != null ? a.mandiPrice : a.basePrice}/tonne</div></div>
-                    ${a.requiredBidPrice != null ? `
-                    <div><div class="ac-stat-label">You must bid ${a.auctionType === "forward" ? "at least" : "at most"}</div><div class="ac-stat-value gold">₹${requiredBidPrice(a)}/tonne</div></div>
-                    ` : ""}
-                    <div><div class="ac-stat-label">Time left</div><div class="ac-stat-value countdown ${t.ended ? 'ended' : ''}" ${a.status === 'active' ? `data-ends-at="${a.endsAt}"` : ""}>${t.text}</div></div>
+                    <div><div class="ac-stat-label">Target Quantity</div><div class="ac-stat-value">${fmtTonnes(a.targetQuantity)} tonnes</div></div>
+                    <div><div class="ac-stat-label">Remaining Target</div><div class="ac-stat-value gold">${fmtTonnes(a.remainingQuantity)} tonnes</div></div>
+                    <div><div class="ac-stat-label">${a.mandiPrice != null ? "Mandi Counter" : "Base Price"}</div><div class="ac-stat-value${a.mandiPrice != null ? ' gold' : ''}">₹${a.mandiPrice != null ? a.mandiPrice : a.basePrice}/tonne</div></div>
+                    <div><div class="ac-stat-label">Time Remaining</div><div class="ac-stat-value countdown ${t.ended ? 'ended' : ''}" ${a.status === 'active' ? `data-ends-at="${a.endsAt}"` : ""}>${t.text}</div></div>
                 </div>
 
                 ${myNote}
@@ -1845,20 +2703,11 @@
         `;
     }
 
-    // Tracks each auction's mandiPrice as of the last poll, so we can spot
-    // when the mandi moves the counter-offer and toast the farmer about it
-    // even if this refresh cycle is the only place they'd otherwise see it.
     let knownMandiPrices = {};
 
     async function renderLiveAuctions() {
         const grid = document.getElementById("liveAuctionsGrid");
 
-        // The periodic resync used to blow away the whole grid, which wiped
-        // out a price the farmer was mid-typing. Skip the re-render while
-        // any bid-price input in this grid has focus (or has a typed,
-        // unsubmitted value) so a background refresh never yanks the field
-        // out from under them; the countdown ticker keeps times fresh
-        // separately, so nothing else here is time-critical to the second.
         const active = document.activeElement;
         const isTypingInGrid = active && grid.contains(active) && active.tagName === "INPUT";
         if (isTypingInGrid) return;
@@ -1866,20 +2715,20 @@
         try {
             liveAuctions = await fetchLiveAuctions();
         } catch (err) {
-            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">Couldn't load live auctions — ${err.message}</div>`;
+            grid.innerHTML = `<div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">Couldn't load live auctions — ${err.message}</div>`;
             return;
         }
 
         liveAuctions.forEach(a => {
             const prev = knownMandiPrices[a.id];
             if (prev !== undefined && a.mandiPrice != null && a.mandiPrice !== prev) {
-                showSuccess(`${a.auctionName}: mandi set a new price — ₹${a.mandiPrice}/tonne.`);
+                showSuccess(`${a.auctionName}: Mandi updated counter price to ₹${a.mandiPrice}/tonne.`);
             }
             knownMandiPrices[a.id] = a.mandiPrice;
         });
 
         if (liveAuctions.length === 0) {
-            grid.innerHTML = `<div class="empty-note" style="color:var(--ink3);border-color:var(--border2)">No live auctions right now for your crops/district. You'll get an email when a mandi opens one.</div>`;
+            grid.innerHTML = `<div class="empty-note" style="color:var(--text-muted);border-color:var(--border)">No live mandi auctions currently matching your crops and district. You will be notified via email when one opens.</div>`;
             return;
         }
 
@@ -1893,7 +2742,7 @@
         const cropId = cropSelect ? cropSelect.value : null;
 
         if (!price || price <= 0 || !cropId) {
-            showError("Enter a valid price and pick which listing to bid with.");
+            showError("Please enter a valid bid price and select a crop listing.");
             return;
         }
 
@@ -1903,7 +2752,7 @@
                 pricePerTonne: price,
                 cropId,
             });
-            showSuccess("Bid placed.");
+            showSuccess("Bid placed successfully.");
             await renderLiveAuctions();
         } catch (err) {
             showError(err.message);
@@ -1911,8 +2760,8 @@
     }
 
     function tickAuctionCountdowns() {
-        document.querySelectorAll("#liveAuctionsGrid .ac-stat-value.countdown, #auctionBidsGrid .ac-stat-value.countdown").forEach(el => {
-            if (!el.dataset.endsAt) return; // closed auctions render a static "Closed" label — nothing to tick
+        document.querySelectorAll("#liveAuctionsGrid .ac-stat-value.countdown, #auctionBidsGrid .ac-stat-value.countdown, #invitationsGrid .ac-stat-value.countdown").forEach(el => {
+            if (!el.dataset.endsAt) return;
             const endsAt = parseInt(el.dataset.endsAt, 10);
             const t = auctionTimeLeftLabel(endsAt);
             el.textContent = t.text;
@@ -1921,18 +2770,17 @@
     }
 
     // ── Init ────────────────────────────────────────────────────
-
     (async function init() {
         await syncClock();
         await Promise.all([renderListings(), renderBids()]);
-        await Promise.all([renderLiveAuctions(), renderInvitations(), renderAuctionBids(), renderParticipated()]); // need currentCrops, populated above
-        setInterval(renderBids, 60000);          // refresh countdowns + bid states
-        setInterval(renderLiveAuctions, 8000);   // resync live auctions/bid status
-        setInterval(renderInvitations, 8000);    // resync pending invitations
-        setInterval(renderAuctionBids, 8000);    // resync in-progress auction bids
-        setInterval(renderParticipated, 15000);  // resync auction history
-        setInterval(tickAuctionCountdowns, 1000); // smooth per-second countdown
-        setInterval(syncClock, 60000);           // re-check clock drift periodically
+        await Promise.all([renderLiveAuctions(), renderInvitations(), renderAuctionBids(), renderParticipated()]);
+        setInterval(renderBids, 60000);
+        setInterval(renderLiveAuctions, 8000);
+        setInterval(renderInvitations, 8000);
+        setInterval(renderAuctionBids, 8000);
+        setInterval(renderParticipated, 15000);
+        setInterval(tickAuctionCountdowns, 1000);
+        setInterval(syncClock, 60000);
     })();
 
 </script>

@@ -1,4 +1,4 @@
-# 🌾 Tripura Crop Intelligence System
+# 🌾Crop Intelligence System
 
 An end-to-end AI-powered precision agriculture platform for the state of Tripura, India — covering **crop yield prediction**, **shortage alerts**, **smart crop recommendations**, and **AI irrigation advisory** across all 8 districts and 15 crop varieties.
 
