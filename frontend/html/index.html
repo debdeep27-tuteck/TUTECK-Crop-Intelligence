@@ -1060,7 +1060,7 @@
         </div>
 
         <!-- ── GROUP: OPERATIONS ── -->
-        <div class="nav-section-title">Operations</div>
+        <div class="nav-section-title" id="operations-section-title">Operations</div>
 
         <a class="gn-link" data-target="/irrigation" data-content="/content/irrigation" href="#" title="Irrigation">
           <span class="nav-icon">
@@ -1126,7 +1126,7 @@
         </a>
 
         <!-- ── GROUP: SYSTEM ── -->
-        <div class="nav-section-title">System</div>
+        <div class="nav-section-title" id="system-section-title">System</div>
 
         <a class="gn-link" href="#" onclick="openReportModal(event)" title="Executive Reports">
           <span class="nav-icon">
@@ -1320,6 +1320,104 @@
     }
 
     let ALLOWED_PAGES = [];
+
+    // ── ROLE-BASED SIDEBAR ORDERING ──
+    // Each entry is an ordered list of `data-target` values for the
+    // "Operations" nav section. Items not listed for a role keep their
+    // original relative order and are appended at the end automatically.
+    const ROLE_SIDEBAR_ORDER = {
+      farmer: [
+        '/yield-detect',
+        '/irrigation',
+        '/recommend-page',
+        '/disease',
+        '/auction',
+        '/mandi-prices'
+      ],
+      mandi: [
+        '/auction-mandi',
+        '/yield-detect',
+        '/mandi-prices'
+      ],
+      admin: [
+        '/irrigation',
+        '/recommend-page',
+        '/disease',
+        '/yield-detect',
+        '/auction',
+        '/auction-mandi',
+        '/cold-storage',
+        '/mandi-prices'
+      ],
+      district_admin: [
+        '/irrigation',
+        '/recommend-page',
+        '/disease',
+        '/yield-detect',
+        '/auction',
+        '/mandi-prices',
+        '/cold-storage'
+      ],
+      state_admin: [
+        '/irrigation',
+        '/recommend-page',
+        '/disease',
+        '/yield-detect',
+        '/auction',
+        '/mandi-prices',
+        '/cold-storage'
+      ],
+      default: [
+        '/irrigation',
+        '/recommend-page',
+        '/disease',
+        '/yield-detect',
+        '/auction',
+        '/auction-mandi',
+        '/cold-storage',
+        '/mandi-prices'
+      ]
+    };
+
+    function reorderOperationsNav(role) {
+      const key = String(role || '').trim().toLowerCase();
+      const order = ROLE_SIDEBAR_ORDER[key] || ROLE_SIDEBAR_ORDER.default;
+
+      const nav = document.getElementById('sidebar-nav');
+      const opsTitle = document.getElementById('operations-section-title');
+      const sysTitle = document.getElementById('system-section-title');
+      if (!nav || !opsTitle || !sysTitle) return;
+
+      // Collect the Operations links currently sitting between the two markers
+      const opsLinks = [];
+      let node = opsTitle.nextElementSibling;
+      while (node && node !== sysTitle) {
+        const next = node.nextElementSibling;
+        if (node.classList && node.classList.contains('gn-link') && node.dataset.target) {
+          opsLinks.push(node);
+        }
+        node = next;
+      }
+
+      const linkMap = {};
+      opsLinks.forEach(link => { linkMap[link.dataset.target] = link; });
+
+      const ordered = [];
+      order.forEach(target => {
+        if (linkMap[target]) {
+          ordered.push(linkMap[target]);
+          delete linkMap[target];
+        }
+      });
+      // Preserve any links not explicitly ordered for this role
+      opsLinks.forEach(link => {
+        if (linkMap[link.dataset.target]) {
+          ordered.push(link);
+        }
+      });
+
+      ordered.forEach(link => nav.insertBefore(link, sysTitle));
+    }
 
     async function fetchMyPermissions() {
       try {
@@ -2022,6 +2120,8 @@
       const savedState = getCurrentState();
       localStorage.setItem('cropai_state', savedState);
       updateStatePill(savedState);
+
+      reorderOperationsNav(session && session.role);
 
       ALLOWED_PAGES = await fetchMyPermissions();
       applyRoleAccess();
