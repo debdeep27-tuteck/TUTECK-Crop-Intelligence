@@ -292,11 +292,9 @@
         })
       );
 
-      if (user.role === "admin") {
-        window.location.href = "/admin";
-      } else {
-        window.location.href = "/dashboard";
-      }
+      // All roles, including admin, land on the dashboard first.
+      // Admins can navigate to the admin panel from there via the sidebar.
+      window.location.href = "/dashboard";
     }
 
     signinForm.addEventListener('submit', async (e) => {
