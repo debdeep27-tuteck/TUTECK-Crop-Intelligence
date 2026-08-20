@@ -24,7 +24,7 @@
     <button class="i-tab" onclick="showPage('conditional',this)">Conditional Yield</button>
     <button class="i-tab" onclick="showPage('weather',this)">Weather &amp; Soil</button>
     <button class="i-tab" onclick="showPage('trends',this)">Yield Trends</button>
-    <button class="i-tab" onclick="showPage('models',this)">ML Models</button>
+    <!-- <button class="i-tab" onclick="showPage('models',this)">ML Models</button> -->
     <button class="i-tab" onclick="showPage('predict',this)">Predict Yield</button>
     <button class="i-tab" onclick="showPage('alerts',this)">Live Alerts</button>
   </div>
@@ -675,7 +675,7 @@
     </div>
   </div>
 
-  <!-- ═══════════ PAGE: ML MODELS ═══════════ -->
+  <!-- ═══════════ PAGE: ML MODELS ═══════════
   <div class="page" id="page-models">
     <div class="ph">
       <div>
@@ -684,8 +684,8 @@
       </div>
     </div>
 
-    <!-- Model selector buttons -->
-    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="modelTabRow">
+    <-- Model selector buttons -->
+    <!-- <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="modelTabRow">
       <button class="fr-btn" onclick="selectModel('XGBoost',this)" id="mtab-XGBoost">XGBoost (Production Best)</button>
       <button class="fr-btn fr-btn-sec" onclick="selectModel('RandomForest',this)" id="mtab-RandomForest">Random
         Forest</button>
@@ -694,9 +694,9 @@
       <button class="fr-btn fr-btn-sec" onclick="selectModel('Ridge',this)" id="mtab-Ridge">Ridge Regression</button>
       <button class="fr-btn fr-btn-sec" onclick="selectModel('SVR',this)" id="mtab-SVR">Support Vector
         Regressor</button>
-    </div>
+    </div> -->
 
-    <!-- Model metric strip -->
+    <!-- Model metric strip
     <div class="stat-strip" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px;">
       <div class="sc">
         <div class="sc-lbl">R² Score</div>
@@ -726,17 +726,17 @@
           <button class="btn btn-sm btn-secondary" id="split-future" onclick="setSplit('future')">Holdout</button>
         </div>
       </div>
-    </div>
+    </div> -->
 
-    <div class="cc mb">
+    <!-- <div class="cc mb">
       <div class="cc-head">
         <div class="cc-title"><span class="cc-dot"></span>Model Comparison — R² Score (Test Set)</div>
         <span class="cc-badge">Higher = Better</span>
       </div>
       <canvas id="modelR2Chart"></canvas>
-    </div>
+    </div> -->
 
-    <div class="g3 mb">
+    <!-- <div class="g3 mb">
       <div class="cc">
         <div class="cc-head">
           <div class="cc-title"><span class="cc-dot" style="background:var(--warning);"></span>MAPE Comparison</div>
@@ -758,8 +758,8 @@
         </div>
         <canvas id="modelMaeChart"></canvas>
       </div>
-    </div>
-
+    </div> -->
+<!-- 
     <div class="g2">
       <div class="cc">
         <div class="cc-head">
@@ -778,7 +778,7 @@
         <canvas id="corrChart"></canvas>
       </div>
     </div>
-  </div>
+  </div> -->
 
   <!-- ═══════════ PAGE: PREDICT YIELD ═══════════ -->
   <div class="page" id="page-predict">
