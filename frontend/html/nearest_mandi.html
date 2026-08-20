@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CropAI — Nearest Mandi Intelligence</title>
-  
+
   <!-- Google Fonts & Design System -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/css/design_system.css">
-  
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-  
+
   <style>
     :root {
       --primary: #1B4332;
@@ -351,9 +354,11 @@
     .mandi-list::-webkit-scrollbar {
       width: 5px;
     }
+
     .mandi-list::-webkit-scrollbar-track {
       background: transparent;
     }
+
     .mandi-list::-webkit-scrollbar-thumb {
       background: #CBD5E1;
       border-radius: 4px;
@@ -649,7 +654,9 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     /* ── CUSTOM LEAFLET POPUP STYLING ── */
@@ -762,14 +769,22 @@
       background: #2563EB;
       border: 3px solid #FFFFFF;
       border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25), 0 3px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25), 0 3px 6px rgba(0, 0, 0, 0.2);
       animation: userPulse 2s infinite;
     }
 
     @keyframes userPulse {
-      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-      70% { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+      0% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+      }
+
+      70% {
+        box-shadow: 0 0 0 14px rgba(37, 99, 235, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+      }
     }
 
     @media (max-width: 960px) {
@@ -778,9 +793,11 @@
         overflow-y: auto;
         height: auto;
       }
+
       .kpi-strip {
         grid-template-columns: repeat(2, 1fr);
       }
+
       .nm-grid {
         grid-template-columns: 1fr;
         grid-template-rows: 360px 420px;
@@ -789,13 +806,14 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- ── TOP HEADER ── -->
   <header class="nm-header">
     <div class="nm-title-area">
       <h1 class="nm-title">
-        Nearest Mandi <span class="accent">Intelligence</span>
+        Nearest <span class="accent">Mandi</span>
       </h1>
       <p class="nm-subtitle">Real-time geospatial locator for agricultural markets, APMC yards &amp; rural haats</p>
     </div>
@@ -810,7 +828,15 @@
 
       <!-- Primary Locate Button -->
       <button class="btn-locate" id="btn-locate" onclick="locateUser()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
         <span>Locate Nearest Mandis</span>
       </button>
     </div>
@@ -825,7 +851,12 @@
         <span class="kpi-sub">Within active radius</span>
       </div>
       <div class="kpi-icon-pill">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+          <path d="M3 6h18" />
+          <path d="M16 10a4 4 0 0 1-8 0" />
+        </svg>
       </div>
     </div>
 
@@ -836,7 +867,11 @@
         <span class="kpi-sub" id="kpi-closest-sub">Awaiting GPS</span>
       </div>
       <div class="kpi-icon-pill">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
       </div>
     </div>
 
@@ -847,7 +882,12 @@
         <span class="kpi-sub">Radial coverage</span>
       </div>
       <div class="kpi-icon-pill">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
       </div>
     </div>
 
@@ -858,7 +898,11 @@
         <span class="kpi-sub" id="kpi-coords-sub">Latitude, Longitude</span>
       </div>
       <div class="kpi-icon-pill">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
       </div>
     </div>
   </div>
@@ -876,18 +920,32 @@
         </div>
 
         <div class="search-box">
-          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" class="search-input" id="search-input" placeholder="Filter by market name, locality..." oninput="filterMandis(this.value)">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input type="text" class="search-input" id="search-input" placeholder="Filter by market name, locality..."
+            oninput="filterMandis(this.value)">
         </div>
       </div>
 
       <ul class="mandi-list" id="mandi-list">
         <div class="empty-container">
           <div class="empty-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
           </div>
           <div class="empty-title">Find Agricultural Markets</div>
-          <div class="empty-desc">Click "Locate Nearest Mandis" or choose a location preset to discover nearby APMC yards and bazaars.</div>
+          <div class="empty-desc">Click "Locate Nearest Mandis" or choose a location preset to discover nearby APMC
+            yards and bazaars.</div>
         </div>
       </ul>
     </section>
@@ -901,10 +959,20 @@
 
       <div class="map-tools">
         <button class="map-tool-btn" onclick="recenterMap()" title="Recenter Map">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
         </button>
         <button class="map-tool-btn" onclick="fitAllMandis()" title="Fit All Mandis">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" x2="14" y1="3" y2="10" />
+            <line x1="3" x2="10" y1="21" y2="14" />
+          </svg>
         </button>
       </div>
 
@@ -935,7 +1003,7 @@
     function initMap() {
       // Initialize map centered in India with high quality light tiles
       map = L.map('map', { zoomControl: true }).setView([22.9734, 78.6569], 5);
-      
+
       // Clean modern OpenStreetMap / CartoDB Voyager tiles
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
@@ -977,7 +1045,7 @@
       const textEl = document.getElementById('status-text');
       textEl.textContent = text;
       banner.classList.add('active');
-      
+
       if (autoHide) {
         setTimeout(() => {
           banner.classList.remove('active');
@@ -1063,19 +1131,19 @@
     async function fetchMandis(lat, lon) {
       showStatus("Scanning for regional mandis & APMC yards...");
       const listContainer = document.getElementById('mandi-list');
-      
+
       listContainer.innerHTML = `
         <div class="empty-container">
           <div class="spinner dark" style="width:24px; height:24px;"></div>
           <div class="empty-title">Scanning Map Data</div>
-          <div class="empty-desc">Querying OpenStreetMap and agricultural registry within ${currentRadius/1000}km...</div>
+          <div class="empty-desc">Querying OpenStreetMap and agricultural registry within ${currentRadius / 1000}km...</div>
         </div>
       `;
 
       try {
         const res = await fetch(`/api/nearest-mandi/locate?lat=${lat}&lon=${lon}&radius=${currentRadius}`);
         if (!res.ok) throw new Error("API request returned status " + res.status);
-        
+
         const data = await res.json();
         if (data.status === "success") {
           allMandis = data.mandis || [];
@@ -1112,12 +1180,12 @@
 
       if (mandis.length === 0) {
         closestEl.textContent = 'None';
-        closestSubEl.textContent = `Within ${currentRadius/1000}km`;
+        closestSubEl.textContent = `Within ${currentRadius / 1000}km`;
         listContainer.innerHTML = `
           <div class="empty-container">
             <div class="empty-icon">📍</div>
             <div class="empty-title">No Mandis Found</div>
-            <div class="empty-desc">No agricultural markets detected within ${currentRadius/1000}km. Try expanding search radius to 50km.</div>
+            <div class="empty-desc">No agricultural markets detected within ${currentRadius / 1000}km. Try expanding search radius to 50km.</div>
           </div>
         `;
         return;
@@ -1237,7 +1305,7 @@
         renderMandis(allMandis);
         return;
       }
-      const filtered = allMandis.filter(m => 
+      const filtered = allMandis.filter(m =>
         (m.name && m.name.toLowerCase().includes(q)) ||
         (m.address && m.address.toLowerCase().includes(q)) ||
         (m.market_type && m.market_type.toLowerCase().includes(q))
@@ -1263,4 +1331,5 @@
     document.addEventListener('DOMContentLoaded', initMap);
   </script>
 </body>
+
 </html>
