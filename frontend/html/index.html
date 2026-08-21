@@ -1431,7 +1431,11 @@
         }
         const data = await res.json();
         const pages = (data.permissions && data.permissions.pages) || [];
+        const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
         const isMandi = String(session.role || '').trim().toLowerCase() === 'mandi';
+        if (isAdmin && !pages.includes('/auction-mandi')) {
+          pages.push('/auction-mandi');
+        }
         if (isMandi && !pages.includes('/auction-mandi')) {
           pages.push('/auction-mandi');
         }
@@ -1528,6 +1532,14 @@
 
     // ── LIVE ALERTS NOTIFICATION PANEL ───────────────────────────────────────
     let _alertsLoaded = false;
+    let _flaggedAlerts = [];
+
+    function goToAlertRecord(event, idx) {
+      if (event) event.preventDefault();
+      const record = _flaggedAlerts[idx];
+      navigateTo('/dashboard', event, 'alerts', record || null);
+      closeNotifMenu();
+    }
 
     async function loadLiveAlerts() {
       const list   = document.getElementById('notif-list');
@@ -1537,20 +1549,32 @@
 
       try {
         const state = getCurrentState();
-        const res   = await fetch('/predictions.json?state=' + encodeURIComponent(state),
-                                  { signal: AbortSignal.timeout(6000) });
+        let url = '/predictions.json?state=' + encodeURIComponent(state);
+        // District admins only ever see their own district's alerts, both
+        // here and on the full Live Alerts (EWAS) page.
+        if (IS_DISTRICT_ADMIN && session.district) {
+          url += '&district=' + encodeURIComponent(session.district);
+        }
+        const res   = await fetch(url, { signal: AbortSignal.timeout(6000) });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
-        const preds = data.predictions || [];
-        // Show critical first, then watch; cap at 6 items
+        let preds = data.predictions || [];
+        // Backend may ignore an unrecognized `district` param, so also
+        // filter client-side to guarantee district admins never see other
+        // districts' alerts in this panel.
+        if (IS_DISTRICT_ADMIN && session.district) {
+          const own = String(session.district).trim().toLowerCase();
+          preds = preds.filter(r => String(r.district || '').trim().toLowerCase() === own);
+        }
+        // Show every critical/watch alert, critical first, worst anomaly first.
+        // The list itself scrolls (max-height + overflow-y), so no cap is needed.
         const flagged = preds
           .filter(r => r.status === 'critical' || r.status === 'watch')
           .sort((a, b) => {
             if (a.status === b.status) return (a.anomaly || 0) - (b.anomaly || 0);
             return a.status === 'critical' ? -1 : 1;
-          })
-          .slice(0, 6);
+          });
 
         const count = flagged.length;
         const summary = data.summary || {};
@@ -1579,13 +1603,13 @@
           return;
         }
 
-        list.innerHTML = flagged.map(r => {
+        list.innerHTML = flagged.map((r, i) => {
           const isCrit  = r.status === 'critical';
           const dotCol  = isCrit ? 'var(--danger)' : 'var(--warning)';
           const anomaly = typeof r.anomaly === 'number' ? r.anomaly.toFixed(1) : '—';
           const sign    = r.anomaly > 0 ? '+' : '';
           return `
-            <a href="#" class="notif-item" onclick="navigateTo('/alerts', event)">
+            <a href="#" class="notif-item" onclick="goToAlertRecord(event, ${i})">
               <div class="notif-title">
                 <span class="badge-dot" style="background:${dotCol}"></span>
                 ${isCrit ? 'Critical' : 'Watch'}: ${r.crop}
@@ -1594,6 +1618,10 @@
               <div class="notif-time">${r.weather_year || 'Current'} forecast · XGBoost prediction</div>
             </a>`;
         }).join('');
+
+        // Keep the flagged records around so a click can hand the exact
+        // record off to the alerts page (not just the tab).
+        _flaggedAlerts = flagged;
 
         _alertsLoaded = true;
       } catch (err) {
@@ -1980,17 +2008,36 @@
       }
     }
 
-    function navigateTo(target, event, tab = null) {
+    function navigateTo(target, event, tab = null, highlightRecord = null) {
       if (event) event.preventDefault();
       const content = routeMap[target] || '/content/dashboard';
       let fullUrl = content + stateParam();
       if (tab) {
         fullUrl += `&tab=${encodeURIComponent(tab)}`;
       }
+      // Also carry the target record in the URL (not just postMessage) so a
+      // fresh iframe load (full navigation branch below) can pick it straight
+      // off the query string once it finishes rendering the alerts table.
+      if (highlightRecord) {
+        try {
+          fullUrl += `&highlight=${encodeURIComponent(JSON.stringify({
+            district: highlightRecord.district,
+            crop: highlightRecord.crop,
+            season: highlightRecord.season
+          }))}`;
+        } catch { /* ignore malformed record */ }
+      }
 
       const currentSrc = frame.getAttribute('src') || '';
       const isDashboard = target === '/dashboard';
       const iframeIsOnDashboard = currentSrc.includes('/content/dashboard');
+
+      const postHighlight = () => {
+        if (!highlightRecord) return;
+        try {
+          frame.contentWindow.postMessage({ type: 'highlightAlert', record: highlightRecord }, '*');
+        } catch { /* iframe not ready / cross-origin, URL param above is the fallback */ }
+      };
 
       if (isDashboard && iframeIsOnDashboard && frame.contentWindow) {
         try {
@@ -1999,11 +2046,15 @@
           } else {
             frame.contentWindow.postMessage({ type: 'switchTab', tab: tab || 'overview' }, '*');
           }
+          postHighlight();
         } catch (err) {
           frame.src = fullUrl;
         }
       } else {
         frame.src = fullUrl;
+        if (highlightRecord) {
+          frame.addEventListener('load', postHighlight, { once: true });
+        }
       }
 
       setActive(target, tab);

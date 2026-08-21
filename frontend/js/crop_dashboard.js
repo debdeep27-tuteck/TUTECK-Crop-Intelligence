@@ -1337,6 +1337,58 @@ async function runPrediction() {
 // ═══════════════════════════════════════════════════════════
 let ALL_ALERTS = [], FILTERED_ALERTS = [], ALERT_SORT = 'anomaly', ALERT_ASC = true;
 
+// ── Highlight-on-arrival (from notification bell / parent shell) ──────────
+function alertRowKey(r) {
+  return [r.district, r.crop, r.season].map(v => String(v || '').trim().toLowerCase()).join('|');
+}
+
+let _pendingAlertHighlight = null;
+
+function _readAlertHighlightFromQuery() {
+  try {
+    const raw = new URLSearchParams(window.location.search).get('highlight');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function _alertMatchesHighlight(r, h) {
+  if (!h) return false;
+  const norm = v => String(v || '').trim().toLowerCase();
+  return norm(r.district) === norm(h.district)
+    && norm(r.crop) === norm(h.crop)
+    && norm(r.season) === norm(h.season);
+}
+
+function applyPendingAlertHighlight() {
+  if (!_pendingAlertHighlight) return;
+  const match = ALL_ALERTS.find(r => _alertMatchesHighlight(r, _pendingAlertHighlight));
+  if (!match) { _pendingAlertHighlight = null; return; }
+
+  // Clear filters so the matched row can't be hidden.
+  const distSel = document.getElementById('al-f-district');
+  const seasonSel = document.getElementById('al-f-season');
+  const statusSel = document.getElementById('al-f-status');
+  const cropSel = document.getElementById('al-f-crop');
+  if (distSel) distSel.value = 'all';
+  if (seasonSel) seasonSel.value = 'all';
+  if (statusSel) statusSel.value = 'all';
+  if (cropSel) cropSel.value = 'all';
+  FILTERED_ALERTS = [...ALL_ALERTS];
+  renderAlertTable();
+
+  requestAnimationFrame(() => {
+    const el = document.querySelector('[data-row-key="' + alertRowKey(match) + '"]');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('alert-highlight-flash');
+      setTimeout(() => el.classList.remove('alert-highlight-flash'), 2600);
+    }
+  });
+
+  _pendingAlertHighlight = null;
+}
+
 async function buildAlerts() {
   try {
     const resp = await fetch(`/predictions.json?state=${encodeURIComponent(STATE)}`, { headers: _authHeaders() });
@@ -1376,6 +1428,7 @@ async function buildAlerts() {
 
   renderAlertTable();
   buildAlertCharts();
+  applyPendingAlertHighlight();
 }
 
 function renderAlertTable() {
@@ -1411,7 +1464,7 @@ function renderAlertTable() {
     const normVal = typeof r.normal === 'number' ? r.normal.toFixed(2) : '—';
     const anomVal = typeof r.anomaly === 'number' ? `${r.anomaly > 0 ? '+' : ''}${r.anomaly.toFixed(1)}%` : '0.0%';
 
-    return `<tr>
+    return `<tr data-row-key="${alertRowKey(r)}">
       <td style="font-weight:600;">${r.district}</td>
       <td>${r.crop}</td>
       <td>${r.season}</td>
@@ -1547,6 +1600,8 @@ const initialTab = (
 const validTabs = ['overview', 'eda', 'conditional', 'weather', 'trends', 'models', 'predict', 'alerts'];
 const activeTab = validTabs.includes(initialTab) ? initialTab : 'overview';
 
+_pendingAlertHighlight = _readAlertHighlightFromQuery();
+
 Promise.all([
   fetchProfiles(),
   loadTrendData(),
@@ -1563,6 +1618,14 @@ window.addEventListener('message', (e) => {
     if (validTabs.includes(tabName)) {
       showPage(tabName);
     }
+  }
+  if (e.data && e.data.type === 'highlightAlert' && e.data.record) {
+    _pendingAlertHighlight = e.data.record;
+    if (ALL_ALERTS.length) {
+      applyPendingAlertHighlight();
+    }
+    // If alerts data hasn't loaded yet, buildAlerts() will pick this up
+    // once it finishes (see applyPendingAlertHighlight() call at its end).
   }
 });
 

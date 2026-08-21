@@ -139,6 +139,47 @@
     @media (max-width: 700px) {
       .kpi-grid { grid-template-columns: 1fr; }
     }
+
+    /* Pagination */
+    .pagination {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 14px 12px;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: var(--radius-lg);
+      border-bottom-right-radius: var(--radius-lg);
+    }
+    .pagination button {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: white;
+      color: #333;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .pagination button:hover:not(:disabled):not(.active) { background: #F0FDF4; border-color: #10B981; }
+    .pagination button.active {
+      background: #10B981;
+      border-color: #10B981;
+      color: white;
+      cursor: default;
+    }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .ellipsis {
+      padding: 0 4px;
+      color: #999;
+      font-size: 13px;
+      user-select: none;
+    }
   </style>
 </head>
 
@@ -243,7 +284,7 @@
         </div>
         <span class="badge badge-neutral" id="facilities-badge">Loading Facilities…</span>
       </div>
-      <div class="table-container" style="background:#FFFFFF;border:1px solid var(--border);border-top:none;border-bottom-left-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg);overflow-x:auto;">
+      <div class="table-container" style="background:#FFFFFF;border:1px solid var(--border);border-top:none;overflow-x:auto;">
         <table class="data-table">
           <thead>
             <tr>
@@ -262,6 +303,7 @@
           </tbody>
         </table>
       </div>
+      <div class="pagination" id="facilities-pagination"></div>
     </div>
 
     <!-- Production to Storage Linkage Table -->
@@ -326,6 +368,11 @@
 
     let ALL_FACILITIES = [];
     let ALL_LANDS = [];
+
+    // Pagination state for the facilities table
+    const FACILITIES_PAGE_SIZE = 10;
+    let facilitiesCurrentPage = 1;
+    let facilitiesPageRecords = []; // the currently-filtered set (pre-pagination)
 
     async function loadColdStorageData() {
       try {
@@ -472,32 +519,101 @@
         banner.style.display = 'none';
       }
 
-      // Render Facilities Table
-      const tbody = document.getElementById('facilities-tbody');
-      if (!facilitiesToRender.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">No registered cold storage facilities found in <strong>${selectedDist}</strong>.</td></tr>`;
-      } else {
-        tbody.innerHTML = facilitiesToRender.map(f => {
-          const cap = Number(f.total_capacity_mt) || 0;
-          const typeLabel = STORAGE_TYPE_LABELS[f.storage_type] || (f.storage_type ? f.storage_type : 'Cold Storage (NHB)');
-          const source = f.source || 'NHB Registry';
-          const quality = DATA_QUALITY_LABELS[f.data_quality] || (f.data_quality || 'Official Data');
-          const isEstimate = (f.data_quality || '').includes('DUMMY') || (f.data_quality || '').includes('SEED');
-
-          return `<tr>
-            <td style="font-weight:600;color:var(--text);line-height:1.3;">${f.name}</td>
-            <td>${f.district || '—'}</td>
-            <td style="font-family:var(--font-mono);font-weight:700;font-size:13px;">${cap > 0 ? cap.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) : '—'}</td>
-            <td style="font-size:11.5px;color:var(--text-secondary);">${source.replace('BUNDLED_REGISTRY_IMPORT', 'NHB Registry Import').replace('GOVT_IMPORT', 'Govt. Data')}</td>
-            <td><span class="badge ${isEstimate ? 'badge-warning' : 'badge-success'}" style="font-size:10px;">${quality}</span></td>
-            <td><span class="badge badge-success">Registered</span></td>
-          </tr>`;
-        }).join('');
-      }
+      // Store the filtered set and (re)start pagination from page 1 whenever
+      // the district filter changes / data reloads.
+      facilitiesPageRecords = facilitiesToRender;
+      facilitiesCurrentPage = 1;
+      renderFacilitiesPage(selectedDist);
 
       // Render Linkage Table with real crop-wise yield demand
       renderLinkageTable(selectedDist, totalCap, availCap, landsToRender);
     }
+
+    function renderFacilitiesPage(selectedDist) {
+      const tbody = document.getElementById('facilities-tbody');
+      const total = facilitiesPageRecords.length;
+
+      if (!total) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">No registered cold storage facilities found in <strong>${selectedDist}</strong>.</td></tr>`;
+        renderFacilitiesPagination(0);
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(total / FACILITIES_PAGE_SIZE));
+      if (facilitiesCurrentPage > totalPages) facilitiesCurrentPage = totalPages;
+      if (facilitiesCurrentPage < 1) facilitiesCurrentPage = 1;
+
+      const start = (facilitiesCurrentPage - 1) * FACILITIES_PAGE_SIZE;
+      const pageItems = facilitiesPageRecords.slice(start, start + FACILITIES_PAGE_SIZE);
+
+      tbody.innerHTML = pageItems.map(f => {
+        const cap = Number(f.total_capacity_mt) || 0;
+        const typeLabel = STORAGE_TYPE_LABELS[f.storage_type] || (f.storage_type ? f.storage_type : 'Cold Storage (NHB)');
+        const source = f.source || 'NHB Registry';
+        const quality = DATA_QUALITY_LABELS[f.data_quality] || (f.data_quality || 'Official Data');
+        const isEstimate = (f.data_quality || '').includes('DUMMY') || (f.data_quality || '').includes('SEED');
+
+        return `<tr>
+          <td style="font-weight:600;color:var(--text);line-height:1.3;">${f.name}</td>
+          <td>${f.district || '—'}</td>
+          <td style="font-family:var(--font-mono);font-weight:700;font-size:13px;">${cap > 0 ? cap.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) : '—'}</td>
+          <td style="font-size:11.5px;color:var(--text-secondary);">${source.replace('BUNDLED_REGISTRY_IMPORT', 'NHB Registry Import').replace('GOVT_IMPORT', 'Govt. Data')}</td>
+          <td><span class="badge ${isEstimate ? 'badge-warning' : 'badge-success'}" style="font-size:10px;">${quality}</span></td>
+          <td><span class="badge badge-success">Registered</span></td>
+        </tr>`;
+      }).join('');
+
+      const shownStart = start + 1;
+      const shownEnd = Math.min(start + FACILITIES_PAGE_SIZE, total);
+      document.getElementById('facilities-badge').textContent = `Showing ${shownStart}-${shownEnd} of ${total} Facilities`;
+
+      renderFacilitiesPagination(totalPages);
+    }
+
+    function renderFacilitiesPagination(totalPages) {
+      const el = document.getElementById('facilities-pagination');
+      if (totalPages <= 1) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        return;
+      }
+
+      el.style.display = 'flex';
+
+      const buttons = [];
+      buttons.push(`<button data-page="prev" ${facilitiesCurrentPage === 1 ? 'disabled' : ''} title="Previous page">‹</button>`);
+
+      const pages = new Set([1, totalPages, facilitiesCurrentPage, facilitiesCurrentPage - 1, facilitiesCurrentPage + 1]);
+      const sortedPages = [...pages].filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+
+      let prevPage = null;
+      sortedPages.forEach(p => {
+        if (prevPage !== null && p - prevPage > 1) {
+          buttons.push(`<span class="ellipsis">…</span>`);
+        }
+        buttons.push(`<button data-page="${p}" class="${p === facilitiesCurrentPage ? 'active' : ''}">${p}</button>`);
+        prevPage = p;
+      });
+
+      buttons.push(`<button data-page="next" ${facilitiesCurrentPage === totalPages ? 'disabled' : ''} title="Next page">›</button>`);
+
+      el.innerHTML = buttons.join('');
+    }
+
+    document.getElementById('facilities-pagination').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-page]');
+      if (!btn || btn.disabled) return;
+
+      const target = btn.dataset.page;
+      if (target === 'prev') {
+        facilitiesCurrentPage -= 1;
+      } else if (target === 'next') {
+        facilitiesCurrentPage += 1;
+      } else {
+        facilitiesCurrentPage = parseInt(target, 10);
+      }
+      renderFacilitiesPage(distSel.value);
+    });
 
     function renderLinkageTable(selectedDist, totalCap, availCap, landsToRender) {
       const lTbody = document.getElementById('yield-production-tbody');

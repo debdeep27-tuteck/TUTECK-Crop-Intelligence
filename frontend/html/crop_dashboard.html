@@ -13,6 +13,17 @@
     rel="stylesheet">
   <link rel="stylesheet" href="../css/design_system.css">
   <link rel="stylesheet" href="../css/crop_dashboard.css">
+  <style>
+    /* Highlight-on-arrival flash for a row targeted from the notification bell */
+    #alert-tbody tr.alert-highlight-flash {
+      animation: alertRowFlash 1.3s ease-in-out 2;
+    }
+    @keyframes alertRowFlash {
+      0%   { background-color: transparent; box-shadow: none; }
+      50%  { background-color: rgba(16, 185, 129, 0.18); box-shadow: inset 0 0 0 2px rgba(16, 185, 129, 0.55); }
+      100% { background-color: transparent; box-shadow: none; }
+    }
+  </style>
 </head>
 
 <body>
