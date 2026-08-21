@@ -127,6 +127,44 @@
     color: #777;
     margin-bottom: 8px;
   }
+
+  /* Pagination */
+  .pagination {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 14px 12px;
+    background: white;
+    border-top: 1px solid var(--border);
+  }
+  .pagination button {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #333;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .pagination button:hover:not(:disabled):not(.active) { background: #f3fbf1; border-color: var(--green); }
+  .pagination button.active {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+    cursor: default;
+  }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination .ellipsis {
+    padding: 0 4px;
+    color: #999;
+    font-size: 13px;
+    user-select: none;
+  }
 </style>
 </head>
 <body>
@@ -191,6 +229,7 @@
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
+  <div class="pagination" id="pagination"></div>
 </div>
 
 <script>
@@ -216,6 +255,8 @@ const STATES = [
   { id: "rajasthan", name: "Rajasthan" },
 ];
 
+const PAGE_SIZE = 10;
+
 const stateSelect = document.getElementById("stateSelect");
 const districtSelect = document.getElementById("districtSelect");
 const commoditySelect = document.getElementById("commoditySelect");
@@ -226,6 +267,12 @@ const tableBody = document.getElementById("tableBody");
 const metaRow = document.getElementById("metaRow");
 const metaText = document.getElementById("metaText");
 const updatedText = document.getElementById("updatedText");
+const paginationEl = document.getElementById("pagination");
+
+// Holds the full result set for the current search; the table only
+// ever renders one page-worth (PAGE_SIZE) of it at a time.
+let allRecords = [];
+let currentPage = 1;
 
 function setStatus(msg, isError = false) {
   statusEl.textContent = msg;
@@ -315,26 +362,17 @@ async function loadPrices() {
     const data = await fetchJSON(`${MANDI_API}/prices?${params.toString()}`);
 
     if (!data.records || data.records.length === 0) {
+      allRecords = [];
       setStatus("No price records found for this selection today. Try widening your filters (e.g. remove the crop type) or check back later.");
       return;
     }
 
-    tableBody.innerHTML = data.records.map(r => `
-      <tr>
-        <td>${escapeHtml(r.commodity)}</td>
-        <td>${escapeHtml(r.variety)}</td>
-        <td>${escapeHtml(r.grade)}</td>
-        <td>${escapeHtml(r.market)}</td>
-        <td class="price">${formatPrice(r.min_price)}</td>
-        <td class="price">${formatPrice(r.max_price)}</td>
-        <td class="price modal-price">${formatPrice(r.modal_price)}</td>
-        <td>${escapeHtml(r.arrival_date)}</td>
-      </tr>
-    `).join("");
+    allRecords = data.records;
+    currentPage = 1;
 
-    metaText.textContent = `${data.count} record(s) shown${data.total ? ` of ${data.total} total` : ""}`;
     updatedText.textContent = data.updated ? `Dataset updated: ${data.updated}` : "";
-    metaRow.style.display = "flex";
+
+    renderPage();
 
     statusEl.style.display = "none";
     tableWrap.style.display = "block";
@@ -344,6 +382,83 @@ async function loadPrices() {
     searchBtn.disabled = false;
   }
 }
+
+function renderPage() {
+  const totalRecords = allRecords.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRecords = allRecords.slice(start, start + PAGE_SIZE);
+
+  tableBody.innerHTML = pageRecords.map(r => `
+    <tr>
+      <td>${escapeHtml(r.commodity)}</td>
+      <td>${escapeHtml(r.variety)}</td>
+      <td>${escapeHtml(r.grade)}</td>
+      <td>${escapeHtml(r.market)}</td>
+      <td class="price">${formatPrice(r.min_price)}</td>
+      <td class="price">${formatPrice(r.max_price)}</td>
+      <td class="price modal-price">${formatPrice(r.modal_price)}</td>
+      <td>${escapeHtml(r.arrival_date)}</td>
+    </tr>
+  `).join("");
+
+  const shownStart = totalRecords === 0 ? 0 : start + 1;
+  const shownEnd = Math.min(start + PAGE_SIZE, totalRecords);
+  metaText.textContent = `Showing ${shownStart}-${shownEnd} of ${totalRecords} record(s)`;
+  metaRow.style.display = "flex";
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  if (totalPages <= 1) {
+    paginationEl.style.display = "none";
+    paginationEl.innerHTML = "";
+    return;
+  }
+
+  paginationEl.style.display = "flex";
+
+  const buttons = [];
+
+  buttons.push(`<button data-page="prev" ${currentPage === 1 ? "disabled" : ""} title="Previous page">‹</button>`);
+
+  // Build a compact page list: first, last, current ±1, with ellipses.
+  const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+  const sortedPages = [...pages].filter(p => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+
+  let prevPage = null;
+  sortedPages.forEach(p => {
+    if (prevPage !== null && p - prevPage > 1) {
+      buttons.push(`<span class="ellipsis">…</span>`);
+    }
+    buttons.push(`<button data-page="${p}" class="${p === currentPage ? "active" : ""}">${p}</button>`);
+    prevPage = p;
+  });
+
+  buttons.push(`<button data-page="next" ${currentPage === totalPages ? "disabled" : ""} title="Next page">›</button>`);
+
+  paginationEl.innerHTML = buttons.join("");
+}
+
+paginationEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-page]");
+  if (!btn || btn.disabled) return;
+
+  const target = btn.dataset.page;
+  if (target === "prev") {
+    currentPage -= 1;
+  } else if (target === "next") {
+    currentPage += 1;
+  } else {
+    currentPage = parseInt(target, 10);
+  }
+  renderPage();
+  tableWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
 
 function formatPrice(v) {
   if (v === null || v === undefined) return "-";
