@@ -1431,11 +1431,11 @@
         }
         const data = await res.json();
         const pages = (data.permissions && data.permissions.pages) || [];
-        const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
+        //const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
         const isMandi = String(session.role || '').trim().toLowerCase() === 'mandi';
-        if (isAdmin && !pages.includes('/auction-mandi')) {
-          pages.push('/auction-mandi');
-        }
+        // if (isAdmin && !pages.includes('/auction-mandi')) {
+        //   pages.push('/auction-mandi');
+        // }
         if (isMandi && !pages.includes('/auction-mandi')) {
           pages.push('/auction-mandi');
         }
