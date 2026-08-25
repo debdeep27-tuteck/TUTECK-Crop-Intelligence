@@ -2083,7 +2083,11 @@
         }
 
         function timeLeftLabel(endsAt) {
-            const diff = endsAt - nowMs();
+            const end = Number(endsAt);
+            if (!Number.isFinite(end) || end <= 0) {
+                return { text: "Timer unavailable", ended: false };
+            }
+            const diff = end - nowMs();
             if (diff <= 0) return { text: "Ended", ended: true };
             const mins = Math.floor(diff / 60000);
             const hrs = Math.floor(mins / 60);
