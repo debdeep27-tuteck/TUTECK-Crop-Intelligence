@@ -10,6 +10,7 @@ Endpoints:
   GET  /health
   GET  /supported_crops
   POST /detect
+  POST /detect-url
 """
 
 import sys
@@ -19,10 +20,12 @@ if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
+import base64
 import os
 import json
 import re
 import warnings
+import requests as http_requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -398,6 +401,127 @@ Return only valid JSON using the required schema.
         import traceback
         print("=" * 70)
         print("[disease] EXCEPTION during /detect:")
+        traceback.print_exc()
+        print("=" * 70)
+
+        return jsonify({
+            "error": "Disease detection failed",
+            "details": str(e),
+            "state": state
+        }), 500
+
+
+@app.route("/detect-url", methods=["POST"])
+def detect_url():
+    """
+    Accepts a JSON body with an ``image_url`` field, downloads the image,
+    and runs it through the same Groq VLM pipeline as /detect.
+
+    Request body (JSON):
+      {
+        "image_url": "https://…",   # required – publicly accessible image URL
+        "state": "tripura",          # optional – state context (default: tripura)
+        "crop_hint": "Rice",         # optional
+        "notes": "Yellowing leaves"  # optional
+      }
+
+    Response: same JSON schema as /detect.
+    """
+    state = get_state()
+
+    if not os.environ.get("GROQ_API_KEY", ""):
+        return jsonify({
+            "error": "GROQ_API_KEY is not set. Please set it in your environment or .env file."
+        }), 500
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "No JSON body received"}), 400
+
+    image_url = data.get("image_url", "").strip()
+    crop_hint = data.get("crop_hint", "")
+    notes = data.get("notes", "")
+
+    if not image_url:
+        return jsonify({"error": "image_url is required"}), 400
+
+    # ── Download image from URL ───────────────────────────────────────────
+    try:
+        resp = http_requests.get(image_url, timeout=15, stream=True)
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+        if not content_type.startswith("image/"):
+            content_type = "image/jpeg"
+        image_bytes = resp.content
+    except http_requests.exceptions.Timeout:
+        return jsonify({"error": "Timed out while downloading image from URL"}), 408
+    except http_requests.exceptions.RequestException as exc:
+        return jsonify({"error": "Failed to download image", "details": str(exc)}), 400
+
+    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+    media_type = content_type
+
+    # ── Run through VLM pipeline (identical to /detect) ───────────────────
+    try:
+        data_url = f"data:{media_type};base64,{image_base64}"
+
+        user_text = f"""
+Analyse this crop image.
+
+State: {state}
+Region: {STATE_LABELS.get(state, "India")}
+Crop hint: {crop_hint or "None"}
+Farmer/image notes: {notes or "None"}
+Source URL: {image_url}
+
+Return only valid JSON using the required schema.
+"""
+
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            temperature=0.1,
+            max_completion_tokens=1800,
+            reasoning_effort="none",
+            messages=[
+                {
+                    "role": "system",
+                    "content": build_system_prompt(state)
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": user_text
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": data_url
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+
+        raw = completion.choices[0].message.content
+
+        print("=" * 70)
+        print("[disease/detect-url] RAW MODEL OUTPUT:")
+        print(raw)
+        print("=" * 70)
+
+        result = extract_json_object(raw)
+        result = normalize_result(result, state)
+        result["source_url"] = image_url
+
+        return jsonify(result)
+
+    except Exception as e:
+        import traceback
+        print("=" * 70)
+        print("[disease] EXCEPTION during /detect-url:")
         traceback.print_exc()
         print("=" * 70)
 

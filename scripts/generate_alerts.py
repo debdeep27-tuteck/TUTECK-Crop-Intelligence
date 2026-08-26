@@ -1,18 +1,18 @@
 """
-generate_alerts.py
-==================
+scripts/generate_alerts.py
+==========================
 Fetches real seasonal weather from Open-Meteo, loads model_artefacts.pkl,
-runs XGBoost predictions for all 176 district-crop-season combinations,
+runs XGBoost predictions for all district-crop-season combinations,
 computes yield anomalies, and writes predictions.json for the dashboard.
 
 Usage:
-    python generate_alerts.py
+    python scripts/generate_alerts.py
 
 Output:
-    predictions.json  (same folder — the dashboard reads this)
+    data_and_model_rajasthan/predictions.json  (the dashboard reads this)
 
 Run this once per season or whenever you want fresh predictions.
-Requires: model_artefacts.pkl and weather_cache.json in the same folder.
+Requires: model_artefacts.pkl and weather_cache.json in data_and_model_rajasthan/.
 """
 
 import json
@@ -32,13 +32,13 @@ warnings.filterwarnings("ignore")
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 
-
 BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parent
 
-ARTEFACTS_PATH = BASE_DIR / "../data_and_model_rajasthan/model_artefacts.pkl"
-CACHE_PATH     = BASE_DIR / "../data_and_model_rajasthan/weather_cache.json"
-OUTPUT_PATH    = BASE_DIR / "../data_and_model_rajasthan/predictions.json"
-DATA_PATH      = BASE_DIR / "../data_and_model_rajasthan/merged_crop_enriched_features_del.xlsx"
+ARTEFACTS_PATH = PROJECT_ROOT / "data_and_model_rajasthan" / "model_artefacts.pkl"
+CACHE_PATH     = PROJECT_ROOT / "data_and_model_rajasthan" / "weather_cache.json"
+OUTPUT_PATH    = PROJECT_ROOT / "data_and_model_rajasthan" / "predictions.json"
+DATA_PATH      = PROJECT_ROOT / "data_and_model_rajasthan" / "merged_crop_enriched_features_del.xlsx"
 
 
 YIELD_COL = "Yield (Tonne or Bales/Hectare)"
@@ -195,7 +195,7 @@ def resolve_columns(df: pd.DataFrame, required: dict, source_name: str = None) -
             f"Actual columns in '{source_name or 'the file'}':\n  "
             + "\n  ".join(df.columns)
             + "\n\nAdd the real column name to REQUIRED_COLUMNS in "
-              "generate_alerts.py (near the top of the file) and re-run."
+              "scripts/generate_alerts.py (near the top of the file) and re-run."
         )
 
     if rename_map:
@@ -253,7 +253,7 @@ def build_fallback_lookup(df_history: pd.DataFrame):
 
     key_cols = {"District_Name", "Crop", "Season"}
     if not key_cols.issubset(dfh.columns):
-        print(" df_history is missing District_Name/Crop/Season — "
+        print("  ⚠ df_history is missing District_Name/Crop/Season — "
               "cannot build fertilizer/pest lookup from it.")
         return {}, set()
 
@@ -393,7 +393,6 @@ def get_season_weather(district: str, season: str, cache: dict) -> dict:
     raise RuntimeError(f"Cannot fetch weather for {district} {season}")
 
 
-
 def clean_json(obj):
     """Convert numpy values and non-finite floats into strict JSON-safe values."""
     if isinstance(obj, dict):
@@ -495,10 +494,10 @@ def main():
 
     print(f"  {len(combos)} valid combos to predict")
     if missing_fert_count:
-        print(f" {missing_fert_count} combo(s) used the hardcoded fertilizer default "
+        print(f"  ⚠ {missing_fert_count} combo(s) used the hardcoded fertilizer default "
               f"({DEFAULT_FERTILIZER_KG_PER_HA} kg/ha) — not found in Excel or df_history")
     if missing_pest_count:
-        print(f" {missing_pest_count} combo(s) used the hardcoded pest default "
+        print(f"  ⚠ {missing_pest_count} combo(s) used the hardcoded pest default "
               f"(code {DEFAULT_PEST_CODE} = Medium) — not found in Excel or df_history")
     print()
 
@@ -563,7 +562,7 @@ def main():
                       else "normal")
 
         anom_text = "N/A" if anomaly_pct is None else f"{anomaly_pct:+.1f}%"
-        print(f" {pred_yield:.2f} t/ha  anomaly: {anom_text}  [{status.upper()}]")
+        print(f"  {pred_yield:.2f} t/ha  anomaly: {anom_text}  [{status.upper()}]")
 
         results.append({
             "district":      dist,

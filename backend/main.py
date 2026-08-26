@@ -10,6 +10,9 @@ Starts:
 • backend_2.py Rajasthan       -> http://127.0.0.1:5006 (crop yield / stats API)
   • irrigation_backend2.py       -> http://127.0.0.1:5001 (irrigation advisory API, if present)
   • disease_backend.py           -> http://127.0.0.1:5004 (crop disease detection API)
+  • yield_detect_backend.py      -> http://127.0.0.1:5008 (yield detect & geofencing API)
+  • yield_platform_service.py    -> http://127.0.0.1:6100 (land parcel & yield platform microservice)
+  • cold_storage_backend.py      -> http://127.0.0.1:5010 (cold storage intelligence API)
   • mandi_prices_backend.py      -> http://127.0.0.1:5011 (daily mandi price API, data.gov.in)
 
 Public URLs:
@@ -20,6 +23,7 @@ Public URLs:
   http://localhost:8085/disease
   http://localhost:8085/auction
   http://localhost:8085/auction-mandi
+  http://localhost:8085/cold-storage
   http://localhost:8085/mandi-prices
 
 Usage:
@@ -48,6 +52,17 @@ import webbrowser
 from pathlib import Path
 from typing import Optional
 
+# Load .env from the backend/ directory so child processes (e.g.
+# disease_backend.py now living in disease_detection/) inherit all
+# secrets like GROQ_API_KEY via os.environ.copy() in start_process().
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _backend_env = Path(__file__).resolve().parent / ".env"
+    if _backend_env.exists():
+        _load_dotenv(dotenv_path=str(_backend_env), override=False)
+except ImportError:
+    pass  # python-dotenv not installed; rely on shell environment
+
 # ── DEFAULT CONFIG ─────────────────────────────────────────────────────────────
 
 DEFAULT_GATEWAY_PORT = 8085
@@ -71,10 +86,18 @@ DISEASE_PORT = 5004
 # /yield-detect and /yield-detect-editor to this port.
 YIELD_DETECT_PORT = 5008
 
+# Generic yield platform microservice (land parcel storage + yield prediction);
+# yield_detect_backend.py talks to this over HTTP via YIELD_PLATFORM_SERVICE_URL.
+YIELD_PLATFORM_SERVICE_PORT = 6100
+
 # Auction backend (farmer crop listings + bidding, unused_crops table);
 # gateway.py forwards /api/unused-crops/*, /api/bids/*, /content/auction
 # and /auction to this port.
 AUCTION_PORT = 5009
+
+# Generic auction engine microservice (domain-agnostic, standalone);
+# auction_backend.py talks to this over HTTP via AUCTION_SERVICE_URL.
+AUCTION_ENGINE_PORT = 6000
 
 # Cold Storage Intelligence backend (deterministic storage-capacity
 # advisory); gateway.py forwards /api/cold-storage/* to this port.
@@ -208,8 +231,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically")
     parser.add_argument("--no-irrigation", action="store_true", help="Skip irrigation backend")
     parser.add_argument("--no-disease", action="store_true", help="Skip disease detection backend")
+    parser.add_argument("--no-yield-platform", action="store_true", help="Skip generic yield platform microservice (port 6100)")
     parser.add_argument("--no-yield-detect", action="store_true", help="Skip yield detect (geofencing) backend")
     parser.add_argument("--no-cold-storage", action="store_true", help="Skip cold storage intelligence backend")
+    parser.add_argument("--no-auction-engine", action="store_true", help="Skip generic auction engine microservice (port 6000)")
     parser.add_argument("--no-auction", action="store_true", help="Skip auction backend")
     parser.add_argument("--no-mandi-prices", action="store_true", help="Skip mandi prices backend")
     parser.add_argument("--no-nearest-mandi", action="store_true", help="Skip nearest mandi backend")
@@ -241,12 +266,49 @@ def selected_states(args: argparse.Namespace) -> list[str]:
 
 
 def find_script(start_dir: Path, filename: str) -> Optional[Path]:
-    """Find script whether main.py is run from backend/ or project root."""
+    """Find script whether main.py is run from backend/ or project root.
+
+    Also checks dedicated service sub-folders such as disease_detection/ so
+    that scripts can be moved out of backend/ without breaking the launcher.
+    """
+    project_root = start_dir.parent if (start_dir / "backend").exists() or start_dir.name == "backend" else start_dir
+
     candidates = [
         start_dir / filename,
         start_dir / "backend" / filename,
         start_dir.parent / "backend" / filename,
         start_dir.parent / filename,
+        # ── dedicated service sub-folders (project root level) ──
+        project_root / "disease_detection" / filename,
+        start_dir / "disease_detection" / filename,
+        start_dir.parent / "disease_detection" / filename,
+        # ── irrigation lives in irrigation/ ──
+        project_root / "irrigation" / filename,
+        start_dir / "irrigation" / filename,
+        start_dir.parent / "irrigation" / filename,
+        # ── yield-detect / yield platform lives in yield-detect/ ──
+        project_root / "yield-detect" / filename,
+        start_dir / "yield-detect" / filename,
+        start_dir.parent / "yield-detect" / filename,
+        project_root / "yield_detect" / filename,
+        start_dir / "yield_detect" / filename,
+        start_dir.parent / "yield_detect" / filename,
+        # ── auction engine lives in auction/ ──
+        project_root / "auction" / filename,
+        start_dir / "auction" / filename,
+        start_dir.parent / "auction" / filename,
+        # ── mandi prices ──
+        project_root / "mandi_prices" / filename,
+        start_dir / "mandi_prices" / filename,
+        start_dir.parent / "mandi_prices" / filename,
+        # ── nearest mandi ──
+        project_root / "nearest_mandi" / filename,
+        start_dir / "nearest_mandi" / filename,
+        start_dir.parent / "nearest_mandi" / filename,
+        # ── cold storage ──
+        project_root / "cold_storage" / filename,
+        start_dir / "cold_storage" / filename,
+        start_dir.parent / "cold_storage" / filename,
     ]
 
     for path in candidates:
@@ -285,7 +347,9 @@ def main() -> None:
     backend_script = find_script(base_dir, "backend_2.py")
     irrigation_script = find_script(base_dir, "irrigation_backend2.py")
     disease_script = find_script(base_dir, "disease_backend.py")
+    yield_platform_script = find_script(base_dir, "yield_platform_service.py")
     yield_detect_script = find_script(base_dir, "yield_detect_backend.py")
+    auction_engine_script = find_script(base_dir, "auction_engine_service.py")
     auction_script = find_script(base_dir, "auction_backend.py")
     cold_storage_script = find_script(base_dir, "cold_storage_backend.py")
     mandi_prices_script = find_script(base_dir, "mandi_prices_backend.py")
@@ -334,12 +398,44 @@ def main() -> None:
             cmd_args=[],
             port=DISEASE_PORT,
             timeout=args.ready_timeout,
-            env_extra={"DISEASE_PORT": str(DISEASE_PORT)},
+            # Explicitly pass GROQ_API_KEY because disease_backend.py moved to
+            # disease_detection/ and its own load_dotenv() no longer finds
+            # backend/.env. The value is already in os.environ (loaded above)
+            # so this is just a safety-net explicit injection.
+            env_extra={
+                "DISEASE_PORT": str(DISEASE_PORT),
+                "GROQ_API_KEY": os.environ.get("GROQ_API_KEY", ""),
+            },
         )
     else:
         log(RED, "disease", "disease_backend.py not found; disease detection will show BACKEND OFFLINE.")
 
-    # 3b) Start yield-detect backend (geofenced land yield predictions).
+    # 3b-1) Start generic yield-platform microservice (land parcel storage + yield prediction).
+    # The generic yield platform service (port 6100) must come up first so
+    # yield_detect_backend.py can reach it via YIELD_PLATFORM_SERVICE_URL.
+    if args.no_yield_platform:
+        log(YELLOW, "yield-platform", "Skipped by --no-yield-platform")
+        yield_platform_service_url = f"http://127.0.0.1:{YIELD_PLATFORM_SERVICE_PORT}"
+    elif yield_platform_script:
+        start_if_needed(
+            label="yield-platform",
+            script=yield_platform_script,
+            cmd_args=["--port", str(YIELD_PLATFORM_SERVICE_PORT)],
+            port=YIELD_PLATFORM_SERVICE_PORT,
+            timeout=args.ready_timeout,
+            env_extra={
+                "YIELD_PLATFORM_SERVICE_API_KEY": os.environ.get("YIELD_PLATFORM_SERVICE_API_KEY", ""),
+                "MAPPLS_CLIENT_ID": os.environ.get("MAPPLS_CLIENT_ID", ""),
+                "MAPPLS_CLIENT_SECRET": os.environ.get("MAPPLS_CLIENT_SECRET", ""),
+                "MAPPLS_MAP_KEY": os.environ.get("MAPPLS_MAP_KEY", ""),
+            },
+        )
+        yield_platform_service_url = f"http://127.0.0.1:{YIELD_PLATFORM_SERVICE_PORT}"
+    else:
+        log(YELLOW, "yield-platform", "yield_platform_service.py not found in yield-detect/ or backend/; yield platform engine skipped.")
+        yield_platform_service_url = f"http://127.0.0.1:{YIELD_PLATFORM_SERVICE_PORT}"
+
+    # 3b-2) Start yield-detect backend (geofenced land yield predictions).
     if args.no_yield_detect:
         log(YELLOW, "yield-detect", "Skipped by --no-yield-detect")
     elif yield_detect_script:
@@ -351,13 +447,35 @@ def main() -> None:
             timeout=args.ready_timeout,
             # yield_detect_backend.py has no session store of its own — it
             # verifies bearer tokens by calling the gateway's /api/auth/me,
-            # so it needs to know where the gateway actually ended up.
-            env_extra={"GATEWAY_INTERNAL_URL": f"http://127.0.0.1:{args.gateway_port}"},
+            # and reaches yield_platform_service via YIELD_PLATFORM_SERVICE_URL.
+            env_extra={
+                "GATEWAY_INTERNAL_URL": f"http://127.0.0.1:{args.gateway_port}",
+                "YIELD_PLATFORM_SERVICE_URL": yield_platform_service_url,
+                "YIELD_PLATFORM_SERVICE_API_KEY": os.environ.get("YIELD_PLATFORM_SERVICE_API_KEY", ""),
+            },
         )
     else:
         log(RED, "yield-detect", "yield_detect_backend.py not found; Yield Detect tab will show BACKEND OFFLINE.")
 
      # 3c) Start auction backend (farmer crop listings + bidding).
+    # The generic auction engine (port 6000) must come up first so
+    # auction_backend.py can reach it via AUCTION_SERVICE_URL.
+    if args.no_auction_engine:
+        log(YELLOW, "auction-engine", "Skipped by --no-auction-engine")
+        auction_engine_url = f"http://127.0.0.1:{AUCTION_ENGINE_PORT}"
+    elif auction_engine_script:
+        start_if_needed(
+            label="auction-engine",
+            script=auction_engine_script,
+            cmd_args=["--port", str(AUCTION_ENGINE_PORT)],
+            port=AUCTION_ENGINE_PORT,
+            timeout=args.ready_timeout,
+        )
+        auction_engine_url = f"http://127.0.0.1:{AUCTION_ENGINE_PORT}"
+    else:
+        log(YELLOW, "auction-engine", "auction_engine_service.py not found in auction/ or backend/; auction engine skipped.")
+        auction_engine_url = f"http://127.0.0.1:{AUCTION_ENGINE_PORT}"
+
     if args.no_auction:
         log(YELLOW, "auction", "Skipped by --no-auction")
     elif auction_script:
@@ -367,10 +485,12 @@ def main() -> None:
             cmd_args=["--port", str(AUCTION_PORT)],
             port=AUCTION_PORT,
             timeout=args.ready_timeout,
-            # auction_backend.py has no session store of its own — like
-            # yield_detect_backend.py, it verifies bearer tokens by calling
-            # the gateway's /api/auth/me, so it needs the gateway's URL.
-            env_extra={"GATEWAY_INTERNAL_URL": f"http://127.0.0.1:{args.gateway_port}"},
+            # auction_backend.py verifies bearer tokens via the gateway's /api/auth/me
+            # and reaches the auction engine via AUCTION_SERVICE_URL.
+            env_extra={
+                "GATEWAY_INTERNAL_URL": f"http://127.0.0.1:{args.gateway_port}",
+                "AUCTION_SERVICE_URL": auction_engine_url,
+            },
         )
     else:
         log(RED, "auction", "auction_backend.py not found; Auction tab will show BACKEND OFFLINE.")

@@ -735,7 +735,7 @@ def serve_predictions():
     if not predictions_file.exists():
         return jsonify({
             "error": f"predictions.json not found in {DATA_DIR}. "
-                     "Run generate_alerts.py first."
+                     "Run scripts/generate_alerts.py first."
         }), 404
     return send_from_directory(str(DATA_DIR), "predictions.json")
 

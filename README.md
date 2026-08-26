@@ -129,7 +129,7 @@ This fetches weather data from Open-Meteo and trains all 5 models. Takes ~15–3
 
 ### 3. Generate fresh predictions
 ```bash
-python generate_alerts.py
+python scripts/generate_alerts.py
 ```
 Outputs `predictions.json` — required by `alert_dashboard.html`.
 
