@@ -24,13 +24,7 @@ COPY frontend/ ./frontend/
 COPY data_and_model/ ./data_and_model/
 COPY data_and_model_meghalaya/ ./data_and_model_meghalaya/
 COPY data_and_model_rajasthan/ ./data_and_model_rajasthan/
-COPY disease_detection/ ./disease_detection/
-COPY auction/ ./auction/
-COPY mandi_prices/ ./mandi_prices/
-COPY nearest_mandi/ ./nearest_mandi/
-COPY cold_storage/ ./cold_storage/
-COPY irrigation/ ./irrigation/
-COPY yield-detect/ ./yield-detect/
+COPY micro_services/ ./micro_services/
 COPY scripts/ ./scripts/
 
 # Gateway entry port

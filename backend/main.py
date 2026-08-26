@@ -268,8 +268,9 @@ def selected_states(args: argparse.Namespace) -> list[str]:
 def find_script(start_dir: Path, filename: str) -> Optional[Path]:
     """Find script whether main.py is run from backend/ or project root.
 
-    Also checks dedicated service sub-folders such as disease_detection/ so
-    that scripts can be moved out of backend/ without breaking the launcher.
+    Checks backend/, root, and dedicated sub-folders under micro_services/
+    (or project root) so that services can be moved or organized without
+    breaking the launcher.
     """
     project_root = start_dir.parent if (start_dir / "backend").exists() or start_dir.name == "backend" else start_dir
 
@@ -278,38 +279,39 @@ def find_script(start_dir: Path, filename: str) -> Optional[Path]:
         start_dir / "backend" / filename,
         start_dir.parent / "backend" / filename,
         start_dir.parent / filename,
-        # ── dedicated service sub-folders (project root level) ──
-        project_root / "disease_detection" / filename,
-        start_dir / "disease_detection" / filename,
-        start_dir.parent / "disease_detection" / filename,
-        # ── irrigation lives in irrigation/ ──
-        project_root / "irrigation" / filename,
-        start_dir / "irrigation" / filename,
-        start_dir.parent / "irrigation" / filename,
-        # ── yield-detect / yield platform lives in yield-detect/ ──
-        project_root / "yield-detect" / filename,
-        start_dir / "yield-detect" / filename,
-        start_dir.parent / "yield-detect" / filename,
-        project_root / "yield_detect" / filename,
-        start_dir / "yield_detect" / filename,
-        start_dir.parent / "yield_detect" / filename,
-        # ── auction engine lives in auction/ ──
-        project_root / "auction" / filename,
-        start_dir / "auction" / filename,
-        start_dir.parent / "auction" / filename,
-        # ── mandi prices ──
-        project_root / "mandi_prices" / filename,
-        start_dir / "mandi_prices" / filename,
-        start_dir.parent / "mandi_prices" / filename,
-        # ── nearest mandi ──
-        project_root / "nearest_mandi" / filename,
-        start_dir / "nearest_mandi" / filename,
-        start_dir.parent / "nearest_mandi" / filename,
-        # ── cold storage ──
-        project_root / "cold_storage" / filename,
-        start_dir / "cold_storage" / filename,
-        start_dir.parent / "cold_storage" / filename,
+        project_root / filename,
+        project_root / "backend" / filename,
     ]
+
+    # ── dedicated service folders under micro_services/ ──
+    micro_services_dir = project_root / "micro_services"
+    if micro_services_dir.exists() and micro_services_dir.is_dir():
+        candidates.append(micro_services_dir / filename)
+        try:
+            for sub in micro_services_dir.iterdir():
+                if sub.is_dir():
+                    candidates.append(sub / filename)
+        except Exception:
+            pass
+
+    # ── direct dedicated service sub-folders at project root level ──
+    subfolders = [
+        "disease_detection",
+        "irrigation",
+        "yield-detect",
+        "yield_detect",
+        "auction",
+        "mandi_prices",
+        "nearest_mandi",
+        "cold_storage",
+    ]
+    for folder in subfolders:
+        candidates.append(project_root / folder / filename)
+        candidates.append(start_dir / folder / filename)
+        candidates.append(start_dir.parent / folder / filename)
+        candidates.append(project_root / "micro_services" / folder / filename)
+        candidates.append(start_dir / "micro_services" / folder / filename)
+        candidates.append(start_dir.parent / "micro_services" / folder / filename)
 
     for path in candidates:
         if path.exists():
