@@ -45,7 +45,6 @@ import time
 
 import argparse
 import json
-import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -67,8 +66,6 @@ HTML_DIR = FRONTEND_DIR / "html"
 CSS_DIR = FRONTEND_DIR / "css"
 JS_DIR = FRONTEND_DIR / "js"
 
-DB_PATH = BASE_DIR / "yield_lands.db"
-
 # ── SHARED AUTH: validate tokens against the gateway's live session store ────
 # auth_excel.py keeps sessions in an in-memory dict inside the gateway
 # process (port 8085 by default) — there is no separate users/sessions DB
@@ -76,6 +73,35 @@ DB_PATH = BASE_DIR / "yield_lands.db"
 # So instead we just ask the gateway to verify the token for us via its
 # existing /api/auth/me route, the same way any other client would.
 GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
+
+# ── YIELD PLATFORM SERVICE: generic land storage + crop-yield prediction ──
+# (yield_platform_service.py — one standalone microservice, one process,
+# one port, one API key). This backend used to keep its own "lands" table
+# and its own soil/prediction logic; both moved out into that single
+# service, which knows nothing about farmers, roles, or this app's
+# gateway. This app now talks to it over HTTP for both concerns and
+# translates crop-specific fields (crop, soil_type, irrigation_type, ...)
+# to/from the opaque `metadata` blob on the land side, so every existing
+# /api/yield/* route keeps its exact same request/response contract for
+# the frontend. Same pattern as auction_backend.py -> auction_engine_service.py.
+YIELD_PLATFORM_SERVICE_URL = os.environ.get("YIELD_PLATFORM_SERVICE_URL", "http://127.0.0.1:6100")
+YIELD_PLATFORM_SERVICE_API_KEY = os.environ.get("YIELD_PLATFORM_SERVICE_API_KEY", "")
+
+# Back-compat aliases: the land-storage and crop-yield clients below both
+# just point at the one merged service now.
+LAND_SERVICE_URL = YIELD_PLATFORM_SERVICE_URL
+LAND_SERVICE_API_KEY = YIELD_PLATFORM_SERVICE_API_KEY
+CROP_YIELD_SERVICE_URL = YIELD_PLATFORM_SERVICE_URL
+CROP_YIELD_SERVICE_API_KEY = YIELD_PLATFORM_SERVICE_API_KEY
+
+# ── EXTERNAL-APP AUTH: trusted-identity mode ──────────────────────────────
+# Any OTHER app (one that has no idea what auth_excel.py or /api/auth/me
+# are) can still use this service, as long as it verifies its own users
+# itself and then tells us who the user is via trusted headers, signed
+# with a shared service-to-service API key. This is separate from, and
+# does not replace, the gateway-token mode above — the crop app keeps
+# using that unchanged. Unset by default; set it to enable this path.
+YIELD_SERVICE_API_KEY = os.environ.get("YIELD_SERVICE_API_KEY", "")
 
 # Must match CROP_BACKENDS in main.py / gateway.py
 STATE_BACKEND_PORTS = {
@@ -86,249 +112,8 @@ STATE_BACKEND_PORTS = {
 
 DEFAULT_STATE = "tripura"
 
-# ── SOILGRIDS (ISRIC) SOIL TYPE LOOKUP ────────────────────────────────────────
-# Given a lat/lng from a geofenced plot, queries ISRIC SoilGrids' WRB
-# classification endpoint (no auth required) and maps the returned WRB
-# classes onto the Soil_Type categories each state's crop-yield model was
-# actually trained on. This is looked up by state because the training-data
-# categories differ per state model — extend STATE_SOIL_CLASSES /
-# STATE_WRB_TO_SOIL as more state models are confirmed.
-SOILGRIDS_URL = "https://rest.isric.org/soilgrids/v2.0/classification/query"
-
-# SoilGrids is a public, best-effort service and is occasionally slow
-# (multi-second responses aren't unusual). First attempt fails fast so a
-# broken/very-slow request doesn't block the UI for too long; if it times
-# out, the retry gets a longer window in case it was just transient.
-SOILGRIDS_TIMEOUTS_SECONDS = [8, 20]
-
-# Only request the top 3 WRB candidate classes — plenty for a weighted vote
-# against a 4-category mapping table, and a smaller/faster response than
-# the default 5.
-SOILGRIDS_NUMBER_CLASSES = 3
-
-# Cache is backed by SQLite (same DB file as the lands table) so it survives
-# backend restarts — the same villages/plots get analyzed repeatedly across
-# sessions, and there's no reason to re-hit SoilGrids for a point we've
-# already resolved recently. Keyed on lat/lon rounded to ~1m precision.
-SOILGRIDS_CACHE_TTL_SECONDS = 60 * 60 * 24 * 7  # 1 week — soil classification doesn't change day to day
-
-
-def _cache_key(lat: float, lon: float) -> tuple[float, float]:
-    return (round(lat, 5), round(lon, 5))
-
-
-def _soilgrids_cache_get(lat: float, lon: float) -> list[tuple[str, float]] | None:
-    key_lat, key_lon = _cache_key(lat, lon)
-    db = get_db()
-    row = db.execute(
-        "SELECT fetched_at, probs_json FROM soilgrids_cache WHERE lat = ? AND lon = ?",
-        (key_lat, key_lon),
-    ).fetchone()
-    if not row:
-        return None
-    if (time.time() - row["fetched_at"]) >= SOILGRIDS_CACHE_TTL_SECONDS:
-        return None
-    try:
-        return [tuple(item) for item in json.loads(row["probs_json"])]
-    except (TypeError, ValueError):
-        return None
-
-
-def _soilgrids_cache_set(lat: float, lon: float, probs: list[tuple[str, float]]) -> None:
-    key_lat, key_lon = _cache_key(lat, lon)
-    db = get_db()
-    db.execute(
-        """
-        INSERT INTO soilgrids_cache (lat, lon, fetched_at, probs_json)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(lat, lon) DO UPDATE SET fetched_at = excluded.fetched_at, probs_json = excluded.probs_json
-        """,
-        (key_lat, key_lon, time.time(), json.dumps(probs)),
-    )
-    db.commit()
-
-
-# The exact 4 strings baked into the Rajasthan model's one-hot encoder
-# (confirmed against merged_crop_enriched_features_del.xlsx and the
-# Soil_Type_* columns inside model_artefacts.pkl — "Alluvial" is the
-# dropped/reference category, "Black Cotton" is spelled out in full).
-RAJASTHAN_SOIL_CLASSES = ["Alluvial", "Sandy", "Desert", "Black Cotton"]
-
-# WRB (SoilGrids) class -> nearest Rajasthan Soil_Type category.
-# Only used for Rajasthan right now; add per-state tables here once the
-# other state models' training categories are confirmed the same way.
-RAJASTHAN_WRB_TO_SOIL = {
-    "Calcisols": "Desert", "Leptosols": "Desert", "Solonchaks": "Desert",
-    "Arenosols": "Sandy", "Regosols": "Sandy",
-    "Cambisols": "Alluvial", "Fluvisols": "Alluvial",
-    "Vertisols": "Black Cotton", "Luvisols": "Black Cotton", "Chernozems": "Black Cotton",
-}
-
-# The exact 2 strings baked into the Tripura model's one-hot encoder
-# (confirmed against merged_crop_enriched_features_del.xlsx — only two
-# Soil_Type values ever appear in the training data — and against
-# feat_cols inside model_artefacts.pkl, which carries a single
-# "Soil_Type_Red Laterite" dummy column, meaning "Alluvial" is the
-# dropped/reference category).
-TRIPURA_SOIL_CLASSES = ["Alluvial", "Red Laterite"]
-
-# WRB (SoilGrids) class -> nearest Tripura Soil_Type category. Tripura is a
-# hilly, high-rainfall North-East state, so its dominant WRB classes split
-# roughly into: heavily-weathered, iron/aluminium-oxide-rich upland soils
-# (the "Red Laterite" bucket) vs. younger, river/valley-deposited soils
-# (the "Alluvial" bucket). Unlike the Rajasthan table, this hasn't been
-# validated against ground-truth soil surveys for Tripura specifically —
-# treat it as a reasonable best-effort default, not a confirmed mapping,
-# and let a manual dropdown override take precedence.
-TRIPURA_WRB_TO_SOIL = {
-    "Acrisols": "Red Laterite", "Ferralsols": "Red Laterite",
-    "Plinthosols": "Red Laterite", "Nitisols": "Red Laterite",
-    "Lixisols": "Red Laterite", "Alisols": "Red Laterite",
-    "Fluvisols": "Alluvial", "Cambisols": "Alluvial",
-    "Gleysols": "Alluvial", "Regosols": "Alluvial", "Umbrisols": "Alluvial",
-}
-
-# The exact 3 strings baked into the Meghalaya model's one-hot encoder
-# (confirmed against merged_crop_enriched_features_del.xlsx — Soil_Type
-# takes 3 values in the training data — and against feat_cols inside
-# model_artefacts.pkl, which carries two dummy columns,
-# "Soil_Type_Red Laterite" and "Soil_Type_Sandy Loam", meaning "Alluvial"
-# is the dropped/reference category, same as it is for Tripura).
-# Training-data counts: Red Laterite 6882, Sandy Loam 788, Alluvial 275 —
-# Red Laterite dominates heavily, consistent with Meghalaya's hilly,
-# high-rainfall plateau terrain; the small Alluvial slice likely comes from
-# the Garo Hills lowlands near the Brahmaputra plains.
-MEGHALAYA_SOIL_CLASSES = ["Alluvial", "Red Laterite", "Sandy Loam"]
-
-# WRB (SoilGrids) class -> nearest Meghalaya Soil_Type category. Like the
-# Tripura table, this is a pedologically-reasoned best-effort default (not
-# validated against a ground-truth Meghalaya soil survey): heavily-weathered
-# upland iron/aluminium-oxide soils and high-altitude humus-rich soils map
-# to "Red Laterite" (the dominant class here); coarser, less-structured
-# classes map to "Sandy Loam"; younger river/valley-deposited soils map to
-# "Alluvial". Treat as a starting point and let a manual dropdown override
-# take precedence when it looks wrong for a given spot.
-MEGHALAYA_WRB_TO_SOIL = {
-    "Acrisols": "Red Laterite", "Ferralsols": "Red Laterite",
-    "Plinthosols": "Red Laterite", "Nitisols": "Red Laterite",
-    "Lixisols": "Red Laterite", "Alisols": "Red Laterite",
-    "Umbrisols": "Red Laterite",
-    "Arenosols": "Sandy Loam", "Regosols": "Sandy Loam",
-    "Fluvisols": "Alluvial", "Cambisols": "Alluvial", "Gleysols": "Alluvial",
-}
-
-STATE_WRB_TO_SOIL = {
-    "rajasthan": RAJASTHAN_WRB_TO_SOIL,
-    "tripura": TRIPURA_WRB_TO_SOIL,
-    "meghalaya": MEGHALAYA_WRB_TO_SOIL,
-}
-
-
-def query_soilgrids_wrb(lat: float, lon: float) -> list[tuple[str, float]]:
-    """
-    Queries ISRIC SoilGrids' classification endpoint for a point and returns
-    the raw list of (wrb_class_name, probability_pct) pairs, ordered highest
-    to lowest, or [] if the service is unreachable / the point has no data.
-    NOTE: SoilGrids takes lon then lat (GeoJSON point order) — the params
-    below are passed by name so there's no ambiguity at the call site.
-
-    Cached in SQLite for SOILGRIDS_CACHE_TTL_SECONDS per (lat, lon) rounded
-    to ~1m, surviving backend restarts. On a cache miss, tries a fast
-    timeout first and a more patient one on retry — SoilGrids is a public
-    best-effort service and occasionally takes a while to respond.
-    """
-    cached = _soilgrids_cache_get(lat, lon)
-    if cached is not None:
-        return cached
-
-    last_exc: Exception | None = None
-    for attempt, timeout in enumerate(SOILGRIDS_TIMEOUTS_SECONDS, start=1):
-        try:
-            resp = requests.get(
-                SOILGRIDS_URL,
-                params={"lon": lon, "lat": lat, "number_classes": SOILGRIDS_NUMBER_CLASSES},
-                timeout=timeout,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            probs = data.get("wrb_class_probability") or []
-            # Filter out null probabilities (SoilGrids returns nulls for
-            # points outside its coverage, e.g. open ocean or bad coordinate
-            # order).
-            result = [(cls, pct) for cls, pct in probs if pct is not None]
-            _soilgrids_cache_set(lat, lon, result)
-            return result
-        except (requests.exceptions.RequestException, ValueError) as exc:
-            last_exc = exc
-            if attempt < len(SOILGRIDS_TIMEOUTS_SECONDS):
-                logger.warning(
-                    "SoilGrids query attempt %d/%d (timeout=%ss) failed for (lat=%s, lon=%s): %s — retrying",
-                    attempt, len(SOILGRIDS_TIMEOUTS_SECONDS), timeout, lat, lon, exc,
-                )
-                continue
-
-    logger.warning(
-        "SoilGrids query failed for (lat=%s, lon=%s) after %d attempt(s): %s",
-        lat, lon, len(SOILGRIDS_TIMEOUTS_SECONDS), last_exc,
-    )
-    return []
-
-
-def lookup_soil_type(lat: float, lon: float, state: str) -> str | None:
-    """
-    Returns the Soil_Type string a given state's model expects, derived from
-    a weighted vote over SoilGrids' returned WRB probability classes (not
-    just the single top class, since SoilGrids confidence is often spread
-    thin across several candidates). Returns None if unconfigured for this
-    state, or if SoilGrids has no usable data for the point — callers should
-    fall back to a manual default/dropdown in that case, never block on it.
-    """
-    wrb_map = STATE_WRB_TO_SOIL.get((state or "").lower().strip())
-    if not wrb_map:
-        logger.info("No WRB->Soil_Type mapping configured for state '%s' yet.", state)
-        return None
-
-    probs = query_soilgrids_wrb(lat, lon)
-    if not probs:
-        logger.info("SoilGrids returned no usable classification for (lat=%s, lon=%s).", lat, lon)
-        return None
-
-    scores: dict[str, float] = {}
-    for wrb_class, pct in probs:
-        mapped = wrb_map.get(wrb_class)
-        if mapped:
-            scores[mapped] = scores.get(mapped, 0) + pct
-
-    if not scores:
-        logger.info(
-            "SoilGrids classes for (lat=%s, lon=%s) had no overlap with the '%s' mapping table: %s",
-            lat, lon, state, probs,
-        )
-        return None
-
-    best = max(scores, key=scores.get)
-    logger.info("Soil type for (lat=%s, lon=%s) -> %s (weighted scores: %s)", lat, lon, best, scores)
-    return best
-
-
-def geofence_centroid(body: dict) -> tuple[float, float] | None:
-    """
-    Resolves the lat/lng to run the soil lookup against. Prefers an explicit
-    latitude/longitude on the body (e.g. a marker the user placed); falls
-    back to the centroid of the geofence bounds{north,south,east,west} if
-    only a rectangle was drawn. Returns None if neither is present.
-    """
-    lat, lon = body.get("latitude"), body.get("longitude")
-    if lat is not None and lon is not None:
-        return float(lat), float(lon)
-
-    bounds = body.get("bounds") or {}
-    if all(k in bounds for k in ("north", "south", "east", "west")):
-        centroid_lat = (float(bounds["north"]) + float(bounds["south"])) / 2
-        centroid_lon = (float(bounds["east"]) + float(bounds["west"])) / 2
-        return centroid_lat, centroid_lon
-
-    return None
+# Soil-type lookup and yield prediction now live in crop_yield_service.py
+# (see the CROP YIELD SERVICE client section below).
 
 
 # ── MAPPLS (MapmyIndia) OAUTH CONFIG ──────────────────────────────────────────
@@ -455,18 +240,58 @@ def verify_token(token: str) -> dict | None:
         return None
 
 
+def trusted_header_identity() -> dict | None:
+    """
+    Alternate identity source for callers that are NOT our gateway. A caller
+    app authenticates its own users however it wants, then forwards the
+    request here with:
+
+        Authorization: Bearer <YIELD_SERVICE_API_KEY>
+        X-User-Email:    the already-verified user's email (required)
+        X-User-Role:     e.g. "farmer", "admin"                (optional)
+        X-User-State:    e.g. "rajasthan"                       (optional)
+        X-User-District: e.g. "Ajmer"                           (optional)
+
+    Only active when YIELD_SERVICE_API_KEY is set — unset (the default)
+    means this path is disabled and every caller must use gateway-token
+    auth, same as before. Returns None if the key doesn't match or
+    X-User-Email is missing, so callers fall through to gateway auth.
+    """
+    if not YIELD_SERVICE_API_KEY:
+        return None
+    auth_header = request.headers.get("Authorization", "")
+    presented_key = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
+    if presented_key != YIELD_SERVICE_API_KEY:
+        return None
+    email = request.headers.get("X-User-Email", "").strip()
+    if not email:
+        return None
+    return {
+        "uid": email,
+        "email": email,
+        "role": request.headers.get("X-User-Role", "").strip(),
+        "state": request.headers.get("X-User-State", "").strip(),
+        "district": request.headers.get("X-User-District", "").strip(),
+    }
+
+
 def require_auth(roles: list[str] | None = None):
     """
-    Route decorator: requires a valid 'Authorization: Bearer <token>' header.
-    Sets g.user = {"uid","email","role"}. If `roles` is given, the caller's
-    role must be in that list (case-insensitive) or the request gets 403.
+    Route decorator: requires either (a) a trusted-service identity via the
+    YIELD_SERVICE_API_KEY + X-User-* headers (any external app), or (b) a
+    valid 'Authorization: Bearer <token>' verified against our own gateway
+    (the crop app's existing behavior, unchanged). Sets g.user =
+    {"uid","email","role","state","district"}. If `roles` is given, the
+    caller's role must be in that list (case-insensitive) or 403.
     """
     def decorator(fn):
         @wraps(fn)
         def wrapped(*args, **kwargs):
-            auth_header = request.headers.get("Authorization", "")
-            token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
-            user = verify_token(token)
+            user = trusted_header_identity()
+            if not user:
+                auth_header = request.headers.get("Authorization", "")
+                token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
+                user = verify_token(token)
             if not user:
                 return jsonify({"error": "Unauthorized — missing or invalid session token"}), 401
             if roles and (user.get("role") or "").lower() not in [r.lower() for r in roles]:
@@ -477,163 +302,164 @@ def require_auth(roles: list[str] | None = None):
     return decorator
 
 
-# ── DB HELPERS ────────────────────────────────────────────────────────────────
+# ── LAND SERVICE CLIENT ─────────────────────────────────────────────────
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS lands (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    property_name       TEXT NOT NULL,
-    state               TEXT NOT NULL,
-    district            TEXT,
-    user_email          TEXT,
-    crop                TEXT,
-    soil_type           TEXT,
-    irrigation_type     TEXT,
-    fertilizer_kg_per_ha REAL,
-    pest_incidence      TEXT,
-    season              TEXT,
-    latitude            REAL,
-    longitude           REAL,
-    area_hectare        REAL,
-    bounds_json         TEXT,
-    predicted_yield     REAL,
-    normal_yield        REAL,
-    anomaly_pct         REAL,
-    source              TEXT,
-    created_at          TEXT NOT NULL,
-    updated_at          TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS soilgrids_cache (
-    lat         REAL NOT NULL,
-    lon         REAL NOT NULL,
-    fetched_at  REAL NOT NULL,
-    probs_json  TEXT NOT NULL,
-    PRIMARY KEY (lat, lon)
-);
-"""
+class LandServiceError(Exception):
+    pass
 
 
-def get_db() -> sqlite3.Connection:
-    if "db" not in g:
-        g.db = sqlite3.connect(str(DB_PATH))
-        g.db.row_factory = sqlite3.Row
-    return g.db
+def _land_headers() -> dict:
+    headers = {"Content-Type": "application/json"}
+    if LAND_SERVICE_API_KEY:
+        headers["Authorization"] = f"Bearer {LAND_SERVICE_API_KEY}"
+    return headers
 
 
-@app.teardown_appcontext
-def close_db(_exc=None):
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
+def _land_request(method: str, path: str, **kwargs) -> dict:
+    url = f"{LAND_SERVICE_URL}{path}"
+    try:
+        resp = requests.request(method, url, headers=_land_headers(), timeout=10, **kwargs)
+    except requests.exceptions.RequestException as exc:
+        raise LandServiceError(f"land_service unreachable at {url}: {exc}") from exc
+    if resp.status_code == 404:
+        return None
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        raise LandServiceError(f"land_service {method} {path} failed: {exc} — {resp.text[:300]}") from exc
+    return resp.json() if resp.content else None
 
 
-def init_db():
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.executescript(SCHEMA)
-    # Migration for pre-existing DBs created before user_email existed
-    # (CREATE TABLE IF NOT EXISTS won't add columns to an already-existing
-    # table).
-    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(lands)")}
-    if "user_email" not in existing_cols:
-        conn.execute("ALTER TABLE lands ADD COLUMN user_email TEXT")
-    conn.commit()
-    conn.close()
+# Crop-specific fields that live inside the opaque `metadata` blob on the
+# land_service side, since land_service itself has no idea what a "crop"
+# or "soil type" is.
+_LAND_METADATA_FIELDS = (
+    "state", "district", "crop", "soil_type", "irrigation_type",
+    "fertilizer_kg_per_ha", "pest_incidence", "season",
+    "predicted_yield", "normal_yield", "anomaly_pct", "source",
+)
 
 
-def row_to_dict(row: sqlite3.Row) -> dict:
-    d = dict(row)
-    if d.get("bounds_json"):
-        try:
-            d["bounds"] = json.loads(d["bounds_json"])
-        except (TypeError, ValueError):
-            d["bounds"] = None
-    else:
-        d["bounds"] = None
-    d.pop("bounds_json", None)
+def _parcel_to_land_dict(parcel: dict) -> dict:
+    """Translate a generic land_service parcel back into this app's
+    original land-record shape, so every existing route/frontend keeps
+    seeing exactly the same fields as when this had its own `lands`
+    table."""
+    metadata = parcel.get("metadata") or {}
+    d = {
+        "id": parcel["id"],
+        "property_name": parcel.get("label"),
+        "user_email": parcel.get("ownerId"),
+        "latitude": parcel.get("latitude"),
+        "longitude": parcel.get("longitude"),
+        "area_hectare": parcel.get("areaHectare"),
+        "bounds": parcel.get("bounds"),
+        "created_at": parcel.get("createdAt"),
+        "updated_at": parcel.get("updatedAt"),
+    }
+    for field in _LAND_METADATA_FIELDS:
+        d[field] = metadata.get(field)
     return d
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-# ── STATE / MODEL BACKEND PROXY ────────────────────────────────────────────────
-
-def state_port(state: str) -> int:
-    return STATE_BACKEND_PORTS.get((state or "").lower().strip(), STATE_BACKEND_PORTS[DEFAULT_STATE])
-
-
-def call_predict(state: str, payload: dict) -> dict:
-    """
-    Proxy a prediction request to the running per-state crop backend
-    (backend_2.py) started by main.py. Returns dict with yield/normal/anomaly/source,
-    or an 'error' key if the backend is unreachable / crop invalid.
-    """
-    port = state_port(state)
-    url = f"http://127.0.0.1:{port}/predict"
-    try:
-        resp = requests.post(url, json=payload, timeout=15)
-        resp.raise_for_status()
-        return resp.json()
-    except requests.exceptions.RequestException as exc:
-        return {"error": f"Could not reach crop backend for state '{state}' on port {port}: {exc}"}
-
-
-def call_valid_crops(state: str) -> list:
-    port = state_port(state)
-    url = f"http://127.0.0.1:{port}/valid_crops"
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        # backend_2.py /valid_crops may return a list or {"crops": [...]}
-        if isinstance(data, list):
-            return data
-        return data.get("crops", data.get("valid_crops", []))
-    except requests.exceptions.RequestException:
-        return []
-
-
-def call_valid_districts(state: str) -> list:
-    port = state_port(state)
-    url = f"http://127.0.0.1:{port}/valid_districts"
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        if isinstance(data, list):
-            return data
-        return data.get("valid_districts", [])
-    except requests.exceptions.RequestException:
-        return []
-
-
-def build_predict_payload(body: dict) -> dict:
-    """
-    Map a land record / form body to the fields backend_2.py's /predict
-    expects. If soil_type wasn't supplied by the caller (frontend didn't
-    auto-detect it, or the user's manual dropdown was left unset), try the
-    SoilGrids lookup against the geofenced lat/lng before falling back to
-    the "Alluvial" default.
-    """
-    soil_type = body.get("soil_type")
-    if not soil_type:
-        state = body.get("state", DEFAULT_STATE)
-        point = geofence_centroid(body)
-        if point:
-            soil_type = lookup_soil_type(point[0], point[1], state)
-
-    return {
-        "crop": body.get("crop", ""),
-        "district": body.get("district", "Dhalai"),
-        "Season": body.get("season", "Kharif"),
-        "Soil_Type": soil_type or "Alluvial",
-        "Irrigation_Type": body.get("irrigation_type", "Canal"),
-        "Area (Hectare)": float(body.get("area_hectare") or 0) or 500,
-        "Fertilizer_kg_per_ha": float(body.get("fertilizer_kg_per_ha") or 70),
-        "Pest_Disease_Incidence": body.get("pest_incidence", "Low"),
+def _land_dict_to_parcel_payload(body: dict, owner_email: str) -> dict:
+    """Translate this app's land-record fields into a generic land_service
+    parcel payload, folding crop-specific fields into `metadata`."""
+    metadata = {field: body.get(field) for field in _LAND_METADATA_FIELDS if body.get(field) is not None}
+    payload = {
+        "ownerId": owner_email,
+        "label": body.get("property_name"),
+        "latitude": body.get("latitude"),
+        "longitude": body.get("longitude"),
+        "areaHectare": body.get("area_hectare"),
+        "metadata": metadata,
     }
+    if body.get("bounds") is not None:
+        payload["bounds"] = body.get("bounds")
+    return payload
+
+
+def land_create(body: dict, owner_email: str) -> dict:
+    parcel = _land_request("POST", "/parcels", json=_land_dict_to_parcel_payload(body, owner_email))
+    return _parcel_to_land_dict(parcel)
+
+
+def land_list(owner_email: str | None = None) -> list[dict]:
+    params = {"ownerId": owner_email} if owner_email else None
+    parcels = _land_request("GET", "/parcels", params=params) or []
+    return [_parcel_to_land_dict(p) for p in parcels]
+
+
+def land_get(land_id: int) -> dict | None:
+    parcel = _land_request("GET", f"/parcels/{land_id}")
+    return _parcel_to_land_dict(parcel) if parcel else None
+
+
+def land_update(land_id: int, body: dict) -> dict:
+    parcel = _land_request("PUT", f"/parcels/{land_id}", json=_land_dict_to_parcel_payload(body, body.get("user_email")))
+    return _parcel_to_land_dict(parcel)
+
+
+def land_delete(land_id: int) -> None:
+    _land_request("DELETE", f"/parcels/{land_id}")
+
+
+# ── CROP YIELD SERVICE CLIENT ───────────────────────────────────────────
+
+class CropYieldServiceError(Exception):
+    pass
+
+
+def _crop_yield_headers() -> dict:
+    headers = {"Content-Type": "application/json"}
+    if CROP_YIELD_SERVICE_API_KEY:
+        headers["Authorization"] = f"Bearer {CROP_YIELD_SERVICE_API_KEY}"
+    return headers
+
+
+def _crop_yield_request(method: str, path: str, **kwargs) -> dict:
+    url = f"{CROP_YIELD_SERVICE_URL}{path}"
+    try:
+        resp = requests.request(method, url, headers=_crop_yield_headers(), timeout=20, **kwargs)
+    except requests.exceptions.RequestException as exc:
+        raise CropYieldServiceError(f"crop_yield_service unreachable at {url}: {exc}") from exc
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        raise CropYieldServiceError(f"crop_yield_service {method} {path} failed: {exc} — {resp.text[:300]}") from exc
+    return resp.json() if resp.content else None
+
+
+def cy_valid_crops(state: str) -> dict:
+    return _crop_yield_request("GET", "/valid_crops", params={"state": state})
+
+
+def cy_valid_districts(state: str) -> dict:
+    return _crop_yield_request("GET", "/valid_districts", params={"state": state})
+
+
+def cy_soil_type(state: str, latitude=None, longitude=None, bounds=None) -> dict:
+    params = {"state": state}
+    if latitude is not None:
+        params["lat"] = latitude
+    if longitude is not None:
+        params["lon"] = longitude
+    if bounds:
+        params.update(bounds)
+    return _crop_yield_request("GET", "/soil_type", params=params)
+
+
+def cy_predict(body: dict) -> dict:
+    """body may include state, crop, district, season, soil_type,
+    latitude/longitude or bounds, irrigation_type, area_hectare,
+    fertilizer_kg_per_ha, pest_incidence — crop_yield_service auto-detects
+    soil_type from lat/lng if it's not supplied."""
+    return _crop_yield_request("POST", "/predict", json=body)
+
+
+def now_iso() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ── FRONTEND PAGE ROUTES (served directly; gateway.py can proxy these) ────────
@@ -671,7 +497,7 @@ def serve_js(filename):
 
 @app.route("/api/yield/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "db": str(DB_PATH)})
+    return jsonify({"status": "ok"})
 
 
 # ── API: VALID CROPS (proxy, for populating the editor's crop dropdown) ───────
@@ -679,7 +505,11 @@ def health():
 @app.route("/api/yield/valid_crops", methods=["GET"])
 def valid_crops():
     state = request.args.get("state", DEFAULT_STATE)
-    return jsonify({"state": state, "crops": call_valid_crops(state)})
+    try:
+        return jsonify(cy_valid_crops(state))
+    except CropYieldServiceError as exc:
+        logger.error("valid_crops: %s", exc)
+        return jsonify({"error": "crop yield service unavailable"}), 502
 
 
 # ── API: VALID DISTRICTS (proxy, for populating the editor's district dropdown) ─
@@ -691,10 +521,14 @@ def valid_crops():
 @app.route("/api/yield/valid_districts", methods=["GET"])
 def valid_districts():
     state = request.args.get("state", DEFAULT_STATE)
-    return jsonify({"state": state, "districts": call_valid_districts(state)})
+    try:
+        return jsonify(cy_valid_districts(state))
+    except CropYieldServiceError as exc:
+        logger.error("valid_districts: %s", exc)
+        return jsonify({"error": "crop yield service unavailable"}), 502
 
 
-# ── API: SOIL TYPE LOOKUP (SoilGrids, by geofence lat/lng) ────────────────────
+# ── API: SOIL TYPE LOOKUP (proxy to crop_yield_service, by geofence lat/lng) ──
 # Frontend calls this right after a geofence is drawn/dragged so it can
 # auto-fill the soil dropdown in the editor before the user hits "Analyze".
 # Accepts either an explicit lat/lon, or a bounds{north,south,east,west}
@@ -704,26 +538,24 @@ def valid_districts():
 def soil_lookup():
     if request.method == "GET":
         state = request.args.get("state", DEFAULT_STATE)
-        body = {
-            "latitude": request.args.get("lat", type=float),
-            "longitude": request.args.get("lon", type=float),
-        }
+        lat = request.args.get("lat", type=float)
+        lon = request.args.get("lon", type=float)
+        bounds = None
     else:
         body = request.get_json(force=True) or {}
         state = body.get("state", DEFAULT_STATE)
+        lat = body.get("latitude")
+        lon = body.get("longitude")
+        bounds = body.get("bounds")
 
-    point = geofence_centroid(body)
-    if not point:
+    if lat is None and lon is None and not bounds:
         return jsonify({"error": "latitude/longitude (or bounds) are required"}), 400
 
-    soil_type = lookup_soil_type(point[0], point[1], state)
-    return jsonify({
-        "state": state,
-        "latitude": point[0],
-        "longitude": point[1],
-        "soil_type": soil_type,
-        "configured": (state or "").lower().strip() in STATE_WRB_TO_SOIL,
-    })
+    try:
+        return jsonify(cy_soil_type(state, latitude=lat, longitude=lon, bounds=bounds))
+    except CropYieldServiceError as exc:
+        logger.error("soil_lookup: %s", exc)
+        return jsonify({"error": "crop yield service unavailable"}), 502
 
 
 # ── API: ANALYZE (does NOT persist — used by the "Analyze" button) ────────────
@@ -738,8 +570,11 @@ def analyze():
     if body.get("latitude") is None or body.get("longitude") is None:
         return jsonify({"error": "latitude/longitude are required (geofence the land first)"}), 400
 
-    payload = build_predict_payload(body)
-    result = call_predict(state, payload)
+    try:
+        result = cy_predict(body)
+    except CropYieldServiceError as exc:
+        logger.error("analyze: %s", exc)
+        return jsonify({"error": "crop yield service unavailable"}), 502
 
     if "error" in result:
         return jsonify(result), 502
@@ -759,36 +594,33 @@ def analyze():
 @require_auth()
 def list_lands():
     state = request.args.get("state")
-    db = get_db()
     role = (g.user.get("role") or "").lower()
 
-    clauses, params = [], []
-    if state:
-        clauses.append("state = ?")
-        params.append(state)
+    # land_service only filters by ownerId server-side (it doesn't
+    # understand state/district — those live in opaque metadata). So we
+    # fetch the relevant owner scope and filter the rest in Python here.
+    try:
+        if role == "farmer":
+            lands = land_list(owner_email=g.user["email"])
+        else:
+            lands = land_list()
+    except LandServiceError as exc:
+        logger.error("list_lands: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
 
-    # Farmers only ever see their own lands. district_admin is scoped to
-    # their assigned district; state_admin is scoped to their assigned
-    # state (regardless of ?state=, since that's their whole jurisdiction).
-    # admin/analyst see everything (optionally filtered by ?state=).
-    if role == "farmer":
-        clauses.append("user_email = ?")
-        params.append(g.user["email"])
-    elif role == "district_admin":
+    if state:
+        lands = [l for l in lands if (l.get("state") or "").lower() == state.lower()]
+    if role == "district_admin":
         if g.user.get("district"):
-            clauses.append("district = ?")
-            params.append(g.user["district"])
+            lands = [l for l in lands if l.get("district") == g.user["district"]]
         if g.user.get("state"):
-            clauses.append("state = ?")
-            params.append(g.user["state"])
+            lands = [l for l in lands if l.get("state") == g.user["state"]]
     elif role == "state_admin":
         if g.user.get("state"):
-            clauses.append("state = ?")
-            params.append(g.user["state"])
+            lands = [l for l in lands if l.get("state") == g.user["state"]]
 
-    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    rows = db.execute(f"SELECT * FROM lands {where} ORDER BY updated_at DESC", params).fetchall()
-    return jsonify([row_to_dict(r) for r in rows])
+    lands.sort(key=lambda l: l.get("updated_at") or "", reverse=True)
+    return jsonify(lands)
 
 
 @app.route("/api/yield/internal/production", methods=["GET"])
@@ -802,9 +634,10 @@ def internal_production():
 
     Production per land is estimated as predicted_yield * area_hectare
     (falls back to normal_yield if a prediction hasn't been run yet for
-    that land), summed per crop. Returns a flat list of lands actually
-    used in the case that fell back to normal_yield, capacity for
-    debugging.
+    that land), summed per crop. Land records themselves now live in
+    land_service.py — this fetches all parcels and filters/aggregates
+    here, since land_service doesn't interpret the crop/state/district
+    fields tucked inside metadata.
 
     Also returns "by_farmer": a per-land breakdown (crop + user_email +
     production_mt) so callers that want a per-farmer view (e.g. the cold
@@ -815,36 +648,32 @@ def internal_production():
     """
     state = request.args.get("state")
     district = request.args.get("district")
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    clauses, params = [], []
+    try:
+        lands = land_list()
+    except LandServiceError as exc:
+        logger.error("internal_production: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
+
     if state:
-        clauses.append("lower(state) = lower(?)")
-        params.append(state)
+        lands = [l for l in lands if (l.get("state") or "").lower() == state.lower()]
     if district:
-        clauses.append("lower(district) = lower(?)")
-        params.append(district)
-    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    rows = conn.execute(
-        f"SELECT crop, area_hectare, predicted_yield, normal_yield, user_email FROM lands {where}", params
-    ).fetchall()
-    conn.close()
+        lands = [l for l in lands if (l.get("district") or "").lower() == district.lower()]
 
     totals: dict[str, float] = {}
     by_farmer: list[dict] = []
-    for row in rows:
-        crop = row["crop"]
-        area = row["area_hectare"] or 0
+    for land in lands:
+        crop = land.get("crop")
+        area = land.get("area_hectare") or 0
         if not crop or not area:
             continue
-        yield_rate = row["predicted_yield"] if row["predicted_yield"] is not None else row["normal_yield"]
+        yield_rate = land.get("predicted_yield") if land.get("predicted_yield") is not None else land.get("normal_yield")
         if not yield_rate:
             continue
         production = float(yield_rate) * float(area)
         totals[crop] = totals.get(crop, 0.0) + production
         by_farmer.append({
             "crop": crop,
-            "user_email": row["user_email"],
+            "user_email": land.get("user_email"),
             "production_mt": production,
         })
 
@@ -854,23 +683,26 @@ def internal_production():
 @app.route("/api/yield/lands/<int:land_id>", methods=["GET"])
 @require_auth()
 def get_land(land_id):
-    db = get_db()
-    row = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
-    if not row:
+    try:
+        land = land_get(land_id)
+    except LandServiceError as exc:
+        logger.error("get_land: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
+    if not land:
         return jsonify({"error": "land not found"}), 404
 
     role = (g.user.get("role") or "").lower()
-    if role == "farmer" and row["user_email"] != g.user["email"]:
+    if role == "farmer" and land["user_email"] != g.user["email"]:
         return jsonify({"error": "Forbidden — not your land record"}), 403
     if role == "district_admin":
-        if g.user.get("district") and row["district"] != g.user["district"]:
+        if g.user.get("district") and land["district"] != g.user["district"]:
             return jsonify({"error": "Forbidden — outside your assigned district"}), 403
-        if g.user.get("state") and row["state"] != g.user["state"]:
+        if g.user.get("state") and land["state"] != g.user["state"]:
             return jsonify({"error": "Forbidden — outside your assigned state"}), 403
-    if role == "state_admin" and g.user.get("state") and row["state"] != g.user["state"]:
+    if role == "state_admin" and g.user.get("state") and land["state"] != g.user["state"]:
         return jsonify({"error": "Forbidden — outside your assigned state"}), 403
 
-    return jsonify(row_to_dict(row))
+    return jsonify(land)
 
 
 @app.route("/api/yield/lands", methods=["POST"])
@@ -884,162 +716,138 @@ def create_land():
         return jsonify({"error": "latitude/longitude are required — geofence the land on the map first"}), 400
 
     state = body.get("state", DEFAULT_STATE)
-
-    # Auto-detect soil type from the geofence before persisting, if the
-    # caller (frontend) didn't already supply one via the dropdown.
     soil_type = body.get("soil_type")
-    if not soil_type:
-        point = geofence_centroid(body)
-        if point:
-            soil_type = lookup_soil_type(point[0], point[1], state)
 
     # If the caller hasn't already analyzed (no predicted_yield passed in),
     # run the prediction now so a land is never saved without a yield.
+    # crop_yield_service auto-detects soil_type from lat/lng if it's not
+    # already supplied — no separate soil-lookup call needed here.
     predicted_yield = body.get("predicted_yield")
     normal_yield = body.get("normal_yield")
     anomaly_pct = body.get("anomaly_pct")
     source = body.get("source")
 
     if predicted_yield is None and body.get("crop"):
-        predict_body = {**body, "soil_type": soil_type}
-        result = call_predict(state, build_predict_payload(predict_body))
+        try:
+            result = cy_predict(body)
+        except CropYieldServiceError as exc:
+            logger.error("create_land predict: %s", exc)
+            result = {"error": str(exc)}
         if "error" not in result:
             predicted_yield = result.get("yield")
             normal_yield = result.get("normal")
             anomaly_pct = result.get("anomaly")
             source = result.get("source")
+            soil_type = soil_type or result.get("soil_type_used")
 
-    ts = now_iso()
-    db = get_db()
-    cur = db.execute(
-        """
-        INSERT INTO lands (
-            property_name, state, district, user_email, crop, soil_type, irrigation_type,
-            fertilizer_kg_per_ha, pest_incidence, season, latitude, longitude,
-            area_hectare, bounds_json, predicted_yield, normal_yield, anomaly_pct,
-            source, created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """,
-        (
-            body.get("property_name"),
-            state,
-            body.get("district"),
-            g.user["email"],
-            body.get("crop"),
-            soil_type,
-            body.get("irrigation_type"),
-            body.get("fertilizer_kg_per_ha"),
-            body.get("pest_incidence"),
-            body.get("season"),
-            body.get("latitude"),
-            body.get("longitude"),
-            body.get("area_hectare"),
-            json.dumps(body.get("bounds")) if body.get("bounds") else None,
-            predicted_yield,
-            normal_yield,
-            anomaly_pct,
-            source,
-            ts,
-            ts,
-        ),
-    )
-    db.commit()
-    row = db.execute("SELECT * FROM lands WHERE id = ?", (cur.lastrowid,)).fetchone()
-    return jsonify(row_to_dict(row)), 201
+    if not soil_type:
+        # No prediction ran (e.g. crop not supplied yet) — still auto-fill
+        # soil_type via the standalone soil lookup so it's on the record.
+        try:
+            soil_type = cy_soil_type(state, latitude=body.get("latitude"), longitude=body.get("longitude"),
+                                      bounds=body.get("bounds")).get("soil_type")
+        except CropYieldServiceError as exc:
+            logger.warning("create_land soil lookup: %s", exc)
+
+    to_store = {
+        **body,
+        "state": state,
+        "soil_type": soil_type,
+        "predicted_yield": predicted_yield,
+        "normal_yield": normal_yield,
+        "anomaly_pct": anomaly_pct,
+        "source": source,
+    }
+    try:
+        land = land_create(to_store, g.user["email"])
+    except LandServiceError as exc:
+        logger.error("create_land: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
+    return jsonify(land), 201
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["PUT"])
 @require_auth(roles=["farmer"])
 def update_land(land_id):
-    db = get_db()
-    existing = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
+    try:
+        existing = land_get(land_id)
+    except LandServiceError as exc:
+        logger.error("update_land: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
     if not existing:
         return jsonify({"error": "land not found"}), 404
     if (g.user.get("role") or "").lower() == "farmer" and existing["user_email"] != g.user["email"]:
         return jsonify({"error": "Forbidden — not your land record"}), 403
 
     body = request.get_json(force=True) or {}
-    merged = {**row_to_dict(existing), **{k: v for k, v in body.items() if v is not None}}
+    merged = {**existing, **{k: v for k, v in body.items() if v is not None}}
     state = merged.get("state", DEFAULT_STATE)
 
-    # Re-detect soil type only if it's genuinely missing (e.g. this land
-    # predates the SoilGrids wiring) — otherwise keep whatever's already on
-    # the record rather than silently overwriting a user's manual override.
-    if not merged.get("soil_type"):
-        point = geofence_centroid(merged)
-        if point:
-            merged["soil_type"] = lookup_soil_type(point[0], point[1], state)
-
-    # Re-analyze on edit unless the caller explicitly supplied fresh results.
+    # Re-analyze on edit unless the caller explicitly supplied fresh
+    # results. crop_yield_service auto-detects soil_type from lat/lng if
+    # it's genuinely missing on the record — otherwise it keeps whatever's
+    # already there rather than silently overwriting a manual override
+    # (same behavior as before, just enforced by build_predict_payload's
+    # default inside crop_yield_service).
     predicted_yield = body.get("predicted_yield")
     normal_yield = body.get("normal_yield")
     anomaly_pct = body.get("anomaly_pct")
     source = body.get("source")
 
     if predicted_yield is None and merged.get("crop"):
-        result = call_predict(state, build_predict_payload(merged))
+        try:
+            result = cy_predict(merged)
+        except CropYieldServiceError as exc:
+            logger.error("update_land predict: %s", exc)
+            result = {"error": str(exc)}
         if "error" not in result:
             predicted_yield = result.get("yield")
             normal_yield = result.get("normal")
             anomaly_pct = result.get("anomaly")
             source = result.get("source")
+            if not merged.get("soil_type"):
+                merged["soil_type"] = result.get("soil_type_used")
         else:
             predicted_yield = existing["predicted_yield"]
             normal_yield = existing["normal_yield"]
             anomaly_pct = existing["anomaly_pct"]
             source = existing["source"]
 
-    ts = now_iso()
-    db.execute(
-        """
-        UPDATE lands SET
-            property_name = ?, state = ?, district = ?, crop = ?, soil_type = ?,
-            irrigation_type = ?, fertilizer_kg_per_ha = ?, pest_incidence = ?,
-            season = ?, latitude = ?, longitude = ?, area_hectare = ?,
-            bounds_json = ?, predicted_yield = ?, normal_yield = ?, anomaly_pct = ?,
-            source = ?, updated_at = ?
-        WHERE id = ?
-        """,
-        (
-            merged.get("property_name"),
-            state,
-            merged.get("district"),
-            merged.get("crop"),
-            merged.get("soil_type"),
-            merged.get("irrigation_type"),
-            merged.get("fertilizer_kg_per_ha"),
-            merged.get("pest_incidence"),
-            merged.get("season"),
-            merged.get("latitude"),
-            merged.get("longitude"),
-            merged.get("area_hectare"),
-            json.dumps(merged.get("bounds")) if merged.get("bounds") else None,
-            predicted_yield,
-            normal_yield,
-            anomaly_pct,
-            source,
-            ts,
-            land_id,
-        ),
-    )
-    db.commit()
-    row = db.execute("SELECT * FROM lands WHERE id = ?", (land_id,)).fetchone()
-    return jsonify(row_to_dict(row))
+    merged.update({
+        "state": state,
+        "predicted_yield": predicted_yield,
+        "normal_yield": normal_yield,
+        "anomaly_pct": anomaly_pct,
+        "source": source,
+    })
+
+    try:
+        land = land_update(land_id, merged)
+    except LandServiceError as exc:
+        logger.error("update_land: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
+    return jsonify(land)
 
 
 @app.route("/api/yield/lands/<int:land_id>", methods=["DELETE"])
 @require_auth(roles=["farmer", "admin", "state_admin", "district_admin"])
 def delete_land(land_id):
-    db = get_db()
-    existing = db.execute("SELECT id, user_email FROM lands WHERE id = ?", (land_id,)).fetchone()
+    try:
+        existing = land_get(land_id)
+    except LandServiceError as exc:
+        logger.error("delete_land: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
     if not existing:
         return jsonify({"error": "land not found"}), 404
     # Farmers may only delete their own land record; admin/state_admin/
     # district_admin can delete any land record.
     if (g.user.get("role") or "").lower() == "farmer" and existing["user_email"] != g.user["email"]:
         return jsonify({"error": "Forbidden — not your land record"}), 403
-    db.execute("DELETE FROM lands WHERE id = ?", (land_id,))
-    db.commit()
+    try:
+        land_delete(land_id)
+    except LandServiceError as exc:
+        logger.error("delete_land: %s", exc)
+        return jsonify({"error": "land service unavailable"}), 502
     return jsonify({"deleted": land_id})
 
 
@@ -1254,10 +1062,9 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=5008)
     args = parser.parse_args()
 
-    init_db()
     print("=" * 55)
-    print("  YIELD DETECT BACKEND")
-    print(f"  DB:  {DB_PATH}")
+    print("  YIELD DETECT BACKEND (adapter)")
+    print(f"  Yield platform service: {YIELD_PLATFORM_SERVICE_URL}")
     print(f"  Running at http://127.0.0.1:{args.port}")
     print("=" * 55)
     app.run(host="0.0.0.0", port=args.port, debug=False)

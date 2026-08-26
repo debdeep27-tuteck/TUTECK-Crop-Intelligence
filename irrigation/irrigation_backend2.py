@@ -1,32 +1,174 @@
 """
-irrigation_backend.py
-======================
-Flask backend for the AI Irrigation Advisory System.
-Fetches soil moisture + weather forecasts from Open-Meteo,
-estimates crop water requirements by growth stage, and
-produces a 7-day irrigation schedule.
+service.py — AI Irrigation Advisory Microservice
+==================================================
+Standalone Flask microservice for the AI Irrigation Advisory System.
+Fetches soil moisture + weather forecasts from Open-Meteo, estimates crop
+water requirements by growth stage, and produces a 7-day irrigation
+schedule. Designed to be run and consumed independently of the CropAI
+frontend/monolith — any external app can call it over HTTP once an API
+key is issued.
 
-Run:
-    pip install flask flask-cors requests numpy pandas
-    python irrigation_backend.py
+Local run:
+    pip install -r requirements.txt
+    cp .env.example .env      # then edit values
+    python service.py
 
-Endpoints:
-    POST /advise   — main irrigation schedule
-    GET  /health   — health check
-    GET  /crops    — list supported crops
+Production run:
+    gunicorn -w 4 -b 0.0.0.0:5001 service:app
+
+Auth:
+    All endpoints except /health require an API key, sent as either:
+      Header:  X-API-Key: <key>
+      or       Authorization: Bearer <key>
+    Valid keys are set via the IRRIGATION_API_KEYS env var (comma-separated).
+    If that env var is unset, auth is disabled (open access) — fine for local
+    dev, NOT recommended for a public deployment.
+
+Versioned endpoints (preferred):
+    GET  /api/v1/health    — health check (no auth)
+    GET  /api/v1/crops     — list supported crops
+    GET  /api/v1/districts — list districts for a state
+    POST /api/v1/advise    — main irrigation schedule
+
+Unversioned aliases (/health, /crops, /districts, /advise) are kept for
+backward compatibility with existing callers and behave identically.
 """
 
 import datetime
+import logging
+import os
+import time
 import warnings
+from functools import wraps
+
 import requests
 import numpy as np
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
+
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    _HAS_LIMITER = True
+except ImportError:
+    _HAS_LIMITER = False
 
 warnings.filterwarnings("ignore")
 
+# ── LOGGING ────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO"),
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+log = logging.getLogger("irrigation-service")
+
 app = Flask(__name__)
-CORS(app)
+
+# ── CORS ───────────────────────────────────────────────────────────────────
+# Comma-separated list of allowed origins, e.g. "https://cropai.example.com,https://partner.example.com"
+# Defaults to "*" (any origin) so the service works out-of-the-box for
+# third-party API consumers; tighten this in production if you only expect
+# browser-based callers from known domains (server-to-server callers aren't
+# affected by CORS regardless of this setting).
+_allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
+CORS(app, resources={r"/*": {"origins": _allowed_origins.split(",") if _allowed_origins != "*" else "*"}})
+
+# ── API KEY AUTH ───────────────────────────────────────────────────────────
+_raw_keys = os.environ.get("IRRIGATION_API_KEYS", "").strip()
+API_KEYS = {k.strip() for k in _raw_keys.split(",") if k.strip()}
+AUTH_ENABLED = len(API_KEYS) > 0
+
+if not AUTH_ENABLED:
+    log.warning(
+        "IRRIGATION_API_KEYS is not set — running WITHOUT API key auth. "
+        "Set IRRIGATION_API_KEYS before exposing this service publicly."
+    )
+
+
+def _extract_api_key():
+    key = request.headers.get("X-API-Key")
+    if key:
+        return key.strip()
+    auth = request.headers.get("Authorization", "")
+    if auth.lower().startswith("bearer "):
+        return auth[7:].strip()
+    return None
+
+
+def require_api_key(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not AUTH_ENABLED:
+            return fn(*args, **kwargs)
+        key = _extract_api_key()
+        if not key or key not in API_KEYS:
+            return jsonify({
+                "error": "unauthorized",
+                "message": "Missing or invalid API key. Send it as 'X-API-Key' or 'Authorization: Bearer <key>'.",
+            }), 401
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+# ── RATE LIMITING ──────────────────────────────────────────────────────────
+if _HAS_LIMITER:
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=[os.environ.get("RATE_LIMIT_DEFAULT", "60 per minute")],
+        storage_uri=os.environ.get("RATE_LIMIT_STORAGE_URI", "memory://"),
+    )
+else:
+    log.warning("flask-limiter not installed — rate limiting disabled. `pip install flask-limiter` to enable it.")
+
+    class _NoopLimiter:
+        def limit(self, *a, **k):
+            def deco(fn):
+                return fn
+            return deco
+
+        def exempt(self, fn):
+            return fn
+
+    limiter = _NoopLimiter()
+
+# ── REQUEST LOGGING ────────────────────────────────────────────────────────
+@app.before_request
+def _start_timer():
+    g._t0 = time.time()
+
+
+@app.after_request
+def _log_request(response):
+    try:
+        dt_ms = (time.time() - getattr(g, "_t0", time.time())) * 1000
+        log.info("%s %s -> %s (%.1fms)", request.method, request.path, response.status_code, dt_ms)
+    except Exception:
+        pass
+    return response
+
+
+# ── STANDARDIZED ERROR HANDLERS ────────────────────────────────────────────
+@app.errorhandler(404)
+def _not_found(e):
+    return jsonify({"error": "not_found", "message": "No such endpoint. See /api/v1/health for service info."}), 404
+
+
+@app.errorhandler(405)
+def _method_not_allowed(e):
+    return jsonify({"error": "method_not_allowed", "message": str(e)}), 405
+
+
+@app.errorhandler(429)
+def _rate_limited(e):
+    return jsonify({"error": "rate_limited", "message": "Too many requests. Please slow down and retry later."}), 429
+
+
+@app.errorhandler(500)
+def _server_error(e):
+    log.exception("Unhandled server error")
+    return jsonify({"error": "internal_error", "message": "Something went wrong processing your request."}), 500
+
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────
 
@@ -39,10 +181,15 @@ CORS(app)
 #   python backend_2.py --state rajasthan --port 5006
 # This must match CROP_BACKENDS in main.py.
 CROP_BACKEND_PORTS = {
-    "tripura":   5000,
-    "meghalaya": 5002,
-    "rajasthan": 5006,
+    "tripura":   int(os.environ.get("CROP_BACKEND_PORT_TRIPURA", 5000)),
+    "meghalaya": int(os.environ.get("CROP_BACKEND_PORT_MEGHALAYA", 5002)),
+    "rajasthan": int(os.environ.get("CROP_BACKEND_PORT_RAJASTHAN", 5006)),
 }
+# Host for the crop-recommender backends. Defaults to localhost, since
+# historically this service ran alongside them on the same machine — but as
+# an independent microservice it may now run elsewhere, so this is
+# overridable (e.g. CROP_BACKEND_HOST=crop-backend.internal).
+CROP_BACKEND_HOST = os.environ.get("CROP_BACKEND_HOST", "127.0.0.1")
 
 # ── STATE-AWARE DISTRICT COORDS ────────────────────────────────────────────────
 # Add new states here as needed.
@@ -112,15 +259,17 @@ def get_district_coords(state: str = "tripura") -> dict:
     return ALL_DISTRICT_COORDS.get(state.lower(), ALL_DISTRICT_COORDS["tripura"])
 
 
+@app.route("/api/v1/districts", methods=["GET"])
 @app.route("/districts", methods=["GET"])
+@require_api_key
 def districts():
     """
-    State-aware district list for the frontend dropdown.
-    GET /districts?state=rajasthan
+    State-aware district list for API consumers / frontend dropdowns.
+    GET /api/v1/districts?state=rajasthan
     """
     state = request.args.get("state", "tripura").lower().strip()
     if state not in ALL_DISTRICT_COORDS:
-        return jsonify({"error": f"Unknown state: {state}"}), 400
+        return jsonify({"error": "bad_request", "message": f"Unknown state: {state}"}), 400
     return jsonify(sorted(ALL_DISTRICT_COORDS[state].keys()))
 
 # Crop water requirements (mm/day) by growth stage
@@ -616,9 +765,34 @@ def _day_label(date_str: str) -> str:
 
 # ── ROUTES ─────────────────────────────────────────────────────────────────
 
+@app.route("/api/v1/health", methods=["GET"])
 @app.route("/health", methods=["GET"])
+@limiter.exempt
 def health():
-    return jsonify({"status": "ok", "service": "irrigation-advisor", "crops": list(CROP_WATER_NEEDS.keys())})
+    """Unauthenticated health check — used by load balancers / orchestrators."""
+    return jsonify({
+        "status": "ok",
+        "service": "irrigation-advisor",
+        "version": "1.0.0",
+        "auth_enabled": AUTH_ENABLED,
+        "crops": list(CROP_WATER_NEEDS.keys()),
+    })
+
+
+@app.route("/", methods=["GET"])
+def index():
+    """Root info page so a curious caller (or health probe) hitting '/' gets something useful."""
+    return jsonify({
+        "service": "AI Irrigation Advisory Microservice",
+        "docs": "See README.md for full usage.",
+        "endpoints": {
+            "GET  /api/v1/health": "Health check (no auth)",
+            "GET  /api/v1/crops": "List supported crops (?state=optional)",
+            "GET  /api/v1/districts": "List districts (?state=required)",
+            "POST /api/v1/advise": "Get an irrigation schedule",
+        },
+        "auth": "Send API key via 'X-API-Key' header or 'Authorization: Bearer <key>'." if AUTH_ENABLED else "No auth required (IRRIGATION_API_KEYS not set).",
+    })
 
 
 def _fetch_valid_crops_for_state(state: str):
@@ -633,7 +807,7 @@ def _fetch_valid_crops_for_state(state: str):
         return None
     for path in ("/api/crop/valid_crops", "/valid_crops"):
         try:
-            resp = requests.get(f"http://127.0.0.1:{port}{path}", timeout=3)
+            resp = requests.get(f"http://{CROP_BACKEND_HOST}:{port}{path}", timeout=3)
             if not resp.ok:
                 continue
             data = resp.json()
@@ -645,7 +819,9 @@ def _fetch_valid_crops_for_state(state: str):
     return None
 
 
+@app.route("/api/v1/crops", methods=["GET"])
 @app.route("/crops", methods=["GET"])
+@require_api_key
 def crops():
     """
     State-aware crop list for the frontend dropdown.
@@ -691,7 +867,10 @@ def crops():
     return jsonify(out)
 
 
+@app.route("/api/v1/advise", methods=["POST"])
 @app.route("/advise", methods=["POST"])
+@require_api_key
+@limiter.limit(os.environ.get("RATE_LIMIT_ADVISE", "20 per minute"))
 def advise():
     """
     Main endpoint. Expects JSON:
@@ -706,9 +885,9 @@ def advise():
       "last_rain_date":    "2025-06-10"  // ISO date of last significant rainfall
     }
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
-        return jsonify({"error": "No JSON body"}), 400
+        return jsonify({"error": "bad_request", "message": "Expected a JSON body."}), 400
 
     state           = data.get("state", "tripura").lower().strip()
     district        = data.get("district")
@@ -721,20 +900,21 @@ def advise():
     last_rain_date  = data.get("last_rain_date", None)
 
     if state not in ALL_DISTRICT_COORDS:
-        return jsonify({"error": f"Unknown state: {state}"}), 400
+        return jsonify({"error": "bad_request", "message": f"Unknown state: {state}"}), 400
 
     if not district:
-        return jsonify({"error": "district is required"}), 400
+        return jsonify({"error": "bad_request", "message": "district is required"}), 400
 
     district_coords = get_district_coords(state)
     coords = district_coords.get(district)
     if not coords:
-        return jsonify({"error": f"Unknown district: {district} for state: {state}"}), 400
+        return jsonify({"error": "bad_request", "message": f"Unknown district: {district} for state: {state}"}), 400
 
     try:
         forecast = fetch_weather_forecast(coords[0], coords[1], days=10)
     except Exception as e:
-        return jsonify({"error": f"Weather fetch failed: {str(e)}"}), 502
+        log.warning("Weather fetch failed: %s", e)
+        return jsonify({"error": "upstream_error", "message": f"Weather fetch failed: {str(e)}"}), 502
 
     moisture_timeline, taw = simulate_soil_moisture(forecast, crop, soil_type,
                                                       soil_feel, last_rain_date, sowing)
@@ -794,8 +974,16 @@ def advise():
 
 
 if __name__ == "__main__":
-    print("=" * 55)
-    print("  AI IRRIGATION ADVISORY — Backend")
-    print("  Running at http://localhost:5001")
-    print("=" * 55)
-    app.run(host="0.0.0.0", port=5001, debug=False)
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", 5001))
+    debug = os.environ.get("DEBUG", "false").lower() == "true"
+
+    print("=" * 60)
+    print("  AI IRRIGATION ADVISORY — Independent Microservice")
+    print(f"  Listening on http://{host}:{port}")
+    print(f"  API key auth: {'ENABLED' if AUTH_ENABLED else 'DISABLED (set IRRIGATION_API_KEYS)'}")
+    print(f"  Rate limiting: {'enabled' if _HAS_LIMITER else 'disabled (pip install flask-limiter)'}")
+    print("  NOTE: for production, run via gunicorn instead of this dev server:")
+    print(f"    gunicorn -w 4 -b {host}:{port} service:app")
+    print("=" * 60)
+    app.run(host=host, port=port, debug=debug)

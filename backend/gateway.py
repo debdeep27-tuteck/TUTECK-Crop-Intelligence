@@ -96,7 +96,7 @@ DATA_DIR = {
 # auth_excel.py. That module also exposes /api/auth/* and /api/users/*
 # routes as a Blueprint, so we just register it here.
 
-from auth_excel import auth_bp, init_excel, get_current_session
+from auth.auth_excel import auth_bp, init_excel, get_current_session
 
 init_excel()                    # creates users.xlsx next to this file if missing
 app.register_blueprint(auth_bp) # mounts /api/auth/... and /api/users/...

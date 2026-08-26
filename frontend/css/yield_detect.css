@@ -25,6 +25,18 @@
   --radius-lg: 10px;
   --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
   --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06);
+
+  /* Previously referenced below but never defined — filled in to match
+     the rest of this palette rather than left to fall back silently. */
+  --surface-hover: #F1F5F9;
+  --border-subtle: #EDF2F7;
+  --success-border: #A7F3D0;
+
+  /* Aliases used by yield_detect_editor.html's own inline <style> block
+     (map overlay controls) so those rules resolve once this file loads. */
+  --mono: var(--font-mono);
+  --leaf: var(--primary);
+  --text2: var(--text-secondary);
 }
 
 *, *::before, *::after {
@@ -164,3 +176,289 @@ table.yd-table {
 .badge-amber { background: #FEF3C7; color: var(--warning); border: 1px solid #FDE68A; }
 .badge-red { background: #FEE2E2; color: var(--danger); border: 1px solid #FECACA; }
 .badge-gray { background: #F1F5F9; color: var(--text-muted); border: 1px solid var(--border); }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Add / Edit Land editor page (yield_detect_editor.html)
+   Everything below is new — the table/list page above didn't need
+   these classes, but the editor page does.
+   ═══════════════════════════════════════════════════════════════ */
+
+.editor-wrap {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .editor-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Map panel ── */
+
+.map-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 12px;
+  position: relative;
+}
+
+.map-search-box {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+#map-search {
+  width: 100%;
+  padding: 9px 32px 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: all 0.15s;
+}
+
+#map-search:focus {
+  background: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+#map {
+  width: 100%;
+  height: 460px;
+  border-radius: var(--radius-md);
+  background: #E2E8F0;
+  z-index: 1;
+}
+
+.map-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.geofence-check-box input {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-family: var(--font-sans);
+  color: var(--text);
+  outline: none;
+}
+
+.geofence-check-box input:focus {
+  border-color: var(--accent);
+}
+
+.geofence-check-box button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.geofence-check-box button:hover {
+  background: var(--surface-hover);
+}
+
+#gf-result {
+  font-size: 12.5px;
+  color: var(--primary);
+}
+
+/* Street/Satellite (Mappls) toggle above the map */
+
+.basemap-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1200;
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+}
+
+.basemap-toggle button {
+  border: none;
+  background: #fff;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.basemap-toggle button.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ── Form panel ── */
+
+.form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 18px 20px;
+}
+
+.form-card h3 {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+.form-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-field.full {
+  flex: 0 0 100%;
+}
+
+.form-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form-field input,
+.form-field select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.form-field input[readonly] {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.form-field input::placeholder {
+  color: #94A3B8;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* ── Results card ── */
+
+.results-card {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.result-stat {
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.result-stat .label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.result-stat .value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: var(--font-mono);
+}
+
+/* ── Toast ── */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  z-index: 2000;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+  background: var(--danger);
+}

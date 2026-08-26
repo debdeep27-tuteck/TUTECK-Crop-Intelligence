@@ -1,17 +1,26 @@
 """
 auth_excel.py
 =============
-Excel-backed authentication + role-based access control for CropAI.
+Authentication + role-based access control for CropAI — now backed by
+SQLite (users.db) instead of raw Excel files.
 
-All user records (uid, email, password, role) live in a single Excel
-file (users.xlsx). Every read/write goes through this file — there is
-no separate database. Passwords are hashed before they ever touch disk.
+WHAT CHANGED: all reads/writes used to go straight to users.xlsx. Now
+they go to users.db. The only thing the old .xlsx files are still used
+for is a ONE-TIME AUTOMATIC MIGRATION: the very first time init_excel()
+runs and users.db doesn't exist yet, this module looks for users.xlsx /
+permissions.xlsx / user_permissions.xlsx in this same folder and, if
+found, copies every record from them into users.db. After that, the
+.xlsx files are never read or written again — they're just left on
+disk untouched as a backup. Every new user created from now on goes
+straight into users.db.
 
-Role -> page/CRUD permissions are no longer hardcoded. They live in a
-second file, permissions.xlsx, and can be viewed/edited live by an admin
-via /api/permissions (GET) and /api/permissions/<role> (PUT/PATCH). This
-is what powers the "manage roles" admin panel — no code deploy needed to
-change what a role can see.
+You do NOT need to run anything separately or change how you call this
+module — same import, same function, same routes as before:
+
+    from auth_excel import auth_bp, init_excel
+
+    init_excel()                       # creates users.db + migrates old .xlsx data (first run only)
+    app.register_blueprint(auth_bp)    # mounts all /api/auth and /api/users routes
 
 Roles (defaults, editable from the admin panel)
 -------------------------------------------------
@@ -19,47 +28,40 @@ Roles (defaults, editable from the admin panel)
   analyst  -> Dashboard, Irrigation, Recommender, Alerts
   farmer   -> Irrigation, Disease Detection, Recommender
 
-⚠️ SECURITY NOTE: passwords are stored as PLAIN TEXT in users.xlsx, not
+⚠️ SECURITY NOTE: passwords are stored as PLAIN TEXT in users.db, not
 hashed. Anyone who can open that file (or a backup/copy of it) can read
 every user's actual password. This is fine for a local prototype but is
 not safe for a real deployment, especially since people often reuse
-passwords across sites. Restrict file permissions on users.xlsx, keep it
-out of version control, and consider switching back to hashed storage
+passwords across sites. Restrict file permissions on users.db, keep it
+out of version control, and consider switching to hashed storage
 (werkzeug.security.generate_password_hash / check_password_hash) before
 this goes anywhere near production or real user data.
-
-Usage (from gateway.py)
-------------------------
-    from auth_excel import auth_bp, init_excel
-
-    init_excel()                       # creates users.xlsx if missing
-    app.register_blueprint(auth_bp)    # mounts all /api/auth and /api/users routes
 
 Run standalone for a quick sanity check:
     python auth_excel.py
 """
 
+import sqlite3
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
-import pandas as pd
 from flask import Blueprint, request, jsonify, g
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent
-EXCEL_FILE = BASE_DIR / "users.xlsx"
-PERMISSIONS_FILE = BASE_DIR / "permissions.xlsx"
-USER_PERMISSIONS_FILE = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease","/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"]
+DB_FILE = BASE_DIR / "users.db"
 
-PERMISSIONS_COLUMNS = ["role", "pages", "crud"]  # "pages" stored as comma-separated string
-USER_PERMISSIONS_COLUMNS = ["uid", "pages"]  # per-user page overrides, comma-separated
+# Old Excel files — only ever read once, during first-run auto-migration.
+LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
+LEGACY_PERMISSIONS_XLSX = BASE_DIR / "permissions.xlsx"
+LEGACY_USER_PERMISSIONS_XLSX = BASE_DIR / "user_permissions.xlsx"
 
-COLUMNS = ["uid", "email", "password", "role", "status", "state", "district"]  # NOTE: "password" is stored as PLAINTEXT — see warning below
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"]
 
 VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi"}
 VALID_STATUSES = {"active", "restricted"}
@@ -71,9 +73,9 @@ VALID_STATUSES = {"active", "restricted"}
 STATE_SCOPED_ROLES = {"state_admin", "district_admin", "mandi"}
 DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
 
-# Default permissions, used only to seed permissions.xlsx the first time it's
-# created. After that, permissions.xlsx is the single source of truth and is
-# editable live from the admin panel (see /api/permissions routes below).
+# Default permissions, used only to seed role_permissions the first time
+# the DB is created. After that, the table is the single source of truth
+# and is editable live from the admin panel (see /api/permissions routes).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
         "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
@@ -92,7 +94,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         "crud": False,
     },
     "district_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect","/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
         "crud": False,
     },
     "mandi": {
@@ -101,8 +103,7 @@ DEFAULT_ROLE_PERMISSIONS = {
     },
 }
 
-_excel_lock = threading.Lock()
-_perm_lock = threading.RLock()
+_db_lock = threading.RLock()
 
 # token -> {"uid": str, "email": str, "role": str, "created_at": float}
 SESSIONS = {}
@@ -110,81 +111,163 @@ SESSIONS = {}
 auth_bp = Blueprint("auth_excel", __name__)
 
 
-# ── EXCEL STORAGE HELPERS ────────────────────────────────────────────────
+# ── DB CONNECTION / SCHEMA ───────────────────────────────────────────────
+
+@contextmanager
+def _conn():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    try:
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
+
 
 def init_excel():
-    """Create users.xlsx (and permissions.xlsx / user_permissions.xlsx) with the right headers if missing."""
-    if not EXCEL_FILE.exists():
-        df = pd.DataFrame(columns=COLUMNS)
-        df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
-    init_permissions()
-    init_user_permissions()
+    """
+    Create users.db (with the right tables) if missing, seed default role
+    permissions, and — the first time only — migrate any existing
+    users.xlsx / permissions.xlsx / user_permissions.xlsx records into it.
+    Safe to call on every app startup; migration only runs once (when
+    users.db doesn't exist yet).
+    """
+    db_is_new = not DB_FILE.exists()
+
+    with _db_lock, _conn() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                uid TEXT PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active',
+                state TEXT NOT NULL DEFAULT '',
+                district TEXT NOT NULL DEFAULT ''
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                role TEXT PRIMARY KEY,
+                pages TEXT NOT NULL DEFAULT '',
+                crud INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_permissions (
+                uid TEXT PRIMARY KEY,
+                pages TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
+            )
+        """)
+        existing_roles = {r["role"] for r in conn.execute("SELECT role FROM role_permissions")}
+        for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+            if role not in existing_roles:
+                conn.execute(
+                    "INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)",
+                    (role, ",".join(cfg["pages"]), int(bool(cfg["crud"]))),
+                )
+
+    if db_is_new:
+        _migrate_legacy_excel_files()
 
 
-def _load_df():
-    if not EXCEL_FILE.exists():
-        init_excel()
-    df = pd.read_excel(EXCEL_FILE, engine="openpyxl", dtype=str)
-    # Normalize: make sure all expected columns exist even if the sheet
-    # was hand-edited and a column got dropped.
-    for col in COLUMNS:
-        if col not in df.columns:
-            df[col] = "active" if col == "status" else ""
-    df["status"] = df["status"].replace("", "active").fillna("active")
-    return df[COLUMNS].fillna("")
+def _migrate_legacy_excel_files():
+    """One-time import of records from the old .xlsx files into users.db,
+    if those files exist. Never modifies or deletes the .xlsx files."""
+    if not (LEGACY_USERS_XLSX.exists() or LEGACY_PERMISSIONS_XLSX.exists() or LEGACY_USER_PERMISSIONS_XLSX.exists()):
+        return  # fresh install, nothing to migrate
 
+    try:
+        import pandas as pd
+    except ImportError:
+        print("auth_excel: found legacy .xlsx files but pandas isn't installed, "
+              "so they could not be auto-migrated. Install pandas + openpyxl and "
+              "restart, or delete the .xlsx files if you don't need them.")
+        return
 
-def _save_df(df):
-    df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
+    migrated = {"users": 0, "role_permissions": 0, "user_permissions": 0}
+
+    with _db_lock, _conn() as conn:
+        if LEGACY_USERS_XLSX.exists():
+            df = pd.read_excel(LEGACY_USERS_XLSX, engine="openpyxl", dtype=str).fillna("")
+            for _, row in df.iterrows():
+                uid = str(row.get("uid", "")).strip()
+                email = str(row.get("email", "")).strip().lower()
+                if not uid or not email:
+                    continue
+                conn.execute(
+                    """
+                    INSERT INTO users (uid, email, password, role, status, state, district)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(uid) DO UPDATE SET
+                        email=excluded.email, password=excluded.password, role=excluded.role,
+                        status=excluded.status, state=excluded.state, district=excluded.district
+                    """,
+                    (
+                        uid, email, str(row.get("password", "")),
+                        str(row.get("role", "")).strip().lower(),
+                        str(row.get("status", "active")).strip().lower() or "active",
+                        str(row.get("state", "")), str(row.get("district", "")),
+                    ),
+                )
+                migrated["users"] += 1
+
+        if LEGACY_PERMISSIONS_XLSX.exists():
+            df = pd.read_excel(LEGACY_PERMISSIONS_XLSX, engine="openpyxl", dtype=str).fillna("")
+            for _, row in df.iterrows():
+                role = str(row.get("role", "")).strip().lower()
+                if not role:
+                    continue
+                crud = str(row.get("crud", "")).strip().lower() in ("true", "1", "yes")
+                conn.execute(
+                    """
+                    INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)
+                    ON CONFLICT(role) DO UPDATE SET pages=excluded.pages, crud=excluded.crud
+                    """,
+                    (role, str(row.get("pages", "")), int(crud)),
+                )
+                migrated["role_permissions"] += 1
+
+        if LEGACY_USER_PERMISSIONS_XLSX.exists():
+            df = pd.read_excel(LEGACY_USER_PERMISSIONS_XLSX, engine="openpyxl", dtype=str).fillna("")
+            for _, row in df.iterrows():
+                uid = str(row.get("uid", "")).strip()
+                if not uid:
+                    continue
+                conn.execute(
+                    """
+                    INSERT INTO user_permissions (uid, pages) VALUES (?, ?)
+                    ON CONFLICT(uid) DO UPDATE SET pages=excluded.pages
+                    """,
+                    (uid, str(row.get("pages", ""))),
+                )
+                migrated["user_permissions"] += 1
+
+    print(f"auth_excel: migrated legacy Excel data into {DB_FILE.name} -> "
+          f"{migrated['users']} user(s), {migrated['role_permissions']} role permission row(s), "
+          f"{migrated['user_permissions']} user permission row(s). "
+          f"The original .xlsx files were left untouched.")
 
 
 def _new_uid():
     return uuid.uuid4().hex[:12]
 
 
-# ── ROLE PERMISSIONS STORAGE (permissions.xlsx) ──────────────────────────
-# Lets an admin change what pages each role can see, and whether a role can
-# manage other users, without touching code. Stored as one row per role:
-#   role | pages (comma-separated) | crud (TRUE/FALSE)
-
-def init_permissions():
-    """Create permissions.xlsx seeded with DEFAULT_ROLE_PERMISSIONS if missing."""
-    if not PERMISSIONS_FILE.exists():
-        rows = [
-            {"role": role, "pages": ",".join(cfg["pages"]), "crud": str(bool(cfg["crud"]))}
-            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items()
-        ]
-        df = pd.DataFrame(rows, columns=PERMISSIONS_COLUMNS)
-        df.to_excel(PERMISSIONS_FILE, index=False, engine="openpyxl")
-
-
-def _load_permissions_df():
-    if not PERMISSIONS_FILE.exists():
-        init_permissions()
-    df = pd.read_excel(PERMISSIONS_FILE, engine="openpyxl", dtype=str)
-    for col in PERMISSIONS_COLUMNS:
-        if col not in df.columns:
-            df[col] = ""
-    return df[PERMISSIONS_COLUMNS].fillna("")
-
-
-def _save_permissions_df(df):
-    df.to_excel(PERMISSIONS_FILE, index=False, engine="openpyxl")
-
+# ── ROLE PERMISSIONS ──────────────────────────────────────────────────────
 
 def get_role_permissions():
-    """Return the ROLE_PERMISSIONS dict shape, read live from permissions.xlsx."""
-    with _perm_lock:
-        df = _load_permissions_df()
+    """Return the ROLE_PERMISSIONS dict shape, read live from the DB."""
+    with _db_lock, _conn() as conn:
+        rows = conn.execute("SELECT role, pages, crud FROM role_permissions").fetchall()
     result = {}
-    for _, row in df.iterrows():
+    for row in rows:
         role = row["role"].strip().lower()
         if not role:
             continue
         pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
-        crud = str(row["crud"]).strip().lower() in ("true", "1", "yes")
-        result[role] = {"pages": pages, "crud": crud}
-    # Make sure every known role has an entry, even if the sheet was hand-edited.
+        result[role] = {"pages": pages, "crud": bool(row["crud"])}
     for role in VALID_ROLES:
         result.setdefault(role, {"pages": [], "crud": False})
     return result
@@ -201,78 +284,44 @@ def update_role_permissions(role, pages=None, crud=None):
         if bad:
             raise ValueError(f"Unknown page(s): {bad}. Valid pages are {ALL_PAGES}.")
 
-    with _perm_lock:
-        df = _load_permissions_df()
-        idx = df.index[df["role"].str.lower() == role]
-
-        if len(idx) == 0:
-            new_row = {
-                "role": role,
-                "pages": ",".join(pages) if pages is not None else "",
-                "crud": str(bool(crud)) if crud is not None else "False",
-            }
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    with _db_lock, _conn() as conn:
+        existing = conn.execute("SELECT role FROM role_permissions WHERE role = ?", (role,)).fetchone()
+        if existing is None:
+            conn.execute(
+                "INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)",
+                (role, ",".join(pages) if pages is not None else "", int(bool(crud)) if crud is not None else 0),
+            )
         else:
-            i = idx[0]
             if pages is not None:
-                df.at[i, "pages"] = ",".join(pages)
+                conn.execute("UPDATE role_permissions SET pages = ? WHERE role = ?", (",".join(pages), role))
             if crud is not None:
-                df.at[i, "crud"] = str(bool(crud))
-
-        _save_permissions_df(df)
+                conn.execute("UPDATE role_permissions SET crud = ? WHERE role = ?", (int(bool(crud)), role))
 
     return get_role_permissions()[role]
 
 
-# ── PER-USER PERMISSIONS STORAGE (user_permissions.xlsx) ─────────────────
-# Lets an admin grant/revoke individual pages per user (checkbox-per-row in
-# the admin panel), instead of only editing an entire role at once. A new
-# user is seeded with their role's default pages; after that, this file is
-# the source of truth for what that specific user can see. Stored as one
-# row per user:  uid | pages (comma-separated)
-
-def init_user_permissions():
-    """Create user_permissions.xlsx (empty, one row per user) if missing."""
-    if not USER_PERMISSIONS_FILE.exists():
-        df = pd.DataFrame(columns=USER_PERMISSIONS_COLUMNS)
-        df.to_excel(USER_PERMISSIONS_FILE, index=False, engine="openpyxl")
-
-
-def _load_user_permissions_df():
-    if not USER_PERMISSIONS_FILE.exists():
-        init_user_permissions()
-    df = pd.read_excel(USER_PERMISSIONS_FILE, engine="openpyxl", dtype=str)
-    for col in USER_PERMISSIONS_COLUMNS:
-        if col not in df.columns:
-            df[col] = ""
-    return df[USER_PERMISSIONS_COLUMNS].fillna("")
-
-
-def _save_user_permissions_df(df):
-    df.to_excel(USER_PERMISSIONS_FILE, index=False, engine="openpyxl")
-
+# ── PER-USER PERMISSIONS ──────────────────────────────────────────────────
 
 def get_user_permissions(uid, role=None):
     """
     Return {"pages": [...]} for this specific user. If the user has no row
-    yet in user_permissions.xlsx, seed it from their role's default pages
-    (looked up via `role`, or from users.xlsx if not passed).
+    yet in user_permissions, seed it from their role's default pages
+    (looked up via `role`, or from the users table if not passed).
     """
-    with _perm_lock:
-        df = _load_user_permissions_df()
-        idx = df.index[df["uid"] == uid]
-
-        if len(idx) == 0:
+    with _db_lock, _conn() as conn:
+        row = conn.execute("SELECT pages FROM user_permissions WHERE uid = ?", (uid,)).fetchone()
+        if row is None:
             if role is None:
                 user = get_user(uid)
                 role = user["role"] if user else None
             default_pages = get_role_permissions().get(role, {}).get("pages", [])
-            new_row = {"uid": uid, "pages": ",".join(default_pages)}
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            _save_user_permissions_df(df)
+            conn.execute(
+                "INSERT INTO user_permissions (uid, pages) VALUES (?, ?)",
+                (uid, ",".join(default_pages)),
+            )
             return {"pages": default_pages}
 
-        pages = [p.strip() for p in df.loc[idx[0], "pages"].split(",") if p.strip()]
+        pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
         return {"pages": pages}
 
 
@@ -282,31 +331,22 @@ def update_user_permissions(uid, pages):
     if bad:
         raise ValueError(f"Unknown page(s): {bad}. Valid pages are {ALL_PAGES}.")
 
-    with _perm_lock:
-        df = _load_user_permissions_df()
-        idx = df.index[df["uid"] == uid]
-
-        if len(idx) == 0:
-            df = pd.concat(
-                [df, pd.DataFrame([{"uid": uid, "pages": ",".join(pages)}])],
-                ignore_index=True,
-            )
+    with _db_lock, _conn() as conn:
+        existing = conn.execute("SELECT uid FROM user_permissions WHERE uid = ?", (uid,)).fetchone()
+        if existing is None:
+            conn.execute("INSERT INTO user_permissions (uid, pages) VALUES (?, ?)", (uid, ",".join(pages)))
         else:
-            df.at[idx[0], "pages"] = ",".join(pages)
-
-        _save_user_permissions_df(df)
+            conn.execute("UPDATE user_permissions SET pages = ? WHERE uid = ?", (",".join(pages), uid))
 
     return {"pages": pages}
 
 
 def delete_user_permissions(uid):
-    with _perm_lock:
-        df = _load_user_permissions_df()
-        df = df[df["uid"] != uid]
-        _save_user_permissions_df(df)
+    with _db_lock, _conn() as conn:
+        conn.execute("DELETE FROM user_permissions WHERE uid = ?", (uid,))
 
 
-# ── USER OPERATIONS (all go through the Excel file) ─────────────────────
+# ── USER OPERATIONS ───────────────────────────────────────────────────────
 
 def _validate_state_district(role, state, district):
     """Enforce that state_admin/district_admin carry the right location fields,
@@ -338,23 +378,16 @@ def create_user(email, password, role, state="", district=""):
 
     state, district = _validate_state_district(role, state, district)
 
-    with _excel_lock:
-        df = _load_df()
-        if (df["email"].str.lower() == email).any():
+    with _db_lock, _conn() as conn:
+        dupe = conn.execute("SELECT 1 FROM users WHERE lower(email) = ?", (email,)).fetchone()
+        if dupe:
             raise ValueError("An account with this email already exists.")
 
         uid = _new_uid()
-        new_row = {
-            "uid": uid,
-            "email": email,
-            "password": password,
-            "role": role,
-            "status": "active",
-            "state": state,
-            "district": district,
-        }
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        _save_df(df)
+        conn.execute(
+            "INSERT INTO users (uid, email, password, role, status, state, district) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (uid, email, password, role, "active", state, district),
+        )
 
     # Seed this user's individual page permissions from their role's defaults.
     get_user_permissions(uid, role=role)
@@ -363,15 +396,11 @@ def create_user(email, password, role, state="", district=""):
 
 
 def verify_login(email, password):
-    """Return {'uid','email','role','status'} on success, or None on bad credentials."""
+    """Return {'uid','email','role','status','state','district'} on success, or None on bad credentials."""
     email = email.strip().lower()
-    with _excel_lock:
-        df = _load_df()
-    row = df[df["email"].str.lower() == email]
-    if row.empty:
-        return None
-    row = row.iloc[0]
-    if row["password"] != password:
+    with _db_lock, _conn() as conn:
+        row = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
+    if row is None or row["password"] != password:
         return None
     return {
         "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
@@ -383,81 +412,66 @@ def list_users():
     """Return all users WITHOUT password hashes — for the admin panel.
     Includes each user's current status, state/district scope, and their
     individual page permissions."""
-    with _excel_lock:
-        df = _load_df()
-    users = df[["uid", "email", "role", "status", "state", "district"]].to_dict(orient="records")
+    with _db_lock, _conn() as conn:
+        rows = conn.execute("SELECT uid, email, role, status, state, district FROM users").fetchall()
+    users = [dict(row) for row in rows]
     for user in users:
         user["pages"] = get_user_permissions(user["uid"], role=user["role"])["pages"]
     return users
 
 
 def get_user(uid):
-    with _excel_lock:
-        df = _load_df()
-    row = df[df["uid"] == uid]
-    if row.empty:
-        return None
-    row = row.iloc[0]
-    return {
-        "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
-        "state": row["state"], "district": row["district"],
-    }
+    with _db_lock, _conn() as conn:
+        row = conn.execute("SELECT uid, email, role, status, state, district FROM users WHERE uid = ?", (uid,)).fetchone()
+    return dict(row) if row else None
 
 
 def update_user(uid, email=None, password=None, role=None, state=None, district=None):
-    with _excel_lock:
-        df = _load_df()
-        idx = df.index[df["uid"] == uid]
-        if len(idx) == 0:
+    with _db_lock, _conn() as conn:
+        row = conn.execute("SELECT * FROM users WHERE uid = ?", (uid,)).fetchone()
+        if row is None:
             raise ValueError("User not found.")
-        i = idx[0]
 
         if email:
             email = email.strip().lower()
-            dupe = df[(df["email"].str.lower() == email) & (df["uid"] != uid)]
-            if not dupe.empty:
+            dupe = conn.execute(
+                "SELECT 1 FROM users WHERE lower(email) = ? AND uid != ?", (email, uid)
+            ).fetchone()
+            if dupe:
                 raise ValueError("Another account already uses this email.")
-            df.at[i, "email"] = email
+            conn.execute("UPDATE users SET email = ? WHERE uid = ?", (email, uid))
 
-        # Figure out the effective role/state/district after this update, so
-        # we can validate the state/district combination against whichever
-        # role ends up in effect (new role if given, else the existing one).
-        effective_role = (role.strip().lower() if role else df.at[i, "role"])
+        effective_role = (role.strip().lower() if role else row["role"])
         if role:
             if effective_role not in VALID_ROLES:
                 raise ValueError(f"Invalid role '{effective_role}'. Must be one of {sorted(VALID_ROLES)}.")
-            df.at[i, "role"] = effective_role
+            conn.execute("UPDATE users SET role = ? WHERE uid = ?", (effective_role, uid))
 
-        effective_state = state if state is not None else df.at[i, "state"]
-        effective_district = district if district is not None else df.at[i, "district"]
+        effective_state = state if state is not None else row["state"]
+        effective_district = district if district is not None else row["district"]
         norm_state, norm_district = _validate_state_district(effective_role, effective_state, effective_district)
-        df.at[i, "state"] = norm_state
-        df.at[i, "district"] = norm_district
+        conn.execute("UPDATE users SET state = ?, district = ? WHERE uid = ?", (norm_state, norm_district, uid))
 
         if password:
             if len(password) < 6:
                 raise ValueError("Password must be at least 6 characters.")
-            df.at[i, "password"] = password
+            conn.execute("UPDATE users SET password = ? WHERE uid = ?", (password, uid))
 
-        _save_df(df)
-        row = df.loc[i]
-        return {
-            "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
-            "state": row["state"], "district": row["district"],
-        }
+        updated = conn.execute(
+            "SELECT uid, email, role, status, state, district FROM users WHERE uid = ?", (uid,)
+        ).fetchone()
+        return dict(updated)
 
 
 def delete_user(uid):
-    with _excel_lock:
-        df = _load_df()
-        if not (df["uid"] == uid).any():
+    with _db_lock, _conn() as conn:
+        row = conn.execute("SELECT 1 FROM users WHERE uid = ?", (uid,)).fetchone()
+        if row is None:
             raise ValueError("User not found.")
-        df = df[df["uid"] != uid]
-        _save_df(df)
-        # Drop any active sessions for this user.
+        conn.execute("DELETE FROM users WHERE uid = ?", (uid,))
+        conn.execute("DELETE FROM user_permissions WHERE uid = ?", (uid,))
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
-    delete_user_permissions(uid)
 
 
 def set_user_status(uid, status):
@@ -466,23 +480,21 @@ def set_user_status(uid, status):
     if status not in VALID_STATUSES:
         raise ValueError(f"Invalid status '{status}'. Must be one of {sorted(VALID_STATUSES)}.")
 
-    with _excel_lock:
-        df = _load_df()
-        idx = df.index[df["uid"] == uid]
-        if len(idx) == 0:
+    with _db_lock, _conn() as conn:
+        row = conn.execute("SELECT * FROM users WHERE uid = ?", (uid,)).fetchone()
+        if row is None:
             raise ValueError("User not found.")
-        df.at[idx[0], "status"] = status
-        _save_df(df)
-        row = df.loc[idx[0]]
+        conn.execute("UPDATE users SET status = ? WHERE uid = ?", (status, uid))
+        updated = conn.execute("SELECT uid, email, role, status FROM users WHERE uid = ?", (uid,)).fetchone()
 
     if status == "restricted":
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
 
-    return {"uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"]}
+    return dict(updated)
 
 
-# ── SESSIONS ──────────────────────────────────────────────────────────────
+# ── SESSIONS (unchanged: in-memory) ───────────────────────────────────────
 
 def issue_session(uid, email, role, state="", district=""):
     token = uuid.uuid4().hex + uuid.uuid4().hex  # 64 hex chars
@@ -666,7 +678,6 @@ def admin_restrict_user(uid):
         return jsonify({"error": "User not found."}), 404
 
     if restricted is None:
-        # No explicit value given: toggle current status.
         new_status = "active" if user["status"] == "restricted" else "restricted"
     else:
         new_status = "restricted" if restricted else "active"
@@ -720,9 +731,6 @@ def get_roles():
 
 
 # ── ROUTES: ADMIN — EDIT ROLE PERMISSIONS ────────────────────────────────
-# Lets an admin change, per role, which pages it can see and whether it has
-# CRUD (user-management) rights — no code changes needed, persisted in
-# permissions.xlsx.
 
 @auth_bp.route("/api/permissions", methods=["GET"])
 @require_auth(roles=["admin"])
@@ -738,8 +746,8 @@ def admin_get_permissions():
 @require_auth(roles=["admin"])
 def admin_update_permissions(role):
     body = request.get_json(silent=True) or {}
-    pages = body.get("pages")   # optional list[str]
-    crud = body.get("crud")     # optional bool
+    pages = body.get("pages")
+    crud = body.get("crud")
 
     if pages is not None and not isinstance(pages, list):
         return jsonify({"error": "'pages' must be a list of page paths."}), 400
@@ -756,8 +764,6 @@ def admin_update_permissions(role):
 
 if __name__ == "__main__":
     init_excel()
-    print(f"users.xlsx ready at: {EXCEL_FILE}")
-    print("Columns:", COLUMNS)
+    print(f"users.db ready at: {DB_FILE}")
     print("Current users:", list_users())
-    print(f"permissions.xlsx ready at: {PERMISSIONS_FILE}")
     print("Current role permissions:", get_role_permissions())

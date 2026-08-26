@@ -406,13 +406,19 @@
         // OAuth client_secret never leaves the server) and builds the real tile
         // layer. The "Mappls" toggle button is disabled until this resolves.
         async function initMapplsLayer() {
+            // btn-mappls is currently commented out in the markup (see the
+            // basemap toggle buttons above), so this may legitimately be
+            // null — every btn.* write below has to tolerate that instead
+            // of assuming the button is present.
             const btn = document.getElementById('btn-mappls');
             try {
                 const res = await fetch('/api/yield/mappls_key');
                 const data = await res.json();
                 if (!data.configured || !data.key) {
-                    btn.disabled = true;
-                    btn.title = 'Mappls tile key not configured on the server';
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.title = 'Mappls tile key not configured on the server';
+                    }
                     return;
                 }
                 BASEMAPS.mappls = L.tileLayer(
@@ -420,11 +426,15 @@
                     { maxZoom: 18, attribution: '&copy; MapmyIndia' }
                 );
                 mapplsReady = true;
-                btn.disabled = false;
-                btn.title = '';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.title = '';
+                }
             } catch {
-                btn.disabled = true;
-                btn.title = 'Could not reach Mappls tile service';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.title = 'Could not reach Mappls tile service';
+                }
             }
         }
 

@@ -1536,6 +1536,16 @@
 
     function goToAlertRecord(event, idx) {
       if (event) event.preventDefault();
+
+      // Respect role-based access: if this user's dashboard isn't in their
+      // allowed pages, clicking an alert notification must not force-navigate
+      // them there — that would bypass the same restriction the sidebar link
+      // already enforces via applyRoleAccess().
+      if (ALLOWED_PAGES.length > 0 && !ALLOWED_PAGES.includes('/dashboard')) {
+        closeNotifMenu();
+        return;
+      }
+
       const record = _flaggedAlerts[idx];
       navigateTo('/dashboard', event, 'alerts', record || null);
       closeNotifMenu();
@@ -2010,6 +2020,16 @@
 
     function navigateTo(target, event, tab = null, highlightRecord = null) {
       if (event) event.preventDefault();
+
+      // Never allow programmatic navigation (e.g. from the alerts
+      // notification dropdown) to a page this user isn't permitted to see,
+      // even if the caller forgot to check first.
+      if (ALLOWED_PAGES.length > 0 && !ALLOWED_PAGES.includes(target)) {
+        closeStateMenu();
+        closeNotifMenu();
+        return;
+      }
+
       const content = routeMap[target] || '/content/dashboard';
       let fullUrl = content + stateParam();
       if (tab) {
