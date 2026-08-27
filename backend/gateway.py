@@ -21,6 +21,14 @@ IRR_API_MEGHALAYA  = "http://127.0.0.1:5001"
 CROP_API_RAJASTHAN = "http://127.0.0.1:5006"
 IRR_API_RAJASTHAN  = "http://127.0.0.1:5001"
 
+# Crop Recommender microservices — split out of backend_2.py. Each state's
+# crop_recommender_service.py runs on its own port, separate from that
+# state's dashboard/stats backend above. Ports 5003/5005/5007 were unused
+# in this file before (5001 is already taken by the irrigation services).
+CROP_RECOMMENDER_TRIPURA   = "http://127.0.0.1:5003"
+CROP_RECOMMENDER_MEGHALAYA = "http://127.0.0.1:5005"
+CROP_RECOMMENDER_RAJASTHAN = "http://127.0.0.1:5007"
+
 # Disease detection — single instance serves both states
 DISEASE_API = "http://127.0.0.1:5004"
 
@@ -64,6 +72,19 @@ IRR_APIS = {
     "rajasthan": IRR_API_RAJASTHAN,
 }
 
+RECOMMENDER_APIS = {
+    "tripura": CROP_RECOMMENDER_TRIPURA,
+    "meghalaya": CROP_RECOMMENDER_MEGHALAYA,
+    "rajasthan": CROP_RECOMMENDER_RAJASTHAN,
+}
+
+# Paths that crop_recommender_service.py owns (moved out of backend_2.py).
+# Everything else under /api/crop/<path> still goes to the dashboard/stats
+# backend as before. Match on the first path segment so e.g. both
+# "predict" and "api/crop/predict"-style nested paths route correctly.
+RECOMMENDER_PATHS = {"predict", "recommend", "valid_crops", "valid_districts", "model_info", "profiles"}
+
+
 def get_crop_api():
     state = get_state()
     return CROP_APIS.get(state, CROP_API_TRIPURA)
@@ -71,6 +92,10 @@ def get_crop_api():
 def get_irr_api():
     state = get_state()
     return IRR_APIS.get(state, IRR_API_TRIPURA)
+
+def get_recommender_api():
+    state = get_state()
+    return RECOMMENDER_APIS.get(state, CROP_RECOMMENDER_TRIPURA)
 
 
 # ── FRONTEND FOLDERS ───────────────────────────────────────────────────
@@ -459,7 +484,15 @@ def crop_api(path):
                 override_json["district"] = district
 
     state = forced_state or get_state()
-    base_url = CROP_APIS.get(state, CROP_API_TRIPURA)
+
+    # crop_recommender_service.py owns prediction/recommendation routes as
+    # of the backend_2.py split; everything else (stats, trends, pages)
+    # still goes to that state's dashboard backend on CROP_APIS.
+    first_segment = path.split("/")[0] if path else ""
+    if first_segment in RECOMMENDER_PATHS:
+        base_url = RECOMMENDER_APIS.get(state, CROP_RECOMMENDER_TRIPURA)
+    else:
+        base_url = CROP_APIS.get(state, CROP_API_TRIPURA)
 
     return forward_request(
         base_url,
@@ -583,11 +616,18 @@ def health():
         "services": {
             "tripura": {
                 "crop": CROP_API_TRIPURA,
+                "crop_recommender": CROP_RECOMMENDER_TRIPURA,
                 "irrigation": IRR_API_TRIPURA
             },
             "meghalaya": {
                 "crop": CROP_API_MEGHALAYA,
+                "crop_recommender": CROP_RECOMMENDER_MEGHALAYA,
                 "irrigation": IRR_API_MEGHALAYA
+            },
+            "rajasthan": {
+                "crop": CROP_API_RAJASTHAN,
+                "crop_recommender": CROP_RECOMMENDER_RAJASTHAN,
+                "irrigation": IRR_API_RAJASTHAN
             },
             "shared": {
                 "disease": DISEASE_API,

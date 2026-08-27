@@ -5,9 +5,12 @@ One-command launcher for the Crop Analytics suite.
 
 Starts:
   • gateway.py                  -> http://0.0.0.0:8085  (single public entry point)
-  • backend_2.py Tripura         -> http://127.0.0.1:5000 (crop yield / stats API)
-  • backend_2.py Meghalaya       -> http://127.0.0.1:5002 (crop yield / stats API)
-• backend_2.py Rajasthan       -> http://127.0.0.1:5006 (crop yield / stats API)
+  • backend_2.py Tripura         -> http://127.0.0.1:5000 (crop dashboard/stats API)
+  • backend_2.py Meghalaya       -> http://127.0.0.1:5002 (crop dashboard/stats API)
+  • backend_2.py Rajasthan       -> http://127.0.0.1:5006 (crop dashboard/stats API)
+  • crop_recommender_service.py Tripura   -> http://127.0.0.1:5003 (predict/recommend API)
+  • crop_recommender_service.py Meghalaya -> http://127.0.0.1:5005 (predict/recommend API)
+  • crop_recommender_service.py Rajasthan -> http://127.0.0.1:5007 (predict/recommend API)
   • irrigation_backend2.py       -> http://127.0.0.1:5001 (irrigation advisory API, if present)
   • disease_backend.py           -> http://127.0.0.1:5004 (crop disease detection API)
   • yield_detect_backend.py      -> http://127.0.0.1:5008 (yield detect & geofencing API)
@@ -73,6 +76,16 @@ CROP_BACKENDS = {
     "tripura": 5000,
     "meghalaya": 5002,
     "rajasthan": 5006,
+}
+
+# Crop Recommender microservices (predict/recommend/valid_crops/
+# valid_districts/model_info/profiles) — split out of backend_2.py.
+# One per state, alongside that state's dashboard/stats backend above.
+# Must match gateway.py's RECOMMENDER_APIS targets.
+CROP_RECOMMENDER_BACKENDS = {
+    "tripura": 5003,
+    "meghalaya": 5005,
+    "rajasthan": 5007,
 }
 
 # Existing single irrigation backend; gateway.py uses 5001.
@@ -230,6 +243,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ready-timeout", type=int, default=READY_TIMEOUT)
     parser.add_argument("--no-browser", action="store_true", help="Do not open the browser automatically")
     parser.add_argument("--no-irrigation", action="store_true", help="Skip irrigation backend")
+    parser.add_argument("--no-crop-recommender", action="store_true", help="Skip crop recommender microservice(s)")
     parser.add_argument("--no-disease", action="store_true", help="Skip disease detection backend")
     parser.add_argument("--no-yield-platform", action="store_true", help="Skip generic yield platform microservice (port 6100)")
     parser.add_argument("--no-yield-detect", action="store_true", help="Skip yield detect (geofencing) backend")
@@ -347,6 +361,7 @@ def main() -> None:
     log(CYAN, "main", f"Selected crop states: {', '.join(states)}")
 
     backend_script = find_script(base_dir, "backend_2.py")
+    crop_recommender_script = find_script(base_dir, "crop_recommender.py")
     irrigation_script = find_script(base_dir, "irrigation_backend2.py")
     disease_script = find_script(base_dir, "disease_backend.py")
     yield_platform_script = find_script(base_dir, "yield_platform_service.py")
@@ -374,6 +389,25 @@ def main() -> None:
             port=port,
             timeout=args.ready_timeout,
         )
+
+    # 1b) Start selected crop recommender microservices (predict/recommend/
+    # valid_crops/valid_districts/model_info/profiles) — one per state,
+    # split out of backend_2.py. gateway.py routes these paths here instead
+    # of to the dashboard backend above.
+    if args.no_crop_recommender:
+        log(YELLOW, "crop-recommender", "Skipped by --no-crop-recommender")
+    elif crop_recommender_script:
+        for state in states:
+            port = CROP_RECOMMENDER_BACKENDS[state]
+            start_if_needed(
+                label=f"crop-recommender:{state}",
+                script=crop_recommender_script,
+                cmd_args=["--state", state, "--port", str(port)],
+                port=port,
+                timeout=args.ready_timeout,
+            )
+    else:
+        log(RED, "crop-recommender", "crop_recommender_service.py not found; /predict, /recommend and the recommender page will show BACKEND OFFLINE.")
 
     # 2) Start irrigation backend if available.
     if args.no_irrigation:

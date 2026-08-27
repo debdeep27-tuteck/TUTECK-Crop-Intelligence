@@ -40,7 +40,7 @@ The platform follows a high-performance **Microservices Architecture** orchestra
 ┌──────────────┐┌──────────────┐┌──────────┐┌─────────────┐┌───────────┐┌──────────────┐┌──────────────┐
 │ Tripura Crop ││Meghalaya Crop││Rajasthan ││ FAO-56 Smart││AI Disease ││Yield Detect  ││Crop Auction  │
 │ Analytics    ││Analytics     ││Crop API  ││  Irrigation ││ Diagnosis ││& Geofencing  ││   Platform   │
-│ (Port: 5000) ││(Port: 5002)  ││(Port:5006││(Port: 5001) ││(Port:5004)││ (Port: 5008)││ (Port: 5009) │
+│ (Port: 5000) ││(Port: 5002)  ││Port:5006 ││(Port: 5001) ││(Port:5004)││ (Port: 5008) ││ (Port: 5009) │
 └──────┬───────┘└──────┬───────┘└────┬─────┘└──────┬──────┘└─────┬─────┘└──────┬───────┘└──────┬───────┘
        │               │             │             │             │             │               │
        │               │             │             │             │             ▼               ▼
@@ -53,7 +53,7 @@ The platform follows a high-performance **Microservices Architecture** orchestra
 ┌──────────────┐┌──────────────┐┌──────────┐┌─────────────┐┌───────────┐┌──────────────┐┌──────────────┐
 │ Cold Storage ││ Mandi Market ││ Nearest  ││ Open-Meteo  ││   Groq    ││  SQLite DBs  ││ Scikit-Learn │
 │ Intelligence ││    Prices    ││  Mandi   ││ Weather API ││  Vision   ││ users/auction││   & XGBoost  │
-│ (Port: 5010) ││ (Port: 5011) ││(Port:5012││  Historical ││Llama-3.2  ││ /cold_store  ││   Artifacts  │
+│ (Port: 5010) ││ (Port: 5011) ││Port:5012 ││  Historical ││Llama-3.2  ││ /cold_store  ││   Artifacts  │
 │              ││ (data.gov.in)││          ││ & Forecast  ││  -90b-V   ││ /yield_lands ││ (.pkl files) │
 └──────────────┘└──────────────┘└──────────┘└─────────────┘└───────────┘└──────────────┘└──────────────┘
 ```

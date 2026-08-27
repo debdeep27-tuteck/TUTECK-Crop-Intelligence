@@ -179,6 +179,6 @@ def locate_mandi():
 
 if __name__ == "__main__":
     print("=" * 55)
-    print(f"  NEAREST MANDI BACKEND — Running on http://127.0.0.1:{PORT}")
+    print(f"  NEAREST MANDI BACKEND — Running on http://0.0.0.0:{PORT}")
     print("=" * 55)
-    app.run(host="127.0.0.1", port=PORT, debug=False)
+    app.run(host="0.0.0.0", port=PORT, debug=False)

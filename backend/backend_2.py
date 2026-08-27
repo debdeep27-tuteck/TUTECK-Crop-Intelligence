@@ -1,14 +1,24 @@
 """
-Crop Recommender — Updated Backend
-====================================
-Uses model_artefacts.pkl from crop_yield_with_weather.py (33 features).
-Serves yield predictions AND full ranked recommendations to the HTML frontend.
+Crop Dashboard Backend — Stats & Page-Serving Service
+=======================================================
+Uses model_artefacts.pkl from crop_yield_with_weather.py for df_history
+(trend charts), and the weather Excel for the fuller EDA dataset. Serves
+the dashboard/stats endpoints and the static frontend pages.
+
+Crop yield PREDICTION and RECOMMENDATION ranking have been split out into
+a separate microservice: crop_recommender_service.py. This file no longer
+loads the XGBoost model or scaler and no longer serves /predict,
+/recommend, /valid_crops, /valid_districts, /model_info, or /profiles —
+those live on the recommender service now (default port = this port + 1).
+See crop_recommender_service.py's module docstring for the port
+convention and the required gateway/frontend routing change.
 
 Run:
-    pip install flask flask-cors pandas xgboost scikit-learn openpyxl
-    python backend.py
+    pip install flask flask-cors pandas openpyxl
+    python backend_2.py --state tripura --port 5000
 
-Then open crop_recommender.html in your browser.
+Then open crop_recommender.html in your browser (its /predict, /recommend,
+etc. calls must be pointed at crop_recommender_service.py's port).
 """
 
 import pickle
@@ -71,6 +81,11 @@ if not logger.handlers:
 logger.setLevel(logging.INFO)
 
 # ── DEFENSIVE PEST_DISEASE_INCIDENCE HELPERS ─────────────────────────────────
+# Duplicated from crop_recommender_service.py verbatim. This file and the
+# recommender service each need this independently — it's not shared via
+# import because they're separate processes/deployables. If you change
+# this logic, change it in BOTH files.
+#
 # Pest_Disease_Incidence is the single most inconsistent column across state
 # datasets: Tripura/Meghalaya artefacts store it as numeric 0/1/2, while the
 # Rajasthan Excel source stores it as free-text "Low"/"Medium"/"High" (with
@@ -169,24 +184,11 @@ def normalize_pest_series(series, default=1, context=""):
 
     return pd.Series(out, index=series.index, dtype="int64")
 
-# Importance-derived suitability weights (from final model run)
-# Only features the user can provide that differentiate between crops
-# Pest and Area excluded — they don't vary per crop in suitability scoring
-# Re-normalised to sum to 1.0
-SUITABILITY_WEIGHTS = {
-    "weather_rain_days":    0.189,
-    "Fertilizer_kg_per_ha": 0.140,
-    "weather_et0_total":    0.119,
-    "weather_temp_mean":    0.098,
-    "weather_rain_total":   0.082,
-    "weather_solarrad_total": 0.071,
-    "weather_wind_mean":    0.054,
-}
-# Normalise so they sum to 1
-_wsum = sum(SUITABILITY_WEIGHTS.values())
-SUITABILITY_WEIGHTS = {k: v / _wsum for k, v in SUITABILITY_WEIGHTS.items()}
-
 # ── LOAD ──────────────────────────────────────────────────────────────────────
+# NOTE: this file only needs df_history from the pickle (used by
+# /crop_trends). model/scaler/feat_cols/crop_stats are loaded and used by
+# crop_recommender_service.py instead — they are intentionally NOT
+# unpacked here even though they're present in the same pickle.
 
 print(f"\nLoading model artefacts for state={STATE} from {ARTEFACTS_FILE}...")
 if not Path(ARTEFACTS_FILE).exists():
@@ -197,15 +199,9 @@ if not Path(ARTEFACTS_FILE).exists():
 with open(ARTEFACTS_FILE, "rb") as f:
     art = pickle.load(f)
 
-model      = art["model"]
-feat_cols  = art["feat_cols"]
-scaler     = art["scaler"]
-crop_stats = art["crop_stats"]
 df_history = art["df_history"]
-valid_crops = crop_stats.index.tolist()
 
-print(f"  Model loaded — {len(valid_crops)} crops, {len(feat_cols)} features")
-print(f"  Valid crops: {valid_crops}\n")
+print(f"  df_history loaded — {len(df_history)} rows\n")
 
 # ── LOAD FULL DATASET (for stats/correlations — df_history only has weather+yield) ──
 print(f"Loading full dataset for stats endpoints from {WEATHER_FILE}...")
@@ -327,332 +323,7 @@ if Path(WEATHER_FILE).exists():
 else:
     print(f"  WARNING: {WEATHER_FILE} not found — stats endpoints will use df_history only\n")
 
-# ── BUILD SUITABILITY PROFILES ────────────────────────────────────────────────
-# For each crop: historical mean/std of numeric features + categorical
-# distributions for Season, Soil_Type, Irrigation_Type, Pest_Disease_Incidence,
-# and District_Name. These profiles are used by compute_suitability(), so every
-# UI input now has a direct effect on recommendation ranking.
-
-print("Building crop suitability profiles from historical data...")
-
-
-def _clean_category_value(x):
-    """Normalize category values for robust case/space-insensitive matching."""
-    if x is None:
-        return ""
-    try:
-        if pd.isna(x):
-            return ""
-    except (TypeError, ValueError):
-        pass
-    return str(x).strip()
-
-
-def _category_distribution(series):
-    """Return normalized value counts after stripping blanks/nulls."""
-    if series is None:
-        return {}
-    cleaned = series.map(_clean_category_value)
-    cleaned = cleaned[cleaned != ""]
-    if cleaned.empty:
-        return {}
-    return cleaned.value_counts(normalize=True).to_dict()
-
-
-PROFILES = {}
-
-if _full_df is None:
-    print(f"  WARNING: {WEATHER_FILE} not found — profiles unavailable")
-else:
-    df_wx = _full_df.copy()
-    df_wx.columns = [str(c).strip() for c in df_wx.columns]
-
-    # Normalize pest labels/codes once before building profiles so frontend
-    # values like "Low"/"Medium"/"High" match historical numeric codes 0/1/2.
-    if "Pest_Disease_Incidence" in df_wx.columns:
-        df_wx["Pest_Disease_Incidence"] = normalize_pest_series(
-            df_wx["Pest_Disease_Incidence"], default=1, context="profile_build"
-        )
-
-    if "Crop" not in df_wx.columns:
-        print("  WARNING: Crop column missing — no suitability profiles built")
-    else:
-        for crop, grp in df_wx.groupby("Crop"):
-            p = {}
-
-            # Numeric profiles for all user-controlled weighted inputs.
-            for feat in SUITABILITY_WEIGHTS:
-                if feat in grp.columns:
-                    vals = pd.to_numeric(grp[feat], errors="coerce").dropna()
-                    if len(vals) > 0:
-                        std = float(vals.std())
-                        if not np.isfinite(std) or std <= 0:
-                            std = 1.0
-                        p[feat] = {"mean": float(vals.mean()), "std": std + 1e-3}
-
-            # Average historical yield for anomaly / fallback predictions.
-            if YIELD_COL in grp.columns:
-                y = pd.to_numeric(grp[YIELD_COL], errors="coerce").dropna()
-                p["avg_yield"] = float(y.mean()) if len(y) else 0.0
-            else:
-                p["avg_yield"] = 0.0
-
-            # Categorical profiles. District can be named District_Name in the
-            # dataset/model, while the frontend sends key "district".
-            for cat in ["Season", "Soil_Type", "Irrigation_Type", "Pest_Disease_Incidence", "District_Name", "District"]:
-                if cat in grp.columns:
-                    p[cat] = _category_distribution(grp[cat])
-
-            # If only District exists, expose it under District_Name as well so
-            # compute_suitability has one canonical lookup key.
-            if "District_Name" not in p and "District" in p:
-                p["District_Name"] = p["District"]
-
-            PROFILES[crop] = p
-
-print(f"  Profiles built for {len(PROFILES)} crops\n")
-
-# ── VALID DISTRICTS (for the frontend's district dropdown) ───────────────────
-# District_Name is one-hot encoded at training time (drop_first=True), so a
-# district string that doesn't exactly match one of these values silently
-# falls back to the dropped/reference district at inference. Expose the
-# real trained list so the frontend can offer a dropdown instead of free text.
-if "District_Name" in df_history.columns:
-    valid_districts = sorted(df_history["District_Name"].dropna().astype(str).str.strip().unique().tolist())
-elif _full_df is not None and "District_Name" in _full_df.columns:
-    valid_districts = sorted(_full_df["District_Name"].dropna().astype(str).str.strip().unique().tolist())
-else:
-    valid_districts = []
-
-print(f"  Valid districts: {valid_districts}\n")
-
 # ── HELPERS ───────────────────────────────────────────────────────────────────
-
-def gaussian(val, mean, std):
-    return float(np.exp(-0.5 * ((val - mean) / std) ** 2))
-
-
-def get_lag_features(crop, district, mu, std):
-    """
-    Mirrors what the training scripts' predict_with_live_weather() computed:
-    Yield_Lag1 / Yield_Roll3 / Yield_Trend from the last 3 historical rows
-    for this exact (District_Name, Crop) combination in df_history, each
-    normalized the same way training normalized the target (z-score using
-    this crop's mu/std). Falls back to 0.0 (i.e. "at the crop's mean, no
-    trend") when there isn't enough history for this district+crop yet —
-    same neutral fallback the old hardcoded-0.0 behavior gave everyone, but
-    now only used when there's genuinely no history to compute from.
-    """
-    if "District_Name" not in df_history.columns or "Crop" not in df_history.columns:
-        return 0.0, 0.0, 0.0
-    hist = df_history[
-        (df_history["District_Name"].astype(str).str.strip().str.lower() == str(district).strip().lower())
-        & (df_history["Crop"] == crop)
-    ]
-    if "Year" in hist.columns:
-        hist = hist.sort_values("Year")
-    if len(hist) < 3 or YIELD_COL not in hist.columns:
-        return 0.0, 0.0, 0.0
-
-    last3 = hist[YIELD_COL].values[-3:]
-    yield_lag1  = float(last3[-1])
-    yield_roll3 = float(np.mean(last3))
-    try:
-        yield_trend = float(np.polyfit(range(3), last3, 1)[0])
-    except (TypeError, ValueError):
-        yield_trend = 0.0
-
-    if not std:
-        return 0.0, 0.0, 0.0
-    return (yield_lag1 - mu) / std, (yield_roll3 - mu) / std, yield_trend / std
-
-
-def get_climatology_weather(district, season):
-    """
-    Best-effort weather features for a request that doesn't supply live
-    weather: averages historical weather_* columns in _full_df for this
-    district+season (climatology). Falls back to a district-only average,
-    then to nothing (caller fills 0.0) if neither is available. This
-    replaces silently sending 0.0 for every weather feature on every
-    request, which made rain/temp/etc. have zero effect on the prediction
-    regardless of season or location.
-    """
-    if _full_df is None:
-        return {}
-    df = _full_df
-    out = {}
-
-    scoped = df
-    if "District_Name" in df.columns and district:
-        scoped = scoped[scoped["District_Name"].astype(str).str.strip().str.lower() == str(district).strip().lower()]
-    if "Season" in df.columns and season:
-        season_scoped = scoped[scoped["Season"].astype(str).str.strip().str.lower() == str(season).strip().lower()]
-        if len(season_scoped) > 0:
-            scoped = season_scoped
-
-    for feat in WEATHER_FEATURES:
-        if feat not in df.columns:
-            continue
-        vals = pd.to_numeric(scoped.get(feat), errors="coerce").dropna() if feat in scoped.columns else pd.Series(dtype=float)
-        if len(vals) == 0:
-            # Fall back to the district-independent, season-independent mean
-            # for this state so we still return something rather than 0.0.
-            vals = pd.to_numeric(df[feat], errors="coerce").dropna()
-        if len(vals) > 0:
-            out[feat] = float(vals.mean())
-    return out
-
-
-def predict_yield_for_crop(crop, district, user_inputs, season=None):
-    """
-    Run XGBoost prediction for a specific crop.
-    Returns (predicted_yield, source) where source is 'model' or 'hist_avg'.
-
-    Real feat_cols (from get_dummies on training data, drop_first=True):
-      Categorical: Crop_*, District_Name_*, Irrigation_Type_Drip,
-                   Irrigation_Type_Rainfed, Soil_Type_Red Laterite
-      Numeric:     Area (Hectare), Fertilizer_kg_per_ha,
-                   Pest_Disease_Incidence (0/1/2),
-                   Yield_Lag1, Yield_Roll3, Yield_Trend,
-                   weather_temp_mean, weather_rain_total, weather_rain_days,
-                   weather_et0_total, weather_solarrad_total
-      NOTE: Season is dropped before training — NOT a direct model feature.
-            It's still useful here because it selects which climatology
-            weather window get_climatology_weather() averages over.
-            Soil baseline is Alluvial (drop_first), Red Laterite is encoded.
-            Irrigation baseline is Canal (drop_first), Drip/Rainfed encoded.
-    """
-    if crop not in valid_crops:
-        avg = PROFILES.get(crop, {}).get("avg_yield", 1.0)
-        return avg, "hist_avg"
-
-    mu  = crop_stats.loc[crop, "crop_mean"]
-    std = crop_stats.loc[crop, "crop_std"]
-
-    lag1, roll3, trend = get_lag_features(crop, district, mu, std)
-
-    # Weather: use whatever the caller explicitly supplied; fill in
-    # anything missing from district+season climatology instead of 0.0.
-    climatology = get_climatology_weather(district, season)
-    weather_row = {}
-    for feat in WEATHER_FEATURES:
-        supplied = user_inputs.get(feat)
-        if supplied is not None:
-            try:
-                weather_row[feat] = float(supplied)
-                continue
-            except (TypeError, ValueError):
-                pass
-        weather_row[feat] = climatology.get(feat, 0.0)
-
-    row = {
-        "District_Name":          district,
-        "Crop":                   crop,
-        "Soil_Type":              user_inputs.get("Soil_Type", "Alluvial"),
-        "Irrigation_Type":        user_inputs.get("Irrigation_Type", "Canal"),
-        "Area (Hectare)":         user_inputs.get("Area (Hectare)", 500),
-        "Fertilizer_kg_per_ha":   user_inputs.get("Fertilizer_kg_per_ha", 70),
-        "Pest_Disease_Incidence": normalize_pest_value(
-            user_inputs.get("Pest_Disease_Incidence", "Low"), default=0
-        ),
-        "Yield_Lag1":  lag1,
-        "Yield_Roll3": roll3,
-        "Yield_Trend": trend,
-        **weather_row,
-    }
-
-    X = pd.get_dummies(pd.DataFrame([row]), drop_first=True)
-    X = X.reindex(columns=feat_cols, fill_value=0)
-    X_sc = scaler.transform(X)
-
-    norm_pred  = model.predict(X_sc)[0]
-    pred_yield = float(norm_pred * std + mu)
-    return pred_yield, "model"
-
-
-def _categorical_fit(profile, key, user_value, default=0.0):
-    """
-    Return the historical frequency of user_value for this crop/profile.
-    Matching is exact first, then case-insensitive. Missing values return default.
-    """
-    if user_value is None:
-        return default
-    dist = profile.get(key, {}) or {}
-    if not dist:
-        return default
-
-    uv = _clean_category_value(user_value)
-    if uv == "":
-        return default
-
-    if uv in dist:
-        return float(dist[uv])
-
-    uv_lower = uv.lower()
-    for k, v in dist.items():
-        if _clean_category_value(k).lower() == uv_lower:
-            return float(v)
-
-    return default
-
-
-def compute_suitability(crop, user_inputs):
-    """
-    Returns (score, season_fit), where score is 0-1.
-
-    The ranking now uses every recommender UI input:
-      - Weather + fertilizer numeric profile match
-      - Season
-      - Soil_Type
-      - Irrigation_Type
-      - Pest_Disease_Incidence
-      - District / District_Name
-    """
-    p = PROFILES.get(crop, {})
-    if not p:
-        return 0.0, 0.0
-
-    # Numeric match: Gaussian similarity to the crop's historical conditions.
-    num, wsum = 0.0, 0.0
-    for feat, wt in SUITABILITY_WEIGHTS.items():
-        if feat not in p or feat not in user_inputs:
-            continue
-        try:
-            val = float(user_inputs.get(feat))
-        except (TypeError, ValueError):
-            continue
-        mean = p[feat].get("mean", 0.0)
-        std = p[feat].get("std", 1.0) or 1.0
-        num += wt * gaussian(val, mean, std)
-        wsum += wt
-    numeric_fit = num / wsum if wsum > 0 else 0.0
-
-    # Categorical matches: historical frequency for the selected category.
-    season_fit = _categorical_fit(p, "Season", user_inputs.get("Season", "Kharif"), default=0.0)
-    soil_fit = _categorical_fit(p, "Soil_Type", user_inputs.get("Soil_Type"), default=0.0)
-    irrigation_fit = _categorical_fit(p, "Irrigation_Type", user_inputs.get("Irrigation_Type"), default=0.0)
-
-    pest_raw = user_inputs.get("Pest_Disease_Incidence")
-    pest_code = normalize_pest_value(pest_raw, default=1)
-    pest_fit = _categorical_fit(p, "Pest_Disease_Incidence", pest_code, default=0.0)
-
-    # Frontend sends "district"; model/data commonly use "District_Name".
-    district_value = user_inputs.get("district") or user_inputs.get("District_Name") or user_inputs.get("District")
-    district_fit = _categorical_fit(p, "District_Name", district_value, default=0.0)
-
-    # Final blend. Numeric factors remain the largest signal, but district,
-    # soil, irrigation, pest, and season now materially change the ranking.
-    combined = (
-        0.40 * numeric_fit
-        + 0.20 * season_fit
-        + 0.15 * soil_fit
-        + 0.10 * irrigation_fit
-        + 0.10 * district_fit
-        + 0.05 * pest_fit
-    )
-
-    return float(combined), float(season_fit)
-
 
 def safe_int(x, default=1):
     """int(x) that never raises — used anywhere a groupby key or dict key
@@ -765,7 +436,7 @@ def serve_js(filename):
 @app.route("/api/crop/health", methods=["GET"])
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "crops": len(valid_crops), "features": len(feat_cols)})
+    return jsonify({"status": "ok", "service": "crop_dashboard", "history_rows": len(df_history)})
 
 
 @app.route("/crop_trends", methods=["GET"])
@@ -847,200 +518,6 @@ def crop_trends():
         "crops":   result_crops,
         "overall": [round(float(v), 3) for v in overall_yearly.values],
         "decade":  decade_result,
-    })
-
-
-@app.route("/api/crop/predict", methods=["POST"])
-@app.route("/predict", methods=["POST"])
-def predict():
-    """Single crop prediction. Used by the what-if panel."""
-    data     = request.get_json()
-    crop     = data.get("crop", "")
-    district = data.get("district", "Dhalai")
-    season   = data.get("Season") or data.get("season")
-
-    pred, source = predict_yield_for_crop(crop, district, data, season=season)
-
-    # Compute anomaly vs crop historical normal
-    normal = crop_stats.loc[crop, "crop_mean"] if crop in valid_crops else pred
-    anomaly = round((pred - normal) / normal * 100, 1) if normal > 0 else 0.0
-
-    return jsonify({
-        "yield":   round(pred, 3),
-        "normal":  round(normal, 3),
-        "anomaly": anomaly,
-        "source":  source,
-    })
-
-
-@app.route("/api/crop/recommend", methods=["POST"])
-@app.route("/recommend", methods=["POST"])
-def recommend():
-    """
-    Full recommendation run across all crops.
-    Ranks by suitability score, returns top N with predicted yield + anomaly.
-
-    Expects JSON:
-    {
-      "district":                "Dhalai",
-      "Season":                  "Kharif",
-      "Soil_Type":               "Alluvial",
-      "Irrigation_Type":         "Rainfed",
-      "Fertilizer_kg_per_ha":    70,
-      "Area (Hectare)":          500,
-      "Pest_Disease_Incidence":  "Low",
-      "weather_rain_days":       170,
-      "weather_rain_total":      1800,
-      "weather_temp_mean":       24.5,
-      "weather_et0_total":       1240,
-      "weather_wind_mean":       11.2,
-      "weather_solarrad_total":  5800,
-      "top_n":                   7
-    }
-    """
-    data     = request.get_json()
-    district = data.get("district", "Dhalai")
-    top_n    = int(data.get("top_n", 7))
-    season   = data.get("Season") or data.get("season")
-
-    # Score all crops
-    results = []
-    all_crops = list(PROFILES.keys())
-
-    for crop in all_crops:
-        suit, season_fit = compute_suitability(crop, data)
-        pred, source     = predict_yield_for_crop(crop, district, data, season=season)
-
-        # Normal yield for anomaly
-        if crop in valid_crops:
-            normal = float(crop_stats.loc[crop, "crop_mean"])
-        else:
-            normal = PROFILES.get(crop, {}).get("avg_yield", pred)
-
-        anomaly = round((pred - normal) / normal * 100, 1) if normal > 0 else 0.0
-
-        results.append({
-            "crop":        crop,
-            "suit_score":  round(suit, 4),
-            "season_fit":  round(season_fit, 3),
-            "predicted":   round(pred, 3),
-            "normal":      round(normal, 3),
-            "anomaly":     anomaly,
-            "source":      source,
-        })
-
-    # Sort by suitability descending
-    results.sort(key=lambda x: x["suit_score"], reverse=True)
-
-    # Normalise suitability to percentage
-    max_s = results[0]["suit_score"] if results else 1.0
-    for r in results:
-        r["suit_pct"] = round(r["suit_score"] / max_s * 100) if max_s > 0 else 0
-
-    return jsonify({
-        "district":    district,
-        "season":      data.get("Season", ""),
-        "results":     results[:top_n],
-        "weights_used": SUITABILITY_WEIGHTS,
-    })
-
-
-@app.route("/api/crop/valid_crops", methods=["GET"])
-@app.route("/valid_crops", methods=["GET"])
-def get_valid_crops():
-    return jsonify({"valid_crops": valid_crops})
-
-
-@app.route("/api/crop/valid_districts", methods=["GET"])
-@app.route("/valid_districts", methods=["GET"])
-def get_valid_districts():
-    """
-    The real list of District_Name values this state's model was trained
-    on. A district string that doesn't exactly match one of these gets
-    dropped to the reference/baseline district at prediction time (see
-    predict_yield_for_crop) — the frontend should use this list to build a
-    dropdown instead of a free-text field.
-    """
-    return jsonify({"valid_districts": valid_districts})
-
-
-@app.route("/model_info", methods=["GET"])
-def model_info():
-    """
-    Returns feature importances from the XGBoost model and
-    Pearson correlations of numeric features with yield in df_history.
-    """
-    # ── Feature importances ────────────────────────────────────────────────
-    # Use sklearn's feature_importances_ (mean gain across ALL trees, covers
-    # every feature including those with zero splits — no silent omissions
-    # like get_score() which skips features never chosen for a split).
-    raw_arr = model.feature_importances_          # shape: (n_features,)
-    total   = raw_arr.sum() or 1.0
-
-    # Map each column to its raw importance
-    col_imp = {col: float(raw_arr[i] / total) for i, col in enumerate(feat_cols)}
-
-    # ── Group dummy-encoded columns into logical feature buckets ──────────
-    GROUP_PREFIXES = [
-        ("Crop_",             "Crop"),
-        ("District_Name_",    "District"),
-        ("Soil_Type_",        "Soil_Type"),
-        ("Irrigation_Type_",  "Irrigation_Type"),
-    ]
-
-    grouped: dict = {}
-    for col, imp in col_imp.items():
-        label = col  # default: keep as-is
-        for prefix, group_name in GROUP_PREFIXES:
-            if col.startswith(prefix):
-                label = group_name
-                break
-        grouped[label] = grouped.get(label, 0.0) + imp
-
-    # Re-normalise after grouping so values still sum to 1
-    g_total = sum(grouped.values()) or 1.0
-    feat_imps_sorted = dict(
-        sorted({k: round(v / g_total, 6) for k, v in grouped.items()}.items(),
-               key=lambda x: -x[1])
-    )
-
-    # Pearson correlations with yield — use full dataset so Season/Soil/Irrigation/Pest/Fert are available
-    corr_df = _full_df.copy() if _full_df is not None else df_history.copy()
-    if "Pest_Disease_Incidence" in corr_df.columns:
-        # Defensive re-normalization: this endpoint may run against a
-        # dataframe that was loaded/merged differently than /stats' df, so
-        # never assume this column is already clean numeric.
-        corr_df["Pest_Disease_Incidence"] = normalize_pest_series(
-            corr_df["Pest_Disease_Incidence"], context="/model_info correlations"
-        )
-    numeric_cols = [
-        "Fertilizer_kg_per_ha", "Area (Hectare)",
-        "weather_rain_total", "weather_rain_days",
-        "weather_temp_mean", "weather_et0_total",
-        "weather_wind_mean", "weather_solarrad_total",
-        "Pest_Disease_Incidence",
-    ]
-    corr_result = {}
-    for col in numeric_cols:
-        if col in corr_df.columns:
-            sub = corr_df[[col, YIELD_COL]].dropna()
-            if len(sub) > 10:
-                r = sub.corr().iloc[0, 1]
-                corr_result[col] = round(float(r), 4)
-
-    # Categorical correlations — encode then correlate
-    for cat, label in [("Irrigation_Type", "Irrigation_Type"), ("Soil_Type", "Soil_Type"), ("Season", "Season")]:
-        if cat in corr_df.columns:
-            encoded = corr_df[cat].astype("category").cat.codes
-            sub = pd.concat([encoded, corr_df[YIELD_COL]], axis=1).dropna()
-            if len(sub) > 10:
-                r = sub.corr().iloc[0, 1]
-                corr_result[label] = round(float(r), 4)
-
-    return jsonify({
-        "feat_importances": feat_imps_sorted,
-        "correlations": corr_result,
-        "n_features": len(feat_cols),
     })
 
 
@@ -1296,26 +773,11 @@ def crop_scatter():
     })
 
 
-@app.route("/api/crop/profiles", methods=["GET"])
-@app.route("/profiles", methods=["GET"])
-def get_profiles():
-    """Expose profiles so the HTML can show crop-specific info."""
-    safe = {}
-    for crop, p in PROFILES.items():
-        safe[crop] = {
-            "avg_yield":      p.get("avg_yield", 0),
-            "Season":         p.get("Season", {}),
-            "Soil_Type":      p.get("Soil_Type", {}),
-            "Irrigation_Type": p.get("Irrigation_Type", {}),
-        }
-    return jsonify(safe)
-
-
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="CropAI Crop Backend")
+    parser = argparse.ArgumentParser(description="CropAI Dashboard Backend")
     parser.add_argument("--port",  type=int, default=5000,
                         help="Port to run on (default 5000 for Tripura, 5002 for Meghalaya)")
     parser.add_argument("--state", type=str, default="tripura",
@@ -1326,11 +788,11 @@ if __name__ == "__main__":
     # was never defined anywhere in this module — every startup logged
     # "Could not pre-load '<state>': name '_load_state' is not defined".
     # This was harmless for functionality: the module-level load block above
-    # (STATE/DATA_DIR/ARTEFACTS_FILE/model/_full_df) already runs at import
+    # (STATE/DATA_DIR/ARTEFACTS_FILE/df_history) already runs at import
     # time, driven by the same `--state` CLI arg parsed at the top of this
-    # file, so by the time argparse runs here the correct state's artefacts
-    # and dataframe are already loaded. The removed call was dead code from
-    # an earlier refactor (state used to be lazily loaded per-request).
+    # file, so by the time argparse runs here the correct state's data is
+    # already loaded. The removed call was dead code from an earlier
+    # refactor (state used to be lazily loaded per-request).
     # Kept as a no-op confirmation so startup output still shows what state
     # is live, without a bogus warning every time.
     if args.state.lower().strip() != STATE:
@@ -1338,13 +800,14 @@ if __name__ == "__main__":
             f"WARNING: --state={args.state!r} does not match the module-level "
             f"STATE={STATE!r} resolved from sys.argv at import time. This can "
             f"happen if backend_2.py is launched with an unexpected argv order. "
-            f"The already-loaded artefacts are for state={STATE!r}."
+            f"The already-loaded data is for state={STATE!r}."
         )
     else:
-        print(f"State '{STATE}' artefacts already loaded at import time.")
+        print(f"State '{STATE}' data already loaded at import time.")
 
     print("=" * 55)
-    print(f"  CROP BACKEND — state={args.state}")
+    print(f"  CROP DASHBOARD BACKEND — state={args.state}")
     print(f"  Running at http://localhost:{args.port}")
+    print(f"  Recommender microservice expected on port {args.port + 1}")
     print("=" * 55)
     app.run(host="0.0.0.0", port=args.port, debug=False)
