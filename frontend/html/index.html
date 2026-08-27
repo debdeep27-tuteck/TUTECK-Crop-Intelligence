@@ -2104,7 +2104,8 @@
 
     const IS_DISTRICT_ADMIN = !!(session && (session.role || '').toLowerCase() === 'district_admin');
     const IS_STATE_ADMIN = !!(session && (session.role || '').toLowerCase() === 'state_admin');
-    const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN;
+    const IS_MANDI = !!(session && (session.role || '').toLowerCase() === 'mandi');
+    const IS_STATE_LOCKED = IS_DISTRICT_ADMIN || IS_STATE_ADMIN || IS_MANDI;
     const ASSIGNED_STATE = IS_STATE_LOCKED ? (session.state || '').toLowerCase() : null;
 
     function getCurrentState() {
