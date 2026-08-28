@@ -630,6 +630,32 @@ def me():
     return jsonify({**user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 200
 
 
+@auth_bp.route("/api/auth/demo-user/<role>", methods=["GET"])
+def get_demo_user(role):
+    """Return email and password for an existing active user of the given role."""
+    role = role.strip().lower()
+    if role not in VALID_ROLES:
+        return jsonify({"error": f"Invalid role '{role}'. Must be one of {sorted(VALID_ROLES)}."}), 400
+
+    with _db_lock, _conn() as conn:
+        row = conn.execute(
+            "SELECT uid, email, password, role, status, state, district FROM users WHERE role = ? AND status = 'active' ORDER BY uid LIMIT 1",
+            (role,)
+        ).fetchone()
+
+    if row is None:
+        return jsonify({"error": f"No active user found with role '{role}'. Create one from the admin panel."}), 404
+
+    return jsonify({
+        "email": row["email"],
+        "password": row["password"],
+        "role": row["role"],
+        "uid": row["uid"],
+        "state": row["state"],
+        "district": row["district"],
+    }), 200
+
+
 @auth_bp.route("/api/auth/logout", methods=["POST"])
 def logout():
     token = _get_token_from_request()

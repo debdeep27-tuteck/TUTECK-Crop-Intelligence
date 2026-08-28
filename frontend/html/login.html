@@ -220,6 +220,18 @@
     <div class="auth-footer-note" id="switch-note">
       New to CropAI? <a onclick="setMode('signup')">Create an account</a>
     </div>
+
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:8px;">Quick login as role</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;" id="role-buttons">
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;" data-role="admin">Admin</button>
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#0F766E;" data-role="analyst">Analyst</button>
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#15803D;" data-role="farmer">Farmer</button>
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#1D4ED8;" data-role="state_admin">State Admin</button>
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#7C3AED;" data-role="district_admin">District Admin</button>
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#B45309;" data-role="mandi">Mandi</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -347,6 +359,24 @@
         }
       } catch { }
     })();
+
+    async function fillDemoRole(role) {
+      clearMsgs();
+      try {
+        const res = await fetch(`/api/auth/demo-user/${encodeURIComponent(role)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || data.error || 'Failed to load demo user');
+        document.getElementById('signin-email').value = data.email || '';
+        document.getElementById('signin-password').value = data.password || '';
+        showSuccess(`Demo ${role.replace('_',' ')} credentials loaded`);
+      } catch (err) {
+        showError(err.message || 'Unable to load demo credentials.');
+      }
+    }
+
+    document.querySelectorAll('.role-demo-btn').forEach((btn) => {
+      btn.addEventListener('click', () => fillDemoRole(btn.getAttribute('data-role')));
+    });
   </script>
 </body>
 
