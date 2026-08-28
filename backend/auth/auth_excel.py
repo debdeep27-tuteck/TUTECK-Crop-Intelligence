@@ -41,6 +41,7 @@ Run standalone for a quick sanity check:
     python auth_excel.py
 """
 
+import os
 import sqlite3
 import threading
 import time
@@ -61,7 +62,7 @@ LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
 LEGACY_PERMISSIONS_XLSX = BASE_DIR / "permissions.xlsx"
 LEGACY_USER_PERMISSIONS_XLSX = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"]
 
 VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi"}
 VALID_STATUSES = {"active", "restricted"}
@@ -78,23 +79,23 @@ DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
 # and is editable live from the admin panel (see /api/permissions routes).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
         "crud": True,
     },
     "analyst": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
         "crud": False,
     },
     "farmer": {
-        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction", "/mandi-prices", "/nearest-mandi"],
+        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction", "/mandi-prices", "/nearest-mandi", "/advisory"],
         "crud": False,
     },
     "state_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
         "crud": False,
     },
     "district_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
         "crud": False,
     },
     "mandi": {
@@ -161,6 +162,12 @@ def init_excel():
                 FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                key TEXT PRIMARY KEY,
+                applied_at REAL NOT NULL
+            )
+        """)
         existing_roles = {r["role"] for r in conn.execute("SELECT role FROM role_permissions")}
         for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
             if role not in existing_roles:
@@ -168,6 +175,34 @@ def init_excel():
                     "INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)",
                     (role, ",".join(cfg["pages"]), int(bool(cfg["crud"]))),
                 )
+
+        # One-time backfill: "/advisory" was added to ALL_PAGES/DEFAULT_ROLE_PERMISSIONS
+        # after some installs already had a populated role_permissions table, so those
+        # existing rows never picked it up from the seed step above. Runs exactly once
+        # (tracked in schema_migrations) — so if an admin later deliberately removes
+        # "/advisory" from a role via the admin panel, it stays removed on restart
+        # instead of silently coming back.
+        already_migrated = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = ?", ("advisory_page_backfill_v1",)
+        ).fetchone()
+        if not already_migrated:
+            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+                if "/advisory" not in cfg["pages"]:
+                    continue
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                if row is None:
+                    continue
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/advisory" not in current_pages:
+                    current_pages.append("/advisory")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        (",".join(current_pages), role),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                ("advisory_page_backfill_v1", time.time()),
+            )
 
     if db_is_new:
         _migrate_legacy_excel_files()
@@ -518,7 +553,12 @@ def get_current_session():
     token = _get_token_from_request()
     if not token:
         return None
-    return SESSIONS.get(token)
+    session = SESSIONS.get(token)
+    # TEMP DEBUG — remove once the 401 is diagnosed.
+    print(f"[get_current_session] pid={os.getpid()} token_received={token!r} "
+          f"found={session is not None} sessions_count={len(SESSIONS)} "
+          f"known_tokens={list(SESSIONS.keys())}")
+    return session
 
 
 def require_auth(roles=None):

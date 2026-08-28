@@ -48,6 +48,9 @@ MANDI_PRICES_API = "http://127.0.0.1:5011"
 # Nearest Mandi API
 NEAREST_MANDI_API = "http://127.0.0.1:5012"
 
+# Advisory Chatbot — Groq LLM orchestration layer over the services above
+ADVISORY_API = "http://127.0.0.1:5013"
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -150,6 +153,7 @@ def admin_page():
 @app.route("/auction-mandi")
 @app.route("/mandi-prices")
 @app.route("/nearest-mandi")
+@app.route("/advisory")
 def home():
     response = send_from_directory(str(HTML_DIR), "index.html")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -219,6 +223,11 @@ def content_mandi_prices():
 @app.route("/content/nearest-mandi")
 def content_nearest_mandi():
     return send_from_directory(str(HTML_DIR), "nearest_mandi.html")
+
+
+@app.route("/content/advisory")
+def content_advisory():
+    return send_from_directory(str(HTML_DIR), "advisory_chat.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -538,6 +547,14 @@ def nearest_mandi_api(path):
     return forward_request(NEAREST_MANDI_API, f"api/nearest-mandi/{path}")
 
 
+@app.route("/api/advisory/<path:path>", methods=["GET", "POST", "DELETE"])
+def advisory_api(path):
+    # advisory_backend.py exposes its own routes directly (/chat,
+    # /chat/history/<farmer_id>, /health) with no prefix, so we forward
+    # the path unchanged — same convention as /api/irrigation above.
+    return forward_request(ADVISORY_API, path)
+
+
 @app.route("/api/unused-crops", methods=["GET", "POST"])
 @app.route("/api/unused-crops/<path:path>", methods=["GET", "PATCH", "DELETE", "POST"])
 def auction_crops_api(path=""):
@@ -606,6 +623,11 @@ def mandi_prices_health_direct():
     return forward_request(MANDI_PRICES_API, "health")
 
 
+@app.route("/api/advisory-health")
+def advisory_health_direct():
+    return forward_request(ADVISORY_API, "health")
+
+
 # ── HEALTH CHECK ────────────────────────────────────────────────────────
 
 @app.route("/health")
@@ -635,7 +657,8 @@ def health():
                 "cold_storage": COLD_STORAGE_API,
                 "auction": AUCTION_API,
                 "mandi_prices": MANDI_PRICES_API,
-                "nearest_mandi": NEAREST_MANDI_API
+                "nearest_mandi": NEAREST_MANDI_API,
+                "advisory": ADVISORY_API
             }
         }
     })

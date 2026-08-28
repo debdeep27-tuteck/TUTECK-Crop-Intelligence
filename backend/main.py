@@ -17,6 +17,7 @@ Starts:
   • yield_platform_service.py    -> http://127.0.0.1:6100 (land parcel & yield platform microservice)
   • cold_storage_backend.py      -> http://127.0.0.1:5010 (cold storage intelligence API)
   • mandi_prices_backend.py      -> http://127.0.0.1:5011 (daily mandi price API, data.gov.in)
+  • advisory_backend.py          -> http://127.0.0.1:5013 (Farmer AI advisory chatbot, Groq LLM)
 
 Public URLs:
   http://localhost:8085/dashboard
@@ -28,6 +29,7 @@ Public URLs:
   http://localhost:8085/auction-mandi
   http://localhost:8085/cold-storage
   http://localhost:8085/mandi-prices
+  http://localhost:8085/advisory
 
 Usage:
   python main.py                         # launch all services
@@ -37,6 +39,7 @@ python main.py --state rajasthan        # launch only Rajasthan crop backend + s
   python main.py --states tripura,meghalaya,rajasthan
   python main.py --no-browser
   python main.py --no-disease             # skip disease backend
+  python main.py --no-advisory            # skip advisory chatbot backend
 
 Stop:
   Ctrl+C  (shuts down all servers cleanly)
@@ -122,6 +125,10 @@ MANDI_PRICES_PORT = 5011
 
 # Nearest Mandi backend
 NEAREST_MANDI_PORT = 5012
+
+# Advisory Chatbot backend (Groq LLM orchestration layer over the other
+# services above); gateway.py forwards /api/advisory/* to this port.
+ADVISORY_PORT = 5013
 
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
@@ -252,6 +259,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-auction", action="store_true", help="Skip auction backend")
     parser.add_argument("--no-mandi-prices", action="store_true", help="Skip mandi prices backend")
     parser.add_argument("--no-nearest-mandi", action="store_true", help="Skip nearest mandi backend")
+    parser.add_argument("--no-advisory", action="store_true", help="Skip advisory chatbot backend")
 
     return parser.parse_args()
 
@@ -318,6 +326,8 @@ def find_script(start_dir: Path, filename: str) -> Optional[Path]:
         "mandi_prices",
         "nearest_mandi",
         "cold_storage",
+        "chatbot",
+        "advisory",
     ]
     for folder in subfolders:
         candidates.append(project_root / folder / filename)
@@ -371,6 +381,7 @@ def main() -> None:
     cold_storage_script = find_script(base_dir, "cold_storage_backend.py")
     mandi_prices_script = find_script(base_dir, "mandi_prices_backend.py")
     nearest_mandi_script = find_script(base_dir, "nearest_mandi_backend.py")
+    advisory_script = find_script(base_dir, "advisory_backend.py")
     gateway_script = find_script(base_dir, "gateway.py")
 
     if not backend_script:
@@ -574,6 +585,37 @@ def main() -> None:
     else:
         log(RED, "nearest-mandi", "nearest_mandi_backend.py not found; Nearest Mandi tab will show BACKEND OFFLINE.")
 
+    # 3g) Start advisory chatbot backend (Groq LLM orchestration layer).
+    # Needs GROQ_API_KEY (same key disease_backend.py uses) and, since its
+    # cold-storage tool calls require a farmer's bearer token to be
+    # forwarded to cold_storage_backend.py, GATEWAY_INTERNAL_URL isn't
+    # actually needed here (the token comes from the incoming request),
+    # but ADVISORY_IRRIGATION_API_KEY is passed through in case
+    # irrigation_backend2.py has IRRIGATION_API_KEYS configured.
+    if args.no_advisory:
+        log(YELLOW, "advisory", "Skipped by --no-advisory")
+    elif advisory_script:
+        start_if_needed(
+            label="advisory",
+            script=advisory_script,
+            cmd_args=[],
+            port=ADVISORY_PORT,
+            timeout=args.ready_timeout,
+            env_extra={
+                "GROQ_API_KEY": os.environ.get("GROQ_API_KEY", ""),
+                "ADVISORY_IRRIGATION_API_KEY": os.environ.get("ADVISORY_IRRIGATION_API_KEY", ""),
+                "MANDI_PRICES_URL": f"http://127.0.0.1:{MANDI_PRICES_PORT}",
+                "NEAREST_MANDI_URL": f"http://127.0.0.1:{NEAREST_MANDI_PORT}",
+                "IRRIGATION_URL": f"http://127.0.0.1:{IRRIGATION_PORT}",
+                "COLD_STORAGE_URL": f"http://127.0.0.1:{COLD_STORAGE_PORT}",
+                "CROP_RECOMMENDER_TRIPURA": f"http://127.0.0.1:{CROP_RECOMMENDER_BACKENDS['tripura']}",
+                "CROP_RECOMMENDER_MEGHALAYA": f"http://127.0.0.1:{CROP_RECOMMENDER_BACKENDS['meghalaya']}",
+                "CROP_RECOMMENDER_RAJASTHAN": f"http://127.0.0.1:{CROP_RECOMMENDER_BACKENDS['rajasthan']}",
+            },
+        )
+    else:
+        log(RED, "advisory", "advisory_backend.py not found; Advisory chatbot tab will show BACKEND OFFLINE.")
+
     # 4) Start gateway last, after internal services are up.
     start_if_needed(
         label="gateway",
@@ -585,11 +627,13 @@ def main() -> None:
 
     public_url = f"http://localhost:{args.gateway_port}/dashboard"
     disease_url = f"http://localhost:{args.gateway_port}/disease"
+    advisory_url = f"http://localhost:{args.gateway_port}/advisory"
 
     print("\n" + "=" * 70)
     log(GREEN, "main", "All requested services have been launched.")
     print(f"  Dashboard: {public_url}")
     print(f"  Disease:   {disease_url}")
+    print(f"  Advisory:  {advisory_url}")
     print("  Gateway disease health check:")
     print(f"    http://localhost:{args.gateway_port}/api/disease/health?state=tripura")
     print("=" * 70 + "\n")

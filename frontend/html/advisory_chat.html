@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advisory Chat</title>
+<style>
+  :root {
+    --soil: #3f3226;
+    --soil-light: #6b5a47;
+    --leaf: #4a7c3f;
+    --leaf-dark: #35592d;
+    --leaf-pale: #e8f0e3;
+    --wheat: #d9a441;
+    --paper: #faf8f4;
+    --line: #e2ddd2;
+    --ink: #2a241d;
+    --ink-soft: #6f6659;
+    --danger: #b8503d;
+    --radius: 14px;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--paper);
+    font-family: var(--font-body);
+    color: var(--ink);
+  }
+
+  .advisory-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--paper);
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+
+  .advisory-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--leaf-dark);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .advisory-header .title-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .advisory-header .icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .advisory-header .icon svg { width: 20px; height: 20px; }
+
+  .advisory-header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .advisory-header .subtitle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 1px;
+  }
+
+  .lang-select {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .lang-select option { color: var(--ink); }
+
+  /* ── MESSAGE LIST ───────────────────────────────────────── */
+
+  .advisory-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    color: var(--ink-soft);
+    max-width: 320px;
+    padding: 24px;
+  }
+
+  .empty-state .icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+    border-radius: 16px;
+    background: var(--leaf-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .empty-state .icon svg { width: 28px; height: 28px; color: var(--leaf-dark); }
+
+  .empty-state h2 {
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 16px;
+  }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .chip {
+    background: #fff;
+    border: 1px solid var(--line);
+    color: var(--leaf-dark);
+    font-size: 12.5px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .chip:hover { background: var(--leaf-pale); border-color: var(--leaf); }
+
+  .msg-row { display: flex; }
+  .msg-row.user { justify-content: flex-end; }
+  .msg-row.assistant { justify-content: flex-start; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .msg-row.user .bubble {
+    background: var(--leaf);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg-row.assistant .bubble {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 4px;
+  }
+
+  .tool-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--leaf-dark);
+    background: var(--leaf-pale);
+    padding: 3px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+
+  .typing-dots {
+    display: inline-flex;
+    gap: 3px;
+    padding: 4px 0;
+  }
+
+  .typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink-soft);
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .error-bubble {
+    background: #fbeae6;
+    border: 1px solid #f0c6bb;
+    color: var(--danger);
+  }
+
+  /* ── COMPOSER ───────────────────────────────────────────── */
+
+  .advisory-composer {
+    flex-shrink: 0;
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+    background: #fff;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .composer-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 6px 6px 6px 16px;
+  }
+
+  .composer-input-wrap:focus-within {
+    border-color: var(--leaf);
+  }
+
+  #advisory-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: 14.5px;
+    line-height: 1.4;
+    max-height: 100px;
+    padding: 6px 0;
+    color: var(--ink);
+  }
+
+  #advisory-input:focus { outline: none; }
+
+  #advisory-input::placeholder { color: var(--ink-soft); }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  .mic-btn {
+    background: transparent;
+    color: var(--ink-soft);
+  }
+
+  .mic-btn:hover { background: var(--leaf-pale); color: var(--leaf-dark); }
+
+  .mic-btn.recording {
+    background: var(--danger);
+    color: #fff;
+    animation: pulse 1.4s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(184,80,61,0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(184,80,61,0); }
+    100% { box-shadow: 0 0 0 0 rgba(184,80,61,0); }
+  }
+
+  .send-btn {
+    background: var(--leaf);
+    color: #fff;
+  }
+
+  .send-btn:hover:not(:disabled) { background: var(--leaf-dark); }
+
+  .send-btn:disabled {
+    background: var(--line);
+    color: var(--ink-soft);
+    cursor: not-allowed;
+  }
+
+  .send-btn:active:not(:disabled) { transform: scale(0.94); }
+
+  .disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    padding: 6px 14px 10px;
+    background: #fff;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="advisory-shell">
+
+  <div class="advisory-header">
+    <div class="title-block">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C9 6 7 9 7 12a5 5 0 0 0 10 0c0-3-2-6-5-10z"/>
+          <path d="M12 22v-6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Farm Advisor</h1>
+        <div class="subtitle">Ask about prices, irrigation, storage &amp; more</div>
+      </div>
+    </div>
+    <select id="lang-select" class="lang-select" aria-label="Response language">
+      <option value="en">English</option>
+      <option value="hi">हिंदी</option>
+      <option value="bn">বাংলা</option>
+      <option value="mr">मराठी</option>
+      <option value="gu">ગુજરાતી</option>
+      <option value="ta">தமிழ்</option>
+      <option value="te">తెలుగు</option>
+      <option value="pa">ਪੰਜਾਬੀ</option>
+      <option value="kok">Kokborok</option>
+      <option value="ks">Khasi</option>
+    </select>
+  </div>
+
+  <div class="advisory-messages" id="messages">
+    <div class="empty-state" id="empty-state">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <h2>Ask your farm advisor anything</h2>
+      <p>Get live mandi prices, irrigation advice, cold storage availability and crop recommendations — in your own language.</p>
+      <div class="suggestion-chips">
+        <button class="chip" type="button" data-q="What is today's mandi price for mustard?">Mandi price for mustard?</button>
+        <button class="chip" type="button" data-q="Should I irrigate my field today?">Should I irrigate today?</button>
+        <button class="chip" type="button" data-q="Is there cold storage space nearby?">Cold storage nearby?</button>
+        <button class="chip" type="button" data-q="What crop should I plant this season?">What to plant this season?</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="advisory-composer">
+    <div class="composer-input-wrap">
+      <textarea id="advisory-input" rows="1" placeholder="Type your question…" aria-label="Message"></textarea>
+    </div>
+    <button class="icon-btn mic-btn" id="mic-btn" type="button" aria-label="Voice input" title="Voice input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+      </svg>
+    </button>
+    <button class="icon-btn send-btn" id="send-btn" type="button" aria-label="Send message" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="disclaimer">Advisory only — not financial or legal advice. Always confirm before major decisions.</div>
+
+</div>
+
+<script>
+(function () {
+  const messagesEl = document.getElementById('messages');
+  const emptyStateEl = document.getElementById('empty-state');
+  const inputEl = document.getElementById('advisory-input');
+  const sendBtn = document.getElementById('send-btn');
+  const micBtn = document.getElementById('mic-btn');
+  const langSelect = document.getElementById('lang-select');
+
+  // Identity now comes entirely from the logged-in session token (the
+  // backend verifies it against /api/auth/me and derives the farmer's
+  // own uid) — this widget no longer generates or sends its own id.
+  // login.html stores the whole session as JSON under 'cropai_session',
+  // e.g. {"token": "...", "email": "...", "role": "...", ...} — the
+  // token itself is NOT a top-level localStorage key.
+  const SESSION_KEY = 'cropai_session';
+
+  function getAuthToken() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return '';
+      const session = JSON.parse(raw);
+      return (session && session.token) || '';
+    } catch (e) { return ''; }
+  }
+
+  // ── SESSION GUARD ──────────────────────────────────────────
+  // This widget is loaded once as part of the dashboard shell and can
+  // outlive a login/logout — if User A logs out and User B logs in
+  // without this page/iframe doing a hard reload, the DOM still has
+  // A's bubbles and any in-flight request from A's session could still
+  // resolve and render into B's chat. currentToken pins every render
+  // (history load + sendMessage) to the token that was active when the
+  // request started, and any response is dropped if the token has since
+  // changed.
+  let currentToken = getAuthToken();
+
+  function resetChatUI() {
+    currentToken = getAuthToken();
+    messagesEl.querySelectorAll('.msg-row').forEach((row) => row.remove());
+    removeTypingIndicator();
+    if (emptyStateEl) emptyStateEl.style.display = '';
+    inputEl.value = '';
+    autoResize();
+    updateSendState();
+  }
+
+  // Parent dashboard should call this after any login/logout so a
+  // leftover session's messages never bleed into the next user's view.
+  // e.g. window.frames['advisory-chat-frame'].contentWindow.advisoryChatOnSessionChange()
+  window.advisoryChatOnSessionChange = function () {
+    resetChatUI();
+    loadHistory();
+  };
+
+  // Cross-tab safety net: if the session in localStorage changes (another
+  // tab logged in/out) while this widget is open, reset instead of
+  // silently continuing to show the previous user's conversation.
+  window.addEventListener('storage', (e) => {
+    if (e.key === SESSION_KEY) {
+      resetChatUI();
+      loadHistory();
+    }
+  });
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function hideEmptyState() {
+    if (emptyStateEl) emptyStateEl.style.display = 'none';
+  }
+
+  function addBubble(role, text, { isError = false, toolsUsed = [] } = {}) {
+    hideEmptyState();
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + role;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble' + (isError ? ' error-bubble' : '');
+
+    if (toolsUsed && toolsUsed.length) {
+      const tag = document.createElement('div');
+      tag.className = 'tool-tag';
+      tag.textContent = '🔎 checked live data';
+      bubble.appendChild(tag);
+      bubble.appendChild(document.createElement('br'));
+    }
+
+    bubble.appendChild(document.createTextNode(text));
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function addTypingIndicator() {
+    hideEmptyState();
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    row.id = 'typing-indicator';
+    row.innerHTML = `
+      <div class="bubble">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>`;
+    messagesEl.appendChild(row);
+    scrollToBottom();
+  }
+
+  function removeTypingIndicator() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function autoResize() {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+  }
+
+  function updateSendState() {
+    sendBtn.disabled = inputEl.value.trim().length === 0;
+  }
+
+  async function sendMessage(text) {
+    const message = (text || inputEl.value).trim();
+    if (!message) return;
+
+    const requestToken = getAuthToken();
+
+    addBubble('user', message);
+    inputEl.value = '';
+    autoResize();
+    updateSendState();
+    addTypingIndicator();
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (requestToken) headers['Authorization'] = 'Bearer ' + requestToken;
+
+    if (!requestToken) {
+      removeTypingIndicator();
+      addBubble('assistant', 'Please log in to use the Farm Advisor.', { isError: true });
+      return;
+    }
+
+    try {
+      const resp = await fetch('/api/advisory/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: message,
+          lang: langSelect.value,
+        }),
+      });
+
+      const data = await resp.json().catch(() => ({}));
+
+      // The session may have changed while this request was in flight
+      // (user logged out/switched). Don't let a stale reply render.
+      if (requestToken !== currentToken) return;
+
+      removeTypingIndicator();
+
+      if (!resp.ok) {
+        if (resp.status === 403) {
+          addBubble('assistant', "You don't have access to the Farm Advisor. Ask an admin to enable it for your account.", { isError: true });
+        } else if (resp.status === 401) {
+          addBubble('assistant', 'Your session has expired. Please log in again.', { isError: true });
+        } else {
+          addBubble('assistant', data.error || "Sorry, the advisor isn't available right now. Please try again in a moment.", { isError: true });
+        }
+        return;
+      }
+
+      addBubble('assistant', data.reply || "Sorry, I couldn't understand that. Could you rephrase?", {
+        toolsUsed: data.tools_used || [],
+      });
+    } catch (err) {
+      if (requestToken !== currentToken) return;
+      removeTypingIndicator();
+      addBubble('assistant', "Couldn't reach the advisor service. Check your connection and try again.", { isError: true });
+    }
+  }
+
+  sendBtn.addEventListener('click', () => sendMessage());
+
+  inputEl.addEventListener('input', () => {
+    autoResize();
+    updateSendState();
+  });
+
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  document.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', () => sendMessage(chip.dataset.q));
+  });
+
+  // ── VOICE INPUT (Whisper on Groq) ──────────────────
+  // Records a short clip with MediaRecorder, uploads it to
+  // /chat/transcribe, and places the transcribed text into the input
+  // box for the user to review/edit before sending — it does not
+  // auto-send, since transcription can be imperfect.
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let isRecording = false;
+
+  async function startRecording() {
+    if (isRecording) return;
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      addBubble('assistant', "Couldn't access the microphone. Check your browser's microphone permission and try again.", { isError: true });
+      return;
+    }
+    recordedChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      handleRecordingComplete();
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    micBtn.classList.add('recording');
+  }
+
+  function stopRecording() {
+    if (!isRecording || !mediaRecorder) return;
+    isRecording = false;
+    micBtn.classList.remove('recording');
+    mediaRecorder.stop();
+  }
+
+  async function handleRecordingComplete() {
+    if (recordedChunks.length === 0) return;
+    const requestToken = getAuthToken();
+    if (!requestToken) {
+      addBubble('assistant', 'Please log in to use voice input.', { isError: true });
+      return;
+    }
+
+    const blob = new Blob(recordedChunks, { type: recordedChunks[0].type || 'audio/webm' });
+    const form = new FormData();
+    form.append('audio', blob, 'voice-input.webm');
+    form.append('lang', langSelect.value);
+
+    const originalPlaceholder = inputEl.placeholder;
+    inputEl.placeholder = 'Transcribing…';
+    micBtn.disabled = true;
+
+    try {
+      const resp = await fetch('/api/advisory/chat/transcribe', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + requestToken },
+        body: form,
+      });
+      const data = await resp.json().catch(() => ({}));
+
+      if (requestToken !== currentToken) return; // session changed mid-request
+
+      if (!resp.ok) {
+        addBubble('assistant', data.error || "Sorry, I couldn't transcribe that. Please try again or type your question.", { isError: true });
+        return;
+      }
+
+      const text = (data.text || '').trim();
+      if (!text) {
+        addBubble('assistant', "I didn't catch that — please try again or type your question.", { isError: true });
+        return;
+      }
+      inputEl.value = (inputEl.value ? inputEl.value.trim() + ' ' : '') + text;
+      autoResize();
+      updateSendState();
+      inputEl.focus();
+    } catch (err) {
+      if (requestToken !== currentToken) return;
+      addBubble('assistant', "Couldn't reach the transcription service. Check your connection and try again.", { isError: true });
+    } finally {
+      inputEl.placeholder = originalPlaceholder;
+      micBtn.disabled = false;
+    }
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+      addBubble('assistant', 'Voice input is not supported in this browser. Please type your question.', { isError: true });
+      return;
+    }
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  });
+
+  // Load any existing conversation history for this user so a page
+  // refresh doesn't lose context. Guarded against the token changing
+  // while the request is in flight (see SESSION GUARD above).
+  async function loadHistory() {
+    const requestToken = getAuthToken();
+    if (!requestToken) return;
+    try {
+      const resp = await fetch('/api/advisory/chat/history', {
+        headers: { 'Authorization': 'Bearer ' + requestToken },
+      });
+      if (requestToken !== currentToken) return; // session changed mid-request
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (requestToken !== currentToken) return;
+      const msgs = data.messages || [];
+      if (msgs.length === 0) return;
+      hideEmptyState();
+      msgs.forEach((m) => addBubble(m.role === 'user' ? 'user' : 'assistant', m.content));
+    } catch (e) { /* history is optional; fail silently */ }
+  }
+  loadHistory();
+})();
+</script>
+
+</body>
+</html>
