@@ -201,6 +201,47 @@
     margin-bottom: 6px;
   }
 
+  .speak-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 6px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: middle;
+    opacity: 0.6;
+    transition: opacity 0.15s, background 0.15s;
+  }
+
+  .speak-btn:hover {
+    opacity: 1;
+    background: var(--leaf-pale);
+  }
+
+  .speak-btn.loading {
+    opacity: 0.4;
+    cursor: wait;
+    animation: pulse-fade 1s infinite;
+  }
+
+  .speak-btn.speaking {
+    opacity: 1;
+    background: var(--leaf-pale);
+    animation: pulse-fade 1.1s infinite;
+  }
+
+  @keyframes pulse-fade {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
   .typing-dots {
     display: inline-flex;
     gap: 3px;
@@ -414,6 +455,11 @@
   const micBtn = document.getElementById('mic-btn');
   const langSelect = document.getElementById('lang-select');
 
+  // Mirrors LANG_TO_SARVAM in advisory_backend.py — Sarvam's TTS doesn't
+  // cover Kokborok/Khasi, so hide the speaker button for those rather
+  // than showing an error after the user taps it.
+  const TTS_SUPPORTED_LANGS = new Set(['en', 'hi', 'bn', 'mr', 'ta', 'te', 'gu', 'pa']);
+
   // Identity now comes entirely from the logged-in session token (the
   // backend verifies it against /api/auth/me and derives the farmer's
   // own uid) — this widget no longer generates or sends its own id.
@@ -478,6 +524,72 @@
     if (emptyStateEl) emptyStateEl.style.display = 'none';
   }
 
+  // ── SPOKEN REPLIES (PlayAI TTS on Groq) ─────────────
+  // Speaker button on assistant bubbles fetches /chat/speak and plays the
+  // returned audio. Only one clip plays at a time — starting a new one
+  // stops whatever's currently playing.
+  let currentAudio = null;
+
+  function stopSpeaking() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.src = '';
+      currentAudio = null;
+    }
+    document.querySelectorAll('.speak-btn.speaking').forEach((b) => b.classList.remove('speaking'));
+  }
+
+  async function speakText(text, btnEl) {
+    const requestToken = getAuthToken();
+    if (!requestToken) return;
+
+    // Toggle off if this button's clip is already playing.
+    if (btnEl.classList.contains('speaking')) {
+      stopSpeaking();
+      return;
+    }
+    stopSpeaking();
+
+    btnEl.classList.add('loading');
+    try {
+      const resp = await fetch('/api/advisory/chat/speak', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + requestToken,
+        },
+        body: JSON.stringify({ text, lang: langSelect.value }),
+      });
+      if (requestToken !== currentToken) return; // session changed mid-request
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        addBubble('assistant', data.error || "Sorry, couldn't generate speech for that reply.", { isError: true });
+        return;
+      }
+      const audioBlob = await resp.blob();
+      const url = URL.createObjectURL(audioBlob);
+      const audio = new Audio(url);
+      currentAudio = audio;
+      btnEl.classList.add('speaking');
+      audio.addEventListener('ended', () => {
+        btnEl.classList.remove('speaking');
+        URL.revokeObjectURL(url);
+        if (currentAudio === audio) currentAudio = null;
+      });
+      audio.addEventListener('error', () => {
+        btnEl.classList.remove('speaking');
+        URL.revokeObjectURL(url);
+        if (currentAudio === audio) currentAudio = null;
+      });
+      await audio.play();
+    } catch (err) {
+      if (requestToken !== currentToken) return;
+      addBubble('assistant', "Couldn't reach the speech service. Check your connection and try again.", { isError: true });
+    } finally {
+      btnEl.classList.remove('loading');
+    }
+  }
+
   function addBubble(role, text, { isError = false, toolsUsed = [] } = {}) {
     hideEmptyState();
     const row = document.createElement('div');
@@ -495,6 +607,19 @@
     }
 
     bubble.appendChild(document.createTextNode(text));
+
+    // Speaker button only on assistant replies that aren't error messages.
+    if (role === 'assistant' && !isError && TTS_SUPPORTED_LANGS.has(langSelect.value)) {
+      const speakBtn = document.createElement('button');
+      speakBtn.type = 'button';
+      speakBtn.className = 'speak-btn';
+      speakBtn.setAttribute('aria-label', 'Play spoken reply');
+      speakBtn.title = 'Play spoken reply';
+      speakBtn.innerHTML = '🔊';
+      speakBtn.addEventListener('click', () => speakText(text, speakBtn));
+      bubble.appendChild(speakBtn);
+    }
+
     row.appendChild(bubble);
     messagesEl.appendChild(row);
     scrollToBottom();
@@ -614,19 +739,36 @@
   let mediaRecorder = null;
   let recordedChunks = [];
   let isRecording = false;
+  let recordingStartedAt = 0;
+  const MIN_RECORDING_MS = 400; // catches accidental tap-and-release
 
   async function startRecording() {
     if (isRecording) return;
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          // Whisper resamples internally anyway, but capturing at a
+          // reasonable rate avoids the browser defaulting to something
+          // very low on some devices.
+          sampleRate: 48000,
+          channelCount: 1,
+        },
+      });
     } catch (e) {
       addBubble('assistant', "Couldn't access the microphone. Check your browser's microphone permission and try again.", { isError: true });
       return;
     }
     recordedChunks = [];
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
-    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    // Prefer opus in a webm container — it's the best-supported
+    // high-quality codec across browsers for MediaRecorder.
+    const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+    const mimeType = preferredTypes.find((t) => MediaRecorder.isTypeSupported(t)) || '';
+    const options = mimeType ? { mimeType, audioBitsPerSecond: 128000 } : { audioBitsPerSecond: 128000 };
+    mediaRecorder = new MediaRecorder(stream, options);
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = () => {
       stream.getTracks().forEach((t) => t.stop());
@@ -634,6 +776,7 @@
     };
     mediaRecorder.start();
     isRecording = true;
+    recordingStartedAt = Date.now();
     micBtn.classList.add('recording');
   }
 
@@ -646,6 +789,11 @@
 
   async function handleRecordingComplete() {
     if (recordedChunks.length === 0) return;
+    if (Date.now() - recordingStartedAt < MIN_RECORDING_MS) {
+      addBubble('assistant', "That was too quick to catch — please hold the mic button and speak for a moment.", { isError: true });
+      recordedChunks = [];
+      return;
+    }
     const requestToken = getAuthToken();
     if (!requestToken) {
       addBubble('assistant', 'Please log in to use voice input.', { isError: true });
