@@ -1321,6 +1321,96 @@ def send_auction_started_email(auction: dict, farmer_emails: list[str]) -> int:
     return sent
 
 
+# ── CROP RECOMMENDER PROXY (valid_crops / valid_districts) ───────────────
+#
+# Backs the "Crop Type" and "District" dropdowns on both the mandi
+# (Start Auction) form and the farmer (List Crop) form. Both forms call:
+#     GET /api/yield/valid_crops?state=<state>
+#     GET /api/yield/valid_districts?state=<state>
+# on THIS app's origin — those routes did not exist before, which is why
+# both dropdowns were stuck on "Loading…" / "Could not load".
+#
+# The real data lives in crop_recommender_service.py, run as one process
+# PER STATE, each on its own port (backend port + 1), with NO ?state=
+# query support of its own — the state is fixed by which process/port you
+# hit. It also returns different JSON keys than the frontend expects:
+#     crop_recommender_service.py          this frontend wants
+#     GET /valid_crops    -> {"valid_crops": [...]}   -> {"crops": [...]}
+#     GET /valid_districts -> {"valid_districts": [...]} -> {"districts": [...]}
+#
+# So this app has to do two things the frontend can't: (1) pick the right
+# port for the requested state, and (2) translate the response shape.
+#
+# Extend CROP_RECOMMENDER_PORTS below whenever a new state is deployed.
+# Keys must be lowercase to match how the frontend sends `state`.
+
+CROP_RECOMMENDER_PORTS: dict[str, int] = {
+    "tripura": int(os.environ.get("CROP_RECOMMENDER_PORT_TRIPURA", "6003")),
+    "meghalaya": int(os.environ.get("CROP_RECOMMENDER_PORT_MEGHALAYA", "6005")),
+    "rajasthan": int(os.environ.get("CROP_RECOMMENDER_PORT_RAJASTHAN", "6007")),
+}
+CROP_RECOMMENDER_HOST = os.environ.get("CROP_RECOMMENDER_HOST", "127.0.0.1")
+
+
+def _crop_recommender_base_url(state: str) -> Optional[str]:
+    port = CROP_RECOMMENDER_PORTS.get(state)
+    if not port:
+        return None
+    return f"http://{CROP_RECOMMENDER_HOST}:{port}"
+
+
+@app.route("/api/yield/valid_crops", methods=["GET"])
+def valid_crops():
+    state = (request.args.get("state") or "").strip().lower()
+    if not state:
+        return jsonify({"error": "state query param is required"}), 400
+
+    base_url = _crop_recommender_base_url(state)
+    if base_url is None:
+        return jsonify({
+            "error": f"no crop_recommender_service configured for state '{state}'",
+            "crops": [],
+        }), 404
+
+    try:
+        resp = requests.get(f"{base_url}/valid_crops", timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "error": f"crop_recommender_service unreachable for state '{state}': {e}",
+            "crops": [],
+        }), 502
+
+    return jsonify({"crops": data.get("valid_crops", [])})
+
+
+@app.route("/api/yield/valid_districts", methods=["GET"])
+def valid_districts():
+    state = (request.args.get("state") or "").strip().lower()
+    if not state:
+        return jsonify({"error": "state query param is required"}), 400
+
+    base_url = _crop_recommender_base_url(state)
+    if base_url is None:
+        return jsonify({
+            "error": f"no crop_recommender_service configured for state '{state}'",
+            "districts": [],
+        }), 404
+
+    try:
+        resp = requests.get(f"{base_url}/valid_districts", timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "error": f"crop_recommender_service unreachable for state '{state}': {e}",
+            "districts": [],
+        }), 502
+
+    return jsonify({"districts": data.get("valid_districts", [])})
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok", "service": "auction_backend"})

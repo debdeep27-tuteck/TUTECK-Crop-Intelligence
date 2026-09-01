@@ -2004,9 +2004,9 @@
         const sel = document.getElementById("formCropType");
         sel.innerHTML = '<option value="">Loading crops…</option>';
         try {
-            const res = await fetch(`/api/yield/valid_crops?state=${encodeURIComponent(state)}`);
+            const res = await fetch(`/api/crop/valid_crops?state=${encodeURIComponent(state)}`);
             const data = await res.json();
-            const crops = data.crops || [];
+            const crops = data.valid_crops || data.crops || [];
             sel.innerHTML = crops.length
                 ? `<option value="">Select crop</option>` + crops.map(c => `<option value="${c}">${c}</option>`).join("")
                 : '<option value="">No crops found</option>';
@@ -2019,9 +2019,9 @@
         const sel = document.getElementById("formDistrict");
         sel.innerHTML = '<option value="">Loading districts…</option>';
         try {
-            const res = await fetch(`/api/yield/valid_districts?state=${encodeURIComponent(state)}`);
+            const res = await fetch(`/api/crop/valid_districts?state=${encodeURIComponent(state)}`);
             const data = await res.json();
-            const districts = data.districts || [];
+            const districts = data.valid_districts || data.districts || [];
             sel.innerHTML = districts.length
                 ? `<option value="">Select a district</option>` + districts.map(d => `<option value="${d}">${d}</option>`).join("")
                 : '<option value="">No districts found</option>';
