@@ -30,7 +30,7 @@ USAGE
     python test_services_accessibility.py --full
 
     # Custom port overrides (name=port,name=port):
-    python test_services_accessibility.py --ports mandi_prices=5011,disease=5004
+    python test_services_accessibility.py --ports mandi_prices=6011,disease=6004
 
 Exit code is 0 if every tested service passed, 1 otherwise — so this can
 be dropped straight into CI or a pre-deploy smoke test.
@@ -104,11 +104,11 @@ def _smoke_backend2(base: str) -> requests.Response:
 
 # Real per-state port map, taken directly from main.py (the orchestrator) —
 # this is the source of truth, not each backend's own --port default.
-CROP_BACKENDS = {"tripura": 5000, "meghalaya": 5002, "rajasthan": 5006}
-CROP_RECOMMENDER_BACKENDS = {"tripura": 5003, "meghalaya": 5005, "rajasthan": 5007}
+CROP_BACKENDS = {"tripura": 6000, "meghalaya": 6002, "rajasthan": 6006}
+CROP_RECOMMENDER_BACKENDS = {"tripura": 6003, "meghalaya": 6005, "rajasthan": 6007}
 
 SERVICES: list[Service] = [
-    Service("cold_storage", 5010, "/api/cold-storage/health", _smoke_cold_storage),
+    Service("cold_storage", 6010, "/api/cold-storage/health", _smoke_cold_storage),
     # backend_2.py — the dashboard/stats service. One instance per state.
     Service("backend2_tripura", CROP_BACKENDS["tripura"], "/api/crop/health", _smoke_backend2),
     Service("backend2_meghalaya", CROP_BACKENDS["meghalaya"], "/api/crop/health", _smoke_backend2),
@@ -120,13 +120,13 @@ SERVICES: list[Service] = [
             "/api/crop/health", _smoke_crop_recommender),
     Service("crop_recommender_rajasthan", CROP_RECOMMENDER_BACKENDS["rajasthan"],
             "/api/crop/health", _smoke_crop_recommender),
-    Service("disease", 5004, "/health", _smoke_disease),
-    Service("irrigation", 5001, "/api/v1/health", _smoke_irrigation,
-            notes="Single shared irrigation backend, not per-state (per main.py: IRRIGATION_PORT=5001)."),
+    Service("disease", 6004, "/health", _smoke_disease),
+    Service("irrigation", 6001, "/api/v1/health", _smoke_irrigation,
+            notes="Single shared irrigation backend, not per-state (per main.py: IRRIGATION_PORT=6001)."),
     Service("yield_platform", 6100, "/health", _smoke_yield_platform),
-    Service("auction_engine", 6000, "/health", _smoke_auction),
-    Service("mandi_prices", 5011, "/health", _smoke_mandi),
-    Service("nearest_mandi", 5012, "/health", _smoke_nearest_mandi),
+    Service("auction_engine", 6200, "/health", _smoke_auction),
+    Service("mandi_prices", 6011, "/health", _smoke_mandi),
+    Service("nearest_mandi", 6012, "/health", _smoke_nearest_mandi),
 ]
 
 
@@ -201,7 +201,7 @@ def main() -> int:
                          help="Comma-separated list of service names to test "
                               "(default: all). See names in SERVICES list.")
     parser.add_argument("--ports", default=None,
-                         help="Override ports, e.g. mandi_prices=5011,disease=5004")
+                         help="Override ports, e.g. mandi_prices=6008,disease=6004")
     parser.add_argument("--full", action="store_true",
                          help="Also hit one real data endpoint per service and "
                               "check CORS headers, not just /health.")

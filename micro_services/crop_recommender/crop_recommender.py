@@ -14,15 +14,15 @@ rather than just a second module of the same app.
 
 Run:
     pip install flask flask-cors pandas xgboost scikit-learn openpyxl
-    python crop_recommender_service.py --state tripura --port 5001
+    python crop_recommender_service.py --state tripura --port 6001
 
 Port convention (backend port + 1, per state):
-    Tripura   -> python backend_2.py --state tripura   --port 5000
-                 python crop_recommender_service.py --state tripura   --port 5001
-    Meghalaya -> python backend_2.py --state meghalaya --port 5002
-                 python crop_recommender_service.py --state meghalaya --port 5003
-    Rajasthan -> python backend_2.py --state rajasthan --port 5004
-                 python crop_recommender_service.py --state rajasthan --port 5005
+    Tripura   -> python backend_2.py --state tripura   --port 6000
+                 python crop_recommender_service.py --state tripura   --port 6001
+    Meghalaya -> python backend_2.py --state meghalaya --port 6002  
+                 python crop_recommender_service.py --state meghalaya --port 6003
+    Rajasthan -> python backend_2.py --state rajasthan --port 6004
+                 python crop_recommender_service.py --state rajasthan --port 6005
 
 IMPORTANT — infra change required:
     crop_recommender.html currently calls /predict, /recommend,
@@ -757,8 +757,8 @@ def get_profiles():
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="CropAI Recommender Microservice")
-    parser.add_argument("--port",  type=int, default=5001,
-                        help="Port to run on (default 5001 for Tripura, 5003 for Meghalaya, 5005 for Rajasthan)")
+    parser.add_argument("--port",  type=int, default=6001,
+                        help="Port to run on (default 6001 for Tripura, 6003 for Meghalaya, 6005 for Rajasthan)")
     parser.add_argument("--state", type=str, default="tripura",
                         help="State to pre-load on startup (tripura / meghalaya / rajasthan)")
     args = parser.parse_args()

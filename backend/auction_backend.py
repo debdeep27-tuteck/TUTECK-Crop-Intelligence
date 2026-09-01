@@ -19,7 +19,7 @@ AUCTION_SERVICE_URL, the same way it already calls the gateway for auth.
 
 Run both services:
     python auction_engine_service.py --port 6000
-    AUCTION_SERVICE_URL=http://127.0.0.1:6000 python auction_backend.py --port 5009
+    AUCTION_SERVICE_URL=http://127.0.0.1:6000 python auction_backend.py --port 6009
 
 If AUCTION_SERVICE_API_KEY is set on the service side, set the same value
 here as AUCTION_SERVICE_API_KEY so this backend's requests are authorized.
@@ -52,14 +52,14 @@ from flask_cors import CORS
 
 # ── CONFIG ───────────────────────────────────────────────────────────────
 
-DEFAULT_PORT = 5009
+DEFAULT_PORT = 6009
 DB_PATH = Path(__file__).resolve().parent / "auction.db"
 
 GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
 
 # The standalone generic auction microservice — a totally separate process
 # reached only over HTTP, same pattern as GATEWAY_INTERNAL_URL above.
-AUCTION_SERVICE_URL = os.environ.get("AUCTION_SERVICE_URL", "http://127.0.0.1:6000")
+AUCTION_SERVICE_URL = os.environ.get("AUCTION_SERVICE_URL", "http://127.0.0.1:6200")
 AUCTION_SERVICE_API_KEY = os.environ.get("AUCTION_SERVICE_API_KEY", "")
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "")

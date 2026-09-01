@@ -364,7 +364,7 @@
       //    backend_2.py for this state isn't running).
       const endpoints = [
         `/api/irrigation/crops?state=${encodeURIComponent(_STATE)}`,
-        `http://127.0.0.1:5001/crops?state=${encodeURIComponent(_STATE)}`
+        `http://127.0.0.1:6001/crops?state=${encodeURIComponent(_STATE)}`
       ];
       for (const url of endpoints) {
         try {

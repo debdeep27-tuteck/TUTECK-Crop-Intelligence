@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 import requests
@@ -9,47 +11,47 @@ CORS(app)
 # ── CONFIG ─────────────────────────────────────────────────────────────
 
 # Tripura backends
-CROP_API_TRIPURA = "http://127.0.0.1:5000"
-IRR_API_TRIPURA  = "http://127.0.0.1:5001"
+CROP_API_TRIPURA = "http://127.0.0.1:6000"
+IRR_API_TRIPURA  = "http://127.0.0.1:6001"
 
 # Meghalaya backends
-CROP_API_MEGHALAYA = "http://127.0.0.1:5002"
-IRR_API_MEGHALAYA  = "http://127.0.0.1:5001"
+CROP_API_MEGHALAYA = "http://127.0.0.1:6002"
+IRR_API_MEGHALAYA  = "http://127.0.0.1:6001"
 
 # Rajasthan backends
 
-CROP_API_RAJASTHAN = "http://127.0.0.1:5006"
-IRR_API_RAJASTHAN  = "http://127.0.0.1:5001"
+CROP_API_RAJASTHAN = "http://127.0.0.1:6006"
+IRR_API_RAJASTHAN  = "http://127.0.0.1:6001"
 
 # Crop Recommender microservices — split out of backend_2.py. Each state's
 # crop_recommender_service.py runs on its own port, separate from that
 # state's dashboard/stats backend above. Ports 5003/5005/5007 were unused
-# in this file before (5001 is already taken by the irrigation services).
-CROP_RECOMMENDER_TRIPURA   = "http://127.0.0.1:5003"
-CROP_RECOMMENDER_MEGHALAYA = "http://127.0.0.1:5005"
-CROP_RECOMMENDER_RAJASTHAN = "http://127.0.0.1:5007"
+# in this file before (6001 is already taken by the irrigation services).
+CROP_RECOMMENDER_TRIPURA   = os.environ.get("CROP_RECOMMENDER_TRIPURA", "http://127.0.0.1:6003")
+CROP_RECOMMENDER_MEGHALAYA = os.environ.get("CROP_RECOMMENDER_MEGHALAYA", "http://127.0.0.1:6005")
+CROP_RECOMMENDER_RAJASTHAN = os.environ.get("CROP_RECOMMENDER_RAJASTHAN", "http://127.0.0.1:6007")
 
 # Disease detection — single instance serves both states
-DISEASE_API = "http://127.0.0.1:5004"
+DISEASE_API = "http://127.0.0.1:6004"
 
 # Yield Detect — geofenced land yield predictions (SQLite-backed)
-YIELD_API = "http://127.0.0.1:5008"
+YIELD_API = "http://127.0.0.1:6008"
 
 # Auction — farmer crop listings / bidding (SQLite-backed, unused_crops table)
-AUCTION_API = "http://127.0.0.1:5009"
+AUCTION_API = "http://127.0.0.1:6009"
 
 # Cold Storage — geofenced cold storage listings (SQLite-backed)
-COLD_STORAGE_API = "http://127.0.0.1:5010"
+COLD_STORAGE_API = "http://127.0.0.1:6010"
 
 # Mandi Prices — daily commodity market prices sourced from data.gov.in
 # (Agmarknet); gateway.py forwards /api/mandi-prices/* to this port.
-MANDI_PRICES_API = "http://127.0.0.1:5011"
+MANDI_PRICES_API = "http://127.0.0.1:6011"
 
 # Nearest Mandi API
-NEAREST_MANDI_API = "http://127.0.0.1:5012"
+NEAREST_MANDI_API = "http://127.0.0.1:6012"
 
 # Advisory Chatbot — Groq LLM orchestration layer over the services above
-ADVISORY_API = "http://127.0.0.1:5013"
+ADVISORY_API = "http://127.0.0.1:6013"
 
 
 # ── HELPERS ────────────────────────────────────────────────────────────
@@ -305,10 +307,10 @@ def forward_request(base_url, path, override_params=None, override_json=None):
     enforcement happens, since the client's own values can't be trusted.
 
     Examples:
-      /api/disease/health          -> http://127.0.0.1:5004/health
-      /api/disease/supported_crops -> http://127.0.0.1:5004/supported_crops
-      /api/disease/detect          -> http://127.0.0.1:5004/detect
-      /api/yield/lands             -> http://127.0.0.1:5008/api/yield/lands
+      /api/disease/health          -> http://127.0.0.1:6004/health
+      /api/disease/supported_crops -> http://127.0.0.1:6004/supported_crops
+      /api/disease/detect          -> http://127.0.0.1:6004/detect
+      /api/yield/lands             -> http://127.0.0.1:6008/api/yield/lands
     """
     url = f"{base_url.rstrip('/')}/{path.lstrip('/')}"
 

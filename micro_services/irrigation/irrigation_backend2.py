@@ -14,7 +14,7 @@ Local run:
     python service.py
 
 Production run:
-    gunicorn -w 4 -b 0.0.0.0:5001 service:app
+    gunicorn -w 4 -b 0.0.0.0:6001 service:app
 
 Auth:
     All endpoints except /health require an API key, sent as either:
@@ -181,9 +181,9 @@ def _server_error(e):
 #   python backend_2.py --state rajasthan --port 5006
 # This must match CROP_BACKENDS in main.py.
 CROP_BACKEND_PORTS = {
-    "tripura":   int(os.environ.get("CROP_BACKEND_PORT_TRIPURA", 5000)),
-    "meghalaya": int(os.environ.get("CROP_BACKEND_PORT_MEGHALAYA", 5002)),
-    "rajasthan": int(os.environ.get("CROP_BACKEND_PORT_RAJASTHAN", 5006)),
+    "tripura":   int(os.environ.get("CROP_BACKEND_PORT_TRIPURA", 6000)),
+    "meghalaya": int(os.environ.get("CROP_BACKEND_PORT_MEGHALAYA", 6002)),
+    "rajasthan": int(os.environ.get("CROP_BACKEND_PORT_RAJASTHAN", 6006)),
 }
 # Host for the crop-recommender backends. Defaults to localhost, since
 # historically this service ran alongside them on the same machine — but as
@@ -975,7 +975,7 @@ def advise():
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("IRRIGATION_PORT", 6001))
     debug = os.environ.get("DEBUG", "false").lower() == "true"
 
     print("=" * 60)

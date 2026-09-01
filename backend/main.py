@@ -5,19 +5,19 @@ One-command launcher for the Crop Analytics suite.
 
 Starts:
   • gateway.py                  -> http://0.0.0.0:8085  (single public entry point)
-  • backend_2.py Tripura         -> http://127.0.0.1:5000 (crop dashboard/stats API)
-  • backend_2.py Meghalaya       -> http://127.0.0.1:5002 (crop dashboard/stats API)
-  • backend_2.py Rajasthan       -> http://127.0.0.1:5006 (crop dashboard/stats API)
-  • crop_recommender_service.py Tripura   -> http://127.0.0.1:5003 (predict/recommend API)
-  • crop_recommender_service.py Meghalaya -> http://127.0.0.1:5005 (predict/recommend API)
-  • crop_recommender_service.py Rajasthan -> http://127.0.0.1:5007 (predict/recommend API)
-  • irrigation_backend2.py       -> http://127.0.0.1:5001 (irrigation advisory API, if present)
-  • disease_backend.py           -> http://127.0.0.1:5004 (crop disease detection API)
-  • yield_detect_backend.py      -> http://127.0.0.1:5008 (yield detect & geofencing API)
+  • backend_2.py Tripura         -> http://127.0.0.1:6000 (crop dashboard/stats API)
+  • backend_2.py Meghalaya       -> http://127.0.0.1:6002 (crop dashboard/stats API)
+  • backend_2.py Rajasthan       -> http://127.0.0.1:6006 (crop dashboard/stats API)
+  • crop_recommender_service.py Tripura   -> http://127.0.0.1:6003 (predict/recommend API)
+  • crop_recommender_service.py Meghalaya -> http://127.0.0.1:6005 (predict/recommend API)
+  • crop_recommender_service.py Rajasthan -> http://127.0.0.1:6007 (predict/recommend API)
+  • irrigation_backend2.py       -> http://127.0.0.1:6001 (irrigation advisory API, if present)
+  • disease_backend.py           -> http://127.0.0.1:6004 (crop disease detection API)
+  • yield_detect_backend.py      -> http://127.0.0.1:6008 (yield detect & geofencing API)
   • yield_platform_service.py    -> http://127.0.0.1:6100 (land parcel & yield platform microservice)
-  • cold_storage_backend.py      -> http://127.0.0.1:5010 (cold storage intelligence API)
-  • mandi_prices_backend.py      -> http://127.0.0.1:5011 (daily mandi price API, data.gov.in)
-  • advisory_backend.py          -> http://127.0.0.1:5013 (Farmer AI advisory chatbot, Groq LLM)
+  • cold_storage_backend.py      -> http://127.0.0.1:6010 (cold storage intelligence API)
+  • mandi_prices_backend.py      -> http://127.0.0.1:6011 (daily mandi price API, data.gov.in)
+  • advisory_backend.py          -> http://127.0.0.1:6013 (Farmer AI advisory chatbot, Groq LLM)
 
 Public URLs:
   http://localhost:8085/dashboard
@@ -76,9 +76,9 @@ READY_TIMEOUT = 30
 
 # Must match gateway.py state-aware targets.
 CROP_BACKENDS = {
-    "tripura": 5000,
-    "meghalaya": 5002,
-    "rajasthan": 5006,
+    "tripura": 6000,
+    "meghalaya": 6002,
+    "rajasthan": 6006,
 }
 
 # Crop Recommender microservices (predict/recommend/valid_crops/
@@ -86,21 +86,21 @@ CROP_BACKENDS = {
 # One per state, alongside that state's dashboard/stats backend above.
 # Must match gateway.py's RECOMMENDER_APIS targets.
 CROP_RECOMMENDER_BACKENDS = {
-    "tripura": 5003,
-    "meghalaya": 5005,
-    "rajasthan": 5007,
+    "tripura": 6003,
+    "meghalaya": 6005,
+    "rajasthan": 6007,
 }
 
-# Existing single irrigation backend; gateway.py uses 5001.
-IRRIGATION_PORT = 5001
+# Existing single irrigation backend; gateway.py uses 6001.
+IRRIGATION_PORT = 6001
 
 # Disease backend; gateway.py forwards /api/disease/* to this port.
-DISEASE_PORT = 5004
+DISEASE_PORT = 6004
 
 # Yield Detect backend (geofenced land yield predictions); gateway.py
 # forwards /api/yield/*, /content/yield-detect, /content/yield-detect-editor,
 # /yield-detect and /yield-detect-editor to this port.
-YIELD_DETECT_PORT = 5008
+YIELD_DETECT_PORT = 6008
 
 # Generic yield platform microservice (land parcel storage + yield prediction);
 # yield_detect_backend.py talks to this over HTTP via YIELD_PLATFORM_SERVICE_URL.
@@ -109,26 +109,26 @@ YIELD_PLATFORM_SERVICE_PORT = 6100
 # Auction backend (farmer crop listings + bidding, unused_crops table);
 # gateway.py forwards /api/unused-crops/*, /api/bids/*, /content/auction
 # and /auction to this port.
-AUCTION_PORT = 5009
+AUCTION_PORT = 6009
 
 # Generic auction engine microservice (domain-agnostic, standalone);
 # auction_backend.py talks to this over HTTP via AUCTION_SERVICE_URL.
-AUCTION_ENGINE_PORT = 6000
+AUCTION_ENGINE_PORT = 6200
 
 # Cold Storage Intelligence backend (deterministic storage-capacity
 # advisory); gateway.py forwards /api/cold-storage/* to this port.
-COLD_STORAGE_PORT = 5010
+COLD_STORAGE_PORT = 6010
 
 # Mandi Prices backend (daily commodity market prices from data.gov.in /
 # Agmarknet); gateway.py forwards /api/mandi-prices/* to this port.
-MANDI_PRICES_PORT = 5011
+MANDI_PRICES_PORT = 6011
 
 # Nearest Mandi backend
-NEAREST_MANDI_PORT = 5012
+NEAREST_MANDI_PORT = 6012
 
 # Advisory Chatbot backend (Groq LLM orchestration layer over the other
 # services above); gateway.py forwards /api/advisory/* to this port.
-ADVISORY_PORT = 5013
+ADVISORY_PORT = 6013
 
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
@@ -255,7 +255,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-yield-platform", action="store_true", help="Skip generic yield platform microservice (port 6100)")
     parser.add_argument("--no-yield-detect", action="store_true", help="Skip yield detect (geofencing) backend")
     parser.add_argument("--no-cold-storage", action="store_true", help="Skip cold storage intelligence backend")
-    parser.add_argument("--no-auction-engine", action="store_true", help="Skip generic auction engine microservice (port 6000)")
+    parser.add_argument("--no-auction-engine", action="store_true", help="Skip generic auction engine microservice (port 6200)")
     parser.add_argument("--no-auction", action="store_true", help="Skip auction backend")
     parser.add_argument("--no-mandi-prices", action="store_true", help="Skip mandi prices backend")
     parser.add_argument("--no-nearest-mandi", action="store_true", help="Skip nearest mandi backend")

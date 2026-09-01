@@ -68,7 +68,7 @@ logging.basicConfig(level=logging.INFO)
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
-DEFAULT_PORT = 6100
+DEFAULT_PORT = os.environ.get("YIELD_PLATFORM_SERVICE_PORT", 6100)
 DB_PATH = Path(__file__).resolve().parent / "yield_platform_service.db"
 API_KEY = os.environ.get("YIELD_PLATFORM_SERVICE_API_KEY", "")
 
@@ -86,9 +86,9 @@ _mappls_token_cache = {"token": None, "expires_at": 0}
 # Must match CROP_BACKENDS in main.py / gateway.py — the per-state trained
 # model servers (backend_2.py) this service proxies /predict etc. to.
 STATE_BACKEND_PORTS = {
-    "tripura": 5000,
-    "meghalaya": 5002,
-    "rajasthan": 5006,
+    "tripura": 6000,
+    "meghalaya": 6002,
+    "rajasthan": 6006,
 }
 DEFAULT_STATE = "tripura"
 

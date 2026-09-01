@@ -82,7 +82,7 @@ async function runAdvise() {
     document.getElementById("empty-state").style.display = "none";
     document.getElementById("results-wrap").style.display = "block";
     document.getElementById("results-wrap").innerHTML =
-      `<div class="error-box">⚠️ Could not connect to backend. Make sure <code>irrigation_backend.py</code> is running on port 5001.<br><br><small>${err.message}</small></div>`;
+      `<div class="error-box">⚠️ Could not connect to backend. Make sure <code>irrigation_backend.py</code> is running on port 6001.<br><br><small>${err.message}</small></div>`;
   } finally {
     btn.classList.remove("loading");
     icon.innerHTML = `<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><polyline points="12 6 12 12 16 14"/>`;

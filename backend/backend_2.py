@@ -778,8 +778,8 @@ def crop_scatter():
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="CropAI Dashboard Backend")
-    parser.add_argument("--port",  type=int, default=5000,
-                        help="Port to run on (default 5000 for Tripura, 5002 for Meghalaya)")
+    parser.add_argument("--port",  type=int, default=6000,
+                        help="Port to run on (default 6000 for Tripura, 6002 for Meghalaya)")
     parser.add_argument("--state", type=str, default="tripura",
                         help="State to pre-load on startup (tripura / meghalaya / rajasthan)")
     args = parser.parse_args()

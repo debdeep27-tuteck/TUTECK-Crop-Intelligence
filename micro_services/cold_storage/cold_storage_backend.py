@@ -1655,7 +1655,7 @@ def delete_farmer_plan(plan_id):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Cold Storage Intelligence backend")
-    p.add_argument("--port", type=int, default=5010)
+    p.add_argument("--port", type=int, default=6010)
     p.add_argument("--host", default="0.0.0.0")
     p.add_argument("--import-govt", action="store_true",
                    help="Fetch NHB names once, save them in SQLite, and exit.")

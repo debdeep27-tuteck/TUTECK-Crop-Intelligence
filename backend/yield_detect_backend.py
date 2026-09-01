@@ -105,9 +105,9 @@ YIELD_SERVICE_API_KEY = os.environ.get("YIELD_SERVICE_API_KEY", "")
 
 # Must match CROP_BACKENDS in main.py / gateway.py
 STATE_BACKEND_PORTS = {
-    "tripura": 5000,
-    "meghalaya": 5002,
-    "rajasthan": 5006,
+    "tripura": 6000,
+    "meghalaya": 6002,
+    "rajasthan": 6006,
 }
 
 DEFAULT_STATE = "tripura"
@@ -1059,7 +1059,7 @@ def check_geofence_point():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Yield Detect backend")
-    parser.add_argument("--port", type=int, default=5008)
+    parser.add_argument("--port", type=int, default=6008)
     args = parser.parse_args()
 
     print("=" * 55)

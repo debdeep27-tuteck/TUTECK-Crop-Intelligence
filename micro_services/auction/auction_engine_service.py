@@ -11,7 +11,7 @@ whatever — talks to it purely over HTTP. Nothing about "crops" exists
 anywhere in this file.
 
 Run it:
-    python auction_engine_service.py --port 6000
+    python auction_engine_service.py --port 6200
 
 Callers integrate by making plain HTTP requests — see the bottom of this
 file for example client calls, and AUCTION_SERVICE.md (companion doc) for
@@ -48,7 +48,7 @@ from generic_auction_engine import AuctionEngine
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
-DEFAULT_PORT = 6000
+DEFAULT_PORT = os.environ.get("AUCTION_SERVICE_PORT", 6200)
 DB_PATH = Path(__file__).resolve().parent / "auction_service.db"
 API_KEY = os.environ.get("AUCTION_SERVICE_API_KEY", "")
 
