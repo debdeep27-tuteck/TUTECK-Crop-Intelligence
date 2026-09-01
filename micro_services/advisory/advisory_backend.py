@@ -60,6 +60,7 @@ headers, timeouts, and error handling all match your other services
 automatically — no new proxy logic needed.
 """
 
+import base64
 import json
 import os
 import sqlite3
@@ -70,7 +71,7 @@ from functools import wraps
 from pathlib import Path
 
 import requests
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, Response
 from groq import Groq
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
@@ -83,6 +84,32 @@ if not GROQ_API_KEY:
     raise RuntimeError("GROQ_API_KEY is not set. Add it to backend/.env (same key your disease-detection service uses).")
 
 client = Groq(api_key=GROQ_API_KEY)
+
+# Spoken replies use Sarvam AI's Bulbul TTS instead of Groq's PlayAI TTS,
+# since Sarvam actually covers the Indian languages this chatbot supports
+# (Groq's TTS is English/Arabic only). Get a key from dashboard.sarvam.ai.
+SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY")
+if not SARVAM_API_KEY:
+    raise RuntimeError("SARVAM_API_KEY is not set. Add it to backend/.env — get a key from https://dashboard.sarvam.ai")
+
+SARVAM_TTS_URL = "https://api.sarvam.ai/text-to-speech"
+SARVAM_TTS_MODEL = "bulbul:v3"
+SARVAM_TTS_SPEAKER = "shubh"  # any bulbul:v3 speaker; see Sarvam docs for the full list
+
+# Maps this app's SUPPORTED_LANGS codes to Sarvam's BCP-47 language_code.
+# Sarvam's TTS doesn't currently cover Kokborok (kok) or Khasi (ks), so
+# those are intentionally left out — /chat/speak returns a clear error
+# for them instead of silently mispronouncing text in the wrong voice.
+LANG_TO_SARVAM = {
+    "en": "en-IN",
+    "hi": "hi-IN",
+    "bn": "bn-IN",
+    "mr": "mr-IN",
+    "ta": "ta-IN",
+    "te": "te-IN",
+    "gu": "gu-IN",
+    "pa": "pa-IN",
+}
 
 CHAT_MODEL = "openai/gpt-oss-120b"       # Groq deprecated llama-3.3-70b-versatile;
                                           # this is the current production model
@@ -597,12 +624,27 @@ def transcribe():
     if lang not in SUPPORTED_LANGS:
         lang = "en"
 
+    audio_bytes = audio_file.read()
+    # A clip under ~2KB is almost certainly silence, a misfire (click with
+    # no speech), or a permissions glitch rather than real audio — catching
+    # it here avoids sending noise to Whisper and getting garbage back.
+    if len(audio_bytes) < 2000:
+        return jsonify({"error": "That recording was too short — please try again and speak for a moment before stopping."}), 400
+
     try:
         result = client.audio.transcriptions.create(
-            file=(audio_file.filename or "audio.webm", audio_file.read()),
-            model="whisper-large-v3-turbo",
+            file=(audio_file.filename or "audio.webm", audio_bytes),
+            # Full model, not the "turbo" variant — turbo trades accuracy
+            # for speed, which shows up as exactly the kind of unclear/
+            # garbled transcriptions you're seeing.
+            model="whisper-large-v3",
             language=lang,
+            # Nudges Whisper toward the vocabulary it'll actually hear —
+            # crop/mandi/irrigation terms it might otherwise mishear as
+            # similar-sounding common words.
+            prompt="Farming advisory conversation about mandi prices, irrigation, crop recommendations, cold storage, and weather for Indian farmers.",
             response_format="text",
+            temperature=0.0,
         )
         # response_format="text" returns a plain string; some SDK versions
         # instead return an object with a .text attribute — handle both.
@@ -610,7 +652,59 @@ def transcribe():
     except Exception as e:
         return jsonify({"error": f"Transcription failed: {e}"}), 500
 
-    return jsonify({"text": text.strip()}), 200
+    text = text.strip()
+    if not text:
+        return jsonify({"error": "Didn't catch any speech in that recording — please try again."}), 400
+
+    return jsonify({"text": text}), 200
+
+
+@app.route("/chat/speak", methods=["POST"])
+@require_advisory_access
+def speak():
+    body = request.get_json(silent=True) or {}
+    text = str(body.get("text", "")).strip()
+    lang = str(body.get("lang", "en")).strip().lower()
+    if not text:
+        return jsonify({"error": "'text' is required."}), 400
+    # bulbul:v3 caps input at 2500 characters; trim defensively so a long
+    # reply doesn't error out instead of just speaking the first part.
+    text = text[:2500]
+
+    language_code = LANG_TO_SARVAM.get(lang)
+    if not language_code:
+        return jsonify({"error": "Spoken replies aren't available in this language yet."}), 400
+
+    try:
+        resp = requests.post(
+            SARVAM_TTS_URL,
+            headers={
+                "api-subscription-key": SARVAM_API_KEY,
+                "Content-Type": "application/json",
+            },
+            json={
+                "text": text,
+                "language_code": language_code,
+                "model": SARVAM_TTS_MODEL,
+                "speaker": SARVAM_TTS_SPEAKER,
+                "speech_sample_rate": 24000,
+            },
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": f"Sarvam TTS request failed ({resp.status_code}): {resp.text[:300]}"}), 502
+
+        data = resp.json()
+        audios = data.get("audios") or []
+        if not audios:
+            return jsonify({"error": "No audio returned by Sarvam TTS."}), 502
+        audio_bytes = base64.b64decode(audios[0])
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Couldn't reach Sarvam TTS: {e}"}), 502
+    except Exception as e:
+        return jsonify({"error": f"Speech generation failed: {e}"}), 500
+
+    return Response(audio_bytes, mimetype="audio/wav")
 
 
 @app.route("/health", methods=["GET"])
