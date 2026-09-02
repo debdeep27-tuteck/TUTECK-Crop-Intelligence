@@ -84,11 +84,14 @@ MAPPLS_SEARCH_URL = "https://atlas.mappls.com/api/places/search/json"
 _mappls_token_cache = {"token": None, "expires_at": 0}
 
 # Must match CROP_BACKENDS in main.py / gateway.py — the per-state trained
-# model servers (backend_2.py) this service proxies /predict etc. to.
+# model dashboard servers (backend_2.py). These no longer serve /predict,
+# /valid_crops, or /valid_districts themselves — as of the split described
+# in backend_2.py's docstring, those live on a separate recommender
+# service per state, conventionally on STATE_BACKEND_PORTS[state] + 1.
 STATE_BACKEND_PORTS = {
     "tripura": 6000,
     "meghalaya": 6002,
-    "rajasthan": 6006,
+    "rajasthan": 6004,
 }
 DEFAULT_STATE = "tripura"
 
@@ -624,8 +627,16 @@ def state_port(state: str) -> int:
     return STATE_BACKEND_PORTS.get((state or "").lower().strip(), STATE_BACKEND_PORTS[DEFAULT_STATE])
 
 
+def recommender_port(state: str) -> int:
+    # crop_recommender_service.py: the split-out service that now owns
+    # /predict, /recommend, /valid_crops, /valid_districts, /model_info,
+    # /profiles (see backend_2.py's module docstring). Runs at
+    # dashboard_port + 1 by convention.
+    return state_port(state) + 1
+
+
 def call_predict(state: str, payload: dict) -> dict:
-    port = state_port(state)
+    port = recommender_port(state)
     url = f"http://127.0.0.1:{port}/predict"
     try:
         resp = requests.post(url, json=payload, timeout=15)
@@ -636,7 +647,7 @@ def call_predict(state: str, payload: dict) -> dict:
 
 
 def call_valid_crops(state: str) -> list:
-    port = state_port(state)
+    port = recommender_port(state)
     url = f"http://127.0.0.1:{port}/valid_crops"
     try:
         resp = requests.get(url, timeout=10)
@@ -650,7 +661,7 @@ def call_valid_crops(state: str) -> list:
 
 
 def call_valid_districts(state: str) -> list:
-    port = state_port(state)
+    port = recommender_port(state)
     url = f"http://127.0.0.1:{port}/valid_districts"
     try:
         resp = requests.get(url, timeout=10)
@@ -658,7 +669,7 @@ def call_valid_districts(state: str) -> list:
         data = resp.json()
         if isinstance(data, list):
             return data
-        return data.get("valid_districts", [])
+        return data.get("districts", data.get("valid_districts", []))
     except requests.exceptions.RequestException:
         return []
 
