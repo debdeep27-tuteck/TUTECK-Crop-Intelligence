@@ -53,6 +53,9 @@ NEAREST_MANDI_API = "http://127.0.0.1:6012"
 # Advisory Chatbot — Groq LLM orchestration layer over the services above
 ADVISORY_API = "http://127.0.0.1:6013"
 
+# Credit Score — Farmer Agri-Credit Score & Loan Risk Assessment
+CREDIT_SCORE_API = "http://127.0.0.1:6014"
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -156,6 +159,7 @@ def admin_page():
 @app.route("/mandi-prices")
 @app.route("/nearest-mandi")
 @app.route("/advisory")
+@app.route("/credit-score")
 def home():
     response = send_from_directory(str(HTML_DIR), "index.html")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -230,6 +234,11 @@ def content_nearest_mandi():
 @app.route("/content/advisory")
 def content_advisory():
     return send_from_directory(str(HTML_DIR), "advisory_chat.html")
+
+
+@app.route("/content/credit-score")
+def content_credit_score():
+    return send_from_directory(str(HTML_DIR), "credit_score.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -557,6 +566,82 @@ def advisory_api(path):
     return forward_request(ADVISORY_API, path)
 
 
+@app.route("/api/credit-score", methods=["GET", "POST"])
+@app.route("/api/credit-score/<path:path>", methods=["GET", "POST"])
+def credit_score_api(path=""):
+    """
+    credit_score_backend.py exposes routes like /credit_score/<farmer_id>,
+    /farmers, /calculate_score, /stats, /health.
+
+    Role-based scoping is enforced here, from the caller's verified session
+    (bearer token) rather than anything in the URL/query string:
+
+      - farmer: every request that would otherwise reveal another farmer's
+        data — /credit_score/<anything>, /farmers, /stats — is redirected
+        server-side to /credit_score/<their own session email>, so a
+        farmer can only ever see their own credit score and loan
+        eligibility, no matter what id they type in the search box or what
+        they send directly to the API.
+      - district_admin: /farmers and /stats are scoped to their session's
+        state + district (forced, can't be overridden by the client); a
+        direct /credit_score/<id> lookup outside their district is
+        rejected after checking the backend's answer, since the id itself
+        doesn't reveal location.
+      - state_admin: same, scoped to their session's state only.
+      - admin / analyst / logged-out: unscoped, full access (unchanged).
+    """
+    import json as _json
+
+    session = get_current_session()
+    full_path = path.lstrip("/") if path else ""
+    override_params = {}
+    role = ""
+    scope_state = ""
+    scope_district = ""
+
+    if session:
+        role = (session.get("role") or "").lower().strip()
+        email = (session.get("email") or "").strip()
+
+        if role == "farmer":
+            if not email:
+                return jsonify({"error": "No email on file for this account"}), 403
+            # Whatever was requested — a specific id, the full directory,
+            # or aggregate stats — a farmer only ever gets their own record.
+            if full_path in ("farmers", "stats") or full_path.startswith("credit_score"):
+                full_path = f"credit_score/{email}"
+
+        elif role in ("state_admin", "district_admin"):
+            scope_state = (session.get("state") or "").strip()
+            if scope_state:
+                override_params["state"] = scope_state
+            if role == "district_admin":
+                scope_district = (session.get("district") or "").strip()
+                if scope_district:
+                    override_params["district"] = scope_district
+
+    resp = forward_request(CREDIT_SCORE_API, full_path, override_params=override_params or None)
+
+    # A state_admin/district_admin can still look up a specific farmer by
+    # id/email directly; verify the record actually falls in their
+    # territory before letting it through, since the backend has no way to
+    # know an admin's scope on a single-record lookup.
+    if role in ("state_admin", "district_admin") and full_path.startswith("credit_score/"):
+        try:
+            payload = _json.loads(resp.get_data(as_text=True))
+        except Exception:
+            payload = None
+        if isinstance(payload, dict) and "state" in payload:
+            rec_state = str(payload.get("state") or "").strip().lower()
+            rec_district = str(payload.get("district") or "").strip().lower()
+            if scope_state and rec_state != scope_state.lower():
+                return jsonify({"error": "Farmer not found in your state"}), 404
+            if scope_district and rec_district != scope_district.lower():
+                return jsonify({"error": "Farmer not found in your district"}), 404
+
+    return resp
+
+
 @app.route("/api/unused-crops", methods=["GET", "POST"])
 @app.route("/api/unused-crops/<path:path>", methods=["GET", "PATCH", "DELETE", "POST"])
 def auction_crops_api(path=""):
@@ -630,6 +715,11 @@ def advisory_health_direct():
     return forward_request(ADVISORY_API, "health")
 
 
+@app.route("/api/credit-score-health")
+def credit_score_health_direct():
+    return forward_request(CREDIT_SCORE_API, "health")
+
+
 # ── HEALTH CHECK ────────────────────────────────────────────────────────
 
 @app.route("/health")
@@ -660,7 +750,8 @@ def health():
                 "auction": AUCTION_API,
                 "mandi_prices": MANDI_PRICES_API,
                 "nearest_mandi": NEAREST_MANDI_API,
-                "advisory": ADVISORY_API
+                "advisory": ADVISORY_API,
+                "credit_score": CREDIT_SCORE_API
             }
         }
     })

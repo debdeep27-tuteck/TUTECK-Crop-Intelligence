@@ -18,6 +18,7 @@ Starts:
   • cold_storage_backend.py      -> http://127.0.0.1:6010 (cold storage intelligence API)
   • mandi_prices_backend.py      -> http://127.0.0.1:6011 (daily mandi price API, data.gov.in)
   • advisory_backend.py          -> http://127.0.0.1:6013 (Farmer AI advisory chatbot, Groq LLM)
+  • credit_score_backend.py      -> http://127.0.0.1:6014 (Farmer Agri-Credit Score & Loan Risk API)
 
 Public URLs:
   http://localhost:8085/dashboard
@@ -30,6 +31,7 @@ Public URLs:
   http://localhost:8085/cold-storage
   http://localhost:8085/mandi-prices
   http://localhost:8085/advisory
+  http://localhost:8085/credit-score
 
 Usage:
   python main.py                         # launch all services
@@ -615,6 +617,19 @@ def main() -> None:
         )
     else:
         log(RED, "advisory", "advisory_backend.py not found; Advisory chatbot tab will show BACKEND OFFLINE.")
+
+    # 3h) Start credit_score microservice (general service, not state-specific)
+    credit_score_script = find_script(base_dir, "credit_score_backend.py")
+    if credit_score_script:
+        start_if_needed(
+            label="credit-score",
+            script=credit_score_script,
+            cmd_args=[],
+            port=6014,
+            timeout=args.ready_timeout,
+        )
+    else:
+        log(YELLOW, "credit-score", "credit_score_backend.py not found; credit-score service skipped.")
 
     # 4) Start gateway last, after internal services are up.
     start_if_needed(

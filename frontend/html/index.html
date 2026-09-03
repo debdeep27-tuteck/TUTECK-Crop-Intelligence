@@ -1227,6 +1227,13 @@
           <span class="nav-label">Nearest Mandi</span>
         </a>
 
+        <a class="gn-link" data-target="/credit-score" data-content="/content/credit-score" href="#" title="Agri Credit Score">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M7 15h.01"/><path d="M11 15h2"/></svg>
+          </span>
+          <span class="nav-label">Agri Credit Score</span>
+        </a>
+
         <!-- ── GROUP: SYSTEM ── -->
         <div class="nav-section-title" id="system-section-title">System</div>
 
@@ -1449,12 +1456,16 @@
         '/recommend-page',
         '/disease',
         '/auction',
-        '/mandi-prices'
+        '/mandi-prices',
+        '/nearest-mandi',
+        '/credit-score'
       ],
       mandi: [
         '/auction-mandi',
         '/yield-detect',
-        '/mandi-prices'
+        '/mandi-prices',
+        '/nearest-mandi',
+        '/credit-score'
       ],
       admin: [
         '/irrigation',
@@ -1464,7 +1475,9 @@
         '/auction',
         '/auction-mandi',
         '/cold-storage',
-        '/mandi-prices'
+        '/mandi-prices',
+        '/nearest-mandi',
+        '/credit-score'
       ],
       district_admin: [
         '/irrigation',
@@ -1473,7 +1486,9 @@
         '/yield-detect',
         '/auction',
         '/mandi-prices',
-        '/cold-storage'
+        '/nearest-mandi',
+        '/cold-storage',
+        '/credit-score'
       ],
       state_admin: [
         '/irrigation',
@@ -1482,7 +1497,9 @@
         '/yield-detect',
         '/auction',
         '/mandi-prices',
-        '/cold-storage'
+        '/nearest-mandi',
+        '/cold-storage',
+        '/credit-score'
       ],
       default: [
         '/irrigation',
@@ -1492,7 +1509,9 @@
         '/auction',
         '/auction-mandi',
         '/cold-storage',
-        '/mandi-prices'
+        '/mandi-prices',
+        '/nearest-mandi',
+        '/credit-score'
       ]
     };
 
@@ -2093,6 +2112,9 @@
       '/auction': 'AUCTION FLOOR',
       '/auction-mandi': 'AUCTION MANDI',
       '/cold-storage': 'COLD STORAGE',
+      '/mandi-prices': 'MARKET PRICES',
+      '/nearest-mandi': 'NEAREST MANDI',
+      '/credit-score': 'AGRI CREDIT SCORE',
     };
 
     links.forEach(link => {
