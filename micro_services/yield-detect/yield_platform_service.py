@@ -84,16 +84,25 @@ MAPPLS_SEARCH_URL = "https://atlas.mappls.com/api/places/search/json"
 _mappls_token_cache = {"token": None, "expires_at": 0}
 
 # Must match CROP_BACKENDS in main.py / gateway.py — the per-state trained
-# model dashboard servers (backend_2.py). These no longer serve /predict,
-# /valid_crops, or /valid_districts themselves — as of the split described
-# in backend_2.py's docstring, those live on a separate recommender
-# service per state, conventionally on STATE_BACKEND_PORTS[state] + 1.
+# model dashboard servers (backend_2.py).
 STATE_BACKEND_PORTS = {
     "tripura": 6000,
     "meghalaya": 6002,
-    "rajasthan": 6004,
+    "rajasthan": 6006,
 }
 DEFAULT_STATE = "tripura"
+
+# crop_recommender_service.py: the split-out service that now owns
+# /predict, /recommend, /valid_crops, /valid_districts, /model_info,
+# /profiles. NOT simply "dashboard port + 1" — Tripura's irrigation
+# service already occupies 6001, so these were assigned their own slots.
+# Verified against gateway.py's RECOMMENDER_APIS, which is the actual
+# source of truth for what's deployed:
+RECOMMENDER_PORTS = {
+    "tripura": 6003,
+    "meghalaya": 6005,
+    "rajasthan": 6007,
+}
 
 app = Flask(__name__)
 CORS(app)
@@ -628,11 +637,8 @@ def state_port(state: str) -> int:
 
 
 def recommender_port(state: str) -> int:
-    # crop_recommender_service.py: the split-out service that now owns
-    # /predict, /recommend, /valid_crops, /valid_districts, /model_info,
-    # /profiles (see backend_2.py's module docstring). Runs at
-    # dashboard_port + 1 by convention.
-    return state_port(state) + 1
+    key = (state or "").lower().strip()
+    return RECOMMENDER_PORTS.get(key, RECOMMENDER_PORTS[DEFAULT_STATE])
 
 
 def call_predict(state: str, payload: dict) -> dict:
