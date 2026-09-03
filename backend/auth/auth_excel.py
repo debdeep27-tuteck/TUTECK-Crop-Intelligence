@@ -46,6 +46,7 @@ import sqlite3
 import threading
 import time
 import uuid
+import json
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -62,7 +63,7 @@ LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
 LEGACY_PERMISSIONS_XLSX = BASE_DIR / "permissions.xlsx"
 LEGACY_USER_PERMISSIONS_XLSX = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"]
 
 VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi"}
 VALID_STATUSES = {"active", "restricted"}
@@ -79,27 +80,27 @@ DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
 # and is editable live from the admin panel (see /api/permissions routes).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
         "crud": True,
     },
     "analyst": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
         "crud": False,
     },
     "farmer": {
-        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction", "/mandi-prices", "/nearest-mandi", "/advisory"],
+        "pages": ["/irrigation", "/disease", "/recommend-page", "/yield-detect", "/cold-storage", "/auction", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
         "crud": False,
     },
     "state_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
         "crud": False,
     },
     "district_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
         "crud": False,
     },
     "mandi": {
-        "pages": ["/auction-mandi", "/nearest-mandi"],
+        "pages": ["/auction-mandi", "/nearest-mandi", "/credit-score"],
         "crud": False,
     },
 }
@@ -108,6 +109,74 @@ _db_lock = threading.RLock()
 
 # token -> {"uid": str, "email": str, "role": str, "created_at": float}
 SESSIONS = {}
+
+# Sidecar file the credit_score (and any other standalone) microservice reads
+# to map bearer tokens back to a user. We can't share SESSIONS across
+# processes (different Python interpreters), so when a token is issued we
+# write it here as a tiny JSON dict, and when it's killed we remove it.
+# The credit_score service (and any future microservice that needs auth)
+# reads this file on every request — it's small (one line per active
+# session), the file is local-only, and it lets each service do its own
+# role-based scoping without depending on the gateway being healthy.
+TOKENS_FILE = BASE_DIR / "active_tokens.json"
+_tokens_lock = threading.RLock()
+
+
+def _persist_token(token, payload):
+    """Add or update a token entry in the sidecar file."""
+    with _tokens_lock:
+        data = {}
+        if TOKENS_FILE.exists():
+            try:
+                with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f) or {}
+            except (json.JSONDecodeError, OSError):
+                data = {}
+        data[token] = {
+            "uid": payload.get("uid", ""),
+            "email": payload.get("email", ""),
+            "role": payload.get("role", ""),
+            "state": payload.get("state", ""),
+            "district": payload.get("district", ""),
+            "created_at": payload.get("created_at", time.time()),
+        }
+        try:
+            with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+        except OSError as e:
+            print(f"auth_excel: failed to persist token sidecar: {e}", flush=True)
+
+
+def _drop_token(token):
+    """Remove a single token from the sidecar file."""
+    with _tokens_lock:
+        if not TOKENS_FILE.exists():
+            return
+        try:
+            with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+            if token in data:
+                del data[token]
+                with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(data, f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"auth_excel: failed to prune token sidecar: {e}", flush=True)
+
+
+def _drop_tokens_for_uid(uid):
+    """Remove every token belonging to this user (used on delete/restrict)."""
+    with _tokens_lock:
+        if not TOKENS_FILE.exists():
+            return
+        try:
+            with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+            kept = {t: v for t, v in data.items() if v.get("uid") != uid}
+            if len(kept) != len(data):
+                with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(kept, f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"auth_excel: failed to prune tokens for uid={uid}: {e}", flush=True)
 
 auth_bp = Blueprint("auth_excel", __name__)
 
@@ -202,6 +271,29 @@ def init_excel():
             conn.execute(
                 "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
                 ("advisory_page_backfill_v1", time.time()),
+            )
+
+        # One-time backfill: "/credit-score" was added after some installs
+        already_migrated_cs = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = ?", ("credit_score_page_backfill_v1",)
+        ).fetchone()
+        if not already_migrated_cs:
+            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+                if "/credit-score" not in cfg["pages"]:
+                    continue
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                if row is None:
+                    continue
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/credit-score" not in current_pages:
+                    current_pages.append("/credit-score")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        (",".join(current_pages), role),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                ("credit_score_page_backfill_v1", time.time()),
             )
 
     if db_is_new:
@@ -507,6 +599,7 @@ def delete_user(uid):
         conn.execute("DELETE FROM user_permissions WHERE uid = ?", (uid,))
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
+        _drop_tokens_for_uid(uid)
 
 
 def set_user_status(uid, status):
@@ -525,6 +618,7 @@ def set_user_status(uid, status):
     if status == "restricted":
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
+        _drop_tokens_for_uid(uid)
 
     return dict(updated)
 
@@ -533,11 +627,13 @@ def set_user_status(uid, status):
 
 def issue_session(uid, email, role, state="", district=""):
     token = uuid.uuid4().hex + uuid.uuid4().hex  # 64 hex chars
-    SESSIONS[token] = {
+    payload = {
         "uid": uid, "email": email, "role": role,
         "state": state or "", "district": district or "",
         "created_at": time.time(),
     }
+    SESSIONS[token] = payload
+    _persist_token(token, payload)
     return token
 
 
@@ -660,6 +756,7 @@ def get_demo_user(role):
 def logout():
     token = _get_token_from_request()
     SESSIONS.pop(token, None)
+    _drop_token(token)
     return jsonify({"status": "logged out"}), 200
 
 
