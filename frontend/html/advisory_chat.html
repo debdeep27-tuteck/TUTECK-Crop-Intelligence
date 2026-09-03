@@ -376,6 +376,25 @@
 
   .tts-btn.active:hover { background: var(--leaf-dark); }
 
+  .location-btn {
+    background: transparent;
+    color: var(--ink-soft);
+  }
+
+  .location-btn:hover { background: var(--leaf-pale); color: var(--leaf-dark); }
+
+  .location-btn.active {
+    background: var(--leaf);
+    color: #fff;
+  }
+
+  .location-btn.active:hover { background: var(--leaf-dark); }
+
+  .location-btn.loading {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
   .disclaimer {
     text-align: center;
     font-size: 11px;
@@ -441,6 +460,12 @@
     <div class="composer-input-wrap">
       <textarea id="advisory-input" rows="1" placeholder="Type your question…" aria-label="Message"></textarea>
     </div>
+    <button class="icon-btn location-btn" id="location-btn" type="button" aria-label="Share location" title="Share location" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.94 11A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
     <button class="icon-btn tts-btn" id="tts-btn" type="button" aria-label="Toggle spoken replies" title="Toggle spoken replies" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="3 9 8 9 12 5 12 19 8 15 3 15 3 9"/>
@@ -475,7 +500,82 @@
   const sendBtn = document.getElementById('send-btn');
   const micBtn = document.getElementById('mic-btn');
   const ttsBtn = document.getElementById('tts-btn');
+  const locationBtn = document.getElementById('location-btn');
   const langSelect = document.getElementById('lang-select');
+
+  // ── LOCATION SHARING ─────────────────────────────────────────
+  // Several advisory tools (nearest mandi, yield prediction, soil type)
+  // need the farmer's GPS coordinates. Rather than asking the farmer to
+  // type coordinates (which they don't have), we grab a browser
+  // geolocation fix once this is switched on and attach it silently to
+  // every /chat request from then on — the assistant can use it for any
+  // location-based tool without having to ask.
+  const LOCATION_PREF_KEY = 'cropai_location_enabled';
+  const LOCATION_MAX_AGE_MS = 5 * 60 * 1000; // refresh if older than 5 min
+  let locationEnabled = localStorage.getItem(LOCATION_PREF_KEY) === '1';
+  let currentLocation = null;      // { latitude, longitude, at }
+  let locationFetchPromise = null; // de-dupes concurrent getCurrentPosition calls
+
+  function updateLocationBtnUI(loading) {
+    locationBtn.classList.toggle('active', locationEnabled);
+    locationBtn.classList.toggle('loading', !!loading);
+    locationBtn.setAttribute('aria-pressed', String(locationEnabled));
+    locationBtn.title = locationEnabled ? 'Location sharing: on' : 'Share location';
+  }
+  updateLocationBtnUI(false);
+
+  function fetchLocation() {
+    if (locationFetchPromise) return locationFetchPromise;
+    locationFetchPromise = new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentLocation = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            at: Date.now(),
+          };
+          resolve(currentLocation);
+        },
+        () => resolve(null), // permission denied / unavailable / timeout
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: LOCATION_MAX_AGE_MS }
+      );
+    }).finally(() => { locationFetchPromise = null; });
+    return locationFetchPromise;
+  }
+
+  // Returns a fresh-enough location if sharing is on, fetching a new fix
+  // first if the cached one is missing or stale. Never blocks sending a
+  // message for more than the geolocation timeout above.
+  async function getLocationForSend() {
+    if (!locationEnabled) return null;
+    if (currentLocation && Date.now() - currentLocation.at < LOCATION_MAX_AGE_MS) {
+      return currentLocation;
+    }
+    return await fetchLocation();
+  }
+
+  locationBtn.addEventListener('click', async () => {
+    if (locationEnabled) {
+      locationEnabled = false;
+      localStorage.setItem(LOCATION_PREF_KEY, '0');
+      updateLocationBtnUI(false);
+      return;
+    }
+    updateLocationBtnUI(true);
+    const loc = await fetchLocation();
+    if (!loc) {
+      updateLocationBtnUI(false);
+      addBubble('assistant', "Couldn't get your location — check that location access is allowed for this site in your browser settings, then try again.", { isError: true });
+      return;
+    }
+    locationEnabled = true;
+    localStorage.setItem(LOCATION_PREF_KEY, '1');
+    updateLocationBtnUI(false);
+  });
 
   // ── AUTO-SPEAK TOGGLE ───────────────────────────────────────
   // When on, every assistant reply is spoken automatically the moment
@@ -724,14 +824,21 @@
       return;
     }
 
+    const loc = await getLocationForSend();
+    const payload = {
+      message: message,
+      lang: langSelect.value,
+    };
+    if (loc) {
+      payload.latitude = loc.latitude;
+      payload.longitude = loc.longitude;
+    }
+
     try {
       const resp = await fetch('/api/advisory/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          message: message,
-          lang: langSelect.value,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await resp.json().catch(() => ({}));

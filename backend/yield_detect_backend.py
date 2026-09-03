@@ -417,10 +417,10 @@ def _crop_yield_headers() -> dict:
     return headers
 
 
-def _crop_yield_request(method: str, path: str, **kwargs) -> dict:
+def _crop_yield_request(method: str, path: str, timeout: int = 20, **kwargs) -> dict:
     url = f"{CROP_YIELD_SERVICE_URL}{path}"
     try:
-        resp = requests.request(method, url, headers=_crop_yield_headers(), timeout=20, **kwargs)
+        resp = requests.request(method, url, headers=_crop_yield_headers(), timeout=timeout, **kwargs)
     except requests.exceptions.RequestException as exc:
         raise CropYieldServiceError(f"crop_yield_service unreachable at {url}: {exc}") from exc
     try:
@@ -446,7 +446,13 @@ def cy_soil_type(state: str, latitude=None, longitude=None, bounds=None) -> dict
         params["lon"] = longitude
     if bounds:
         params.update(bounds)
-    return _crop_yield_request("GET", "/soil_type", params=params)
+    # yield_platform_service.py retries the upstream SoilGrids (ISRIC) query
+    # with its own [8, 20]s timeouts on a cache miss — worst case ~28s
+    # before it even falls back. Give this call real headroom above that,
+    # rather than the default 20s other /crop_yield_service endpoints use,
+    # so a slow-but-successful SoilGrids response isn't cut off here and
+    # reported as "unreachable" when it was actually about to succeed.
+    return _crop_yield_request("GET", "/soil_type", params=params, timeout=35)
 
 
 def cy_predict(body: dict) -> dict:
@@ -454,7 +460,10 @@ def cy_predict(body: dict) -> dict:
     latitude/longitude or bounds, irrigation_type, area_hectare,
     fertilizer_kg_per_ha, pest_incidence — crop_yield_service auto-detects
     soil_type from lat/lng if it's not supplied."""
-    return _crop_yield_request("POST", "/predict", json=body)
+    # Same reasoning as cy_soil_type above: when soil_type isn't supplied,
+    # /predict does the same SoilGrids lookup internally before running
+    # the model, so it needs the same extended timeout headroom.
+    return _crop_yield_request("POST", "/predict", json=body, timeout=35)
 
 
 def now_iso() -> str:

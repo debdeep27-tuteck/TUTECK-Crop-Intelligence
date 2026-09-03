@@ -126,6 +126,11 @@ INTERNAL_SERVICES = {
     "nearest_mandi":    os.environ.get("NEAREST_MANDI_URL", "http://127.0.0.1:6012"),
     "irrigation":       os.environ.get("IRRIGATION_URL", "http://127.0.0.1:6001"),
     "cold_storage":     os.environ.get("COLD_STORAGE_URL", "http://127.0.0.1:6010"),
+    # yield_detect_backend.py — owns /api/yield/analyze (single-field yield
+    # prediction, not persisted) and /api/yield/soil_lookup (soil type by
+    # lat/lng), among others. Both are unauthenticated, unlike
+    # /api/yield/lands, so no auth_header forwarding is needed for these.
+    "yield_detect":     os.environ.get("YIELD_DETECT_URL", "http://127.0.0.1:6008"),
 }
 
 # Crop recommender is now its own microservice, split out of backend_2.py,
@@ -335,12 +340,61 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_yield_prediction",
+            "description": (
+                "Predict the expected crop yield for a specific field, given the farmer's "
+                "GPS location and crop. Requires latitude and longitude — if you don't have "
+                "them yet, ask the farmer to share their location instead of guessing "
+                "coordinates. This is a one-off estimate (not saved to any land record)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "crop": {"type": "string"},
+                    "latitude": {"type": "number"},
+                    "longitude": {"type": "number"},
+                    "state": {"type": "string"},
+                    "district": {"type": "string"},
+                    "season": {"type": "string", "description": "e.g. 'Kharif', 'Rabi', 'Zaid'"},
+                    "soil_type": {"type": "string", "description": "Optional — auto-detected from lat/lng if omitted."},
+                    "irrigation_type": {"type": "string"},
+                    "area_hectare": {"type": "number"},
+                    "fertilizer_kg_per_ha": {"type": "number"},
+                    "pest_incidence": {"type": "string", "description": "e.g. 'Low', 'Medium', 'High'"},
+                },
+                "required": ["crop", "latitude", "longitude"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_soil_type",
+            "description": (
+                "Look up the soil type at a GPS location. Requires latitude and longitude — "
+                "if you don't have them yet, ask the farmer to share their location instead "
+                "of guessing coordinates."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "latitude": {"type": "number"},
+                    "longitude": {"type": "number"},
+                    "state": {"type": "string"},
+                },
+                "required": ["latitude", "longitude"],
+            },
+        },
+    },
 ]
 
 
 # ── TOOL DISPATCH: map LLM tool calls -> real HTTP calls into your services ─
 
-def _request(method, base_url, path, service_label, params=None, json_body=None, extra_headers=None):
+def _request(method, base_url, path, service_label, params=None, json_body=None, extra_headers=None, timeout=None):
     try:
         resp = requests.request(
             method,
@@ -348,7 +402,7 @@ def _request(method, base_url, path, service_label, params=None, json_body=None,
             params=params,
             json=json_body,
             headers=extra_headers,
-            timeout=REQUEST_TIMEOUT,
+            timeout=timeout or REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
         return resp.json()
@@ -361,12 +415,14 @@ def call_internal_service(tool_name, args, auth_header=None):
     Dispatch a tool call to the matching internal microservice, calling each
     backend directly (not through the gateway) using its own real routes —
     verified against mandi_prices_backend.py, nearest_mandi_backend.py,
-    irrigation_backend2.py, cold_storage_backend.py, and crop_recommender.py.
+    irrigation_backend2.py, cold_storage_backend.py, crop_recommender.py,
+    and yield_detect_backend.py.
 
     `auth_header` is the farmer's own "Bearer <token>" value, forwarded from
     the /chat request. cold_storage_backend.py requires it (it verifies the
     token against the gateway's /api/auth/me) — without it, every cold
-    storage lookup will 401.
+    storage lookup will 401. yield_detect_backend.py's /analyze and
+    /soil_lookup routes are unauthenticated, so no token is forwarded there.
     """
     if tool_name == "get_mandi_price":
         params = {
@@ -424,18 +480,47 @@ def call_internal_service(tool_name, args, auth_header=None):
             body["Season"] = args["season"]
         return _request("POST", base, "recommend", "crop_recommender", json_body=body)
 
+    if tool_name == "get_yield_prediction":
+        if args.get("latitude") is None or args.get("longitude") is None:
+            return {"error": "latitude and longitude are required for a yield prediction."}
+        if not args.get("crop"):
+            return {"error": "crop is required for a yield prediction."}
+        body = {
+            "state": str(args.get("state") or "tripura").lower().strip(),
+            "crop": args.get("crop"),
+            "latitude": args.get("latitude"),
+            "longitude": args.get("longitude"),
+        }
+        for key in ("district", "season", "soil_type", "irrigation_type",
+                    "area_hectare", "fertilizer_kg_per_ha", "pest_incidence"):
+            if args.get(key) is not None:
+                body[key] = args[key]
+        return _request("POST", INTERNAL_SERVICES["yield_detect"], "api/yield/analyze",
+                         "yield_detect", json_body=body, timeout=40)
+
+    if tool_name == "get_soil_type":
+        if args.get("latitude") is None or args.get("longitude") is None:
+            return {"error": "latitude and longitude are required for a soil type lookup."}
+        params = {
+            "state": str(args.get("state") or "tripura").lower().strip(),
+            "lat": args.get("latitude"),
+            "lon": args.get("longitude"),
+        }
+        return _request("GET", INTERNAL_SERVICES["yield_detect"], "api/yield/soil_lookup",
+                         "yield_detect", params=params, timeout=40)
+
     return {"error": f"Unknown tool '{tool_name}'"}
 
 
 # ── SYSTEM PROMPT ─────────────────────────────────────────────────────────
 
-def build_system_prompt(lang):
-    return (
+def build_system_prompt(lang, location=None):
+    prompt = (
         "You are a farm advisory assistant for Indian farmers using the CropAI/TUTECK platform. "
         f"Respond in language code '{lang}', in simple, plain language a farmer with limited "
         "literacy can understand — short sentences, no jargon. "
         "You have tools that fetch REAL, live data (mandi prices, irrigation advice, cold storage "
-        "availability, crop recommendations, nearest mandi). "
+        "availability, crop recommendations, nearest mandi, yield predictions, soil type). "
         "Rules:\n"
         "1. NEVER guess or make up a price, weather figure, or advisory number. If you need data to "
         "answer, call the matching tool first.\n"
@@ -447,15 +532,29 @@ def build_system_prompt(lang):
         "\"based on today's mandi prices\") so the farmer knows it isn't a guess.\n"
         "5. Keep answers short — 2-4 sentences unless the farmer asks for more detail."
     )
+    if location and location.get("latitude") is not None and location.get("longitude") is not None:
+        # The frontend only attaches this when the farmer has switched on
+        # location sharing, so it's safe to use directly for any
+        # location-based tool (nearest mandi, yield prediction, soil type)
+        # without asking the farmer to repeat coordinates they can't
+        # actually read off their phone anyway.
+        prompt += (
+            f"\n6. The farmer's current GPS location is latitude={location['latitude']}, "
+            f"longitude={location['longitude']}. Use these directly for any tool that needs "
+            "latitude/longitude — do not ask the farmer for coordinates. If the farmer is "
+            "clearly asking about a different place, ask them to name it instead of using "
+            "this location."
+        )
+    return prompt
 
 
 # ── CORE CHAT LOGIC ────────────────────────────────────────────────────────
 
-def run_chat_turn(user_id, message, lang, auth_header=None):
+def run_chat_turn(user_id, message, lang, auth_header=None, location=None):
     history = load_history(user_id)
 
     messages = [
-        {"role": "system", "content": build_system_prompt(lang)},
+        {"role": "system", "content": build_system_prompt(lang, location=location)},
         *history,
         {"role": "user", "content": message},
     ]
@@ -590,8 +689,25 @@ def chat():
     if lang not in SUPPORTED_LANGS:
         lang = "en"
 
+    # Optional — only present when the farmer has switched on location
+    # sharing in the chat UI. Passed straight through to the LLM's system
+    # prompt so tools like get_nearest_mandi/get_yield_prediction/
+    # get_soil_type can be called without asking the farmer for
+    # coordinates they wouldn't be able to provide anyway.
+    location = None
+    lat, lon = body.get("latitude"), body.get("longitude")
+    if lat is not None and lon is not None:
+        try:
+            location = {"latitude": float(lat), "longitude": float(lon)}
+        except (TypeError, ValueError):
+            location = None
+
     try:
-        reply, tools_used = run_chat_turn(user_id, message, lang, auth_header=request.headers.get("Authorization"))
+        reply, tools_used = run_chat_turn(
+            user_id, message, lang,
+            auth_header=request.headers.get("Authorization"),
+            location=location,
+        )
     except Exception as e:
         return jsonify({"error": f"Advisory service error: {e}"}), 500
 
