@@ -70,6 +70,11 @@
       <div class="yd-title">🛰️ Yield Detect — By Land</div>
       <div class="yd-subtitle" id="yd-subtitle">LOADING…</div>
     </div>
+    <div id="mandi-radius-control" style="display:none; align-items:center; gap:8px;">
+      <label for="mandi-radius-input" style="font-family:'DM Mono',monospace; font-size:12px; color:#8a8470; text-transform:uppercase; letter-spacing:.06em;">Radius (km)</label>
+      <input type="number" id="mandi-radius-input" min="0.5" step="0.5" value="5" style="width:70px; padding:6px 8px; border:1px solid #d8d3c4; border-radius:4px; font-family:'DM Mono',monospace;">
+      <button class="btn btn-small" onclick="loadLands()">Apply</button>
+    </div>
     <button class="btn btn-primary" id="add-land-btn" onclick="goAddLand()" style="display:none;">＋ Add Land</button>
   </div>
 
@@ -101,9 +106,10 @@
     <div class="yd-table-wrap">
       <table class="yd-table">
         <thead>
-          <tr>
+          <tr id="lands-thead-row">
             <th>Property</th>
             <th>District</th>
+            <th class="mandi-only-col" style="display:none;">Distance (km)</th>
             <th>Crop</th>
             <th>Area (Ha)</th>
             <th>Predicted Yield</th>
@@ -144,9 +150,17 @@
     }
     const ROLE = (session.role || '').toLowerCase();
     const IS_FARMER = ROLE === 'farmer';
+    const IS_MANDI = ROLE === 'mandi';
     const CAN_DELETE = IS_FARMER || ['admin', 'state_admin', 'district_admin'].includes(ROLE);
     const addBtn = document.getElementById('add-land-btn');
     if (addBtn) addBtn.style.display = IS_FARMER ? '' : 'none';
+    const radiusControl = document.getElementById('mandi-radius-control');
+    if (radiusControl) radiusControl.style.display = IS_MANDI ? 'inline-flex' : 'none';
+    if (IS_MANDI) {
+      document.querySelectorAll('.mandi-only-col').forEach(el => el.style.display = '');
+    }
+    // Table has 8 columns normally, 9 for mandi (extra Distance column).
+    const TABLE_COLSPAN = IS_MANDI ? 9 : 8;
 
     function authHeaders(extra) {
       return Object.assign({ "Authorization": "Bearer " + session.token }, extra || {});
@@ -221,12 +235,29 @@
     async function loadLands() {
       const tbody = document.getElementById('lands-tbody');
       try {
-        const res = await fetch(`/api/yield/lands?state=${STATE}`, { headers: authHeaders() });
+        let url = `/api/yield/lands?state=${STATE}`;
+        if (IS_MANDI) {
+          const radiusInput = document.getElementById('mandi-radius-input');
+          const radiusKm = (radiusInput && radiusInput.value) ? radiusInput.value : '5';
+          url += `&radius_km=${encodeURIComponent(radiusKm)}`;
+        }
+        const res = await fetch(url, { headers: authHeaders() });
+
+        if (res.status === 409) {
+          const err = await res.json().catch(() => ({}));
+          updateStats([]);
+          tbody.innerHTML = `<tr><td colspan="${TABLE_COLSPAN}" class="yd-empty">${escapeHtml(err.error || 'This mandi account has no address set yet. Ask an admin to add one.')}</td></tr>`;
+          return;
+        }
+
         const lands = await res.json();
 
         if (!Array.isArray(lands) || lands.length === 0) {
           updateStats([]);
-          tbody.innerHTML = `<tr><td colspan="8" class="yd-empty">No lands analyzed yet for ${STATE_LABEL}. Click "＋ Add Land" to geofence your first plot.</td></tr>`;
+          const emptyMsg = IS_MANDI
+            ? `No farmer lands found within radius of your mandi.`
+            : `No lands analyzed yet for ${STATE_LABEL}. Click "＋ Add Land" to geofence your first plot.`;
+          tbody.innerHTML = `<tr><td colspan="${TABLE_COLSPAN}" class="yd-empty">${emptyMsg}</td></tr>`;
           return;
         }
 
@@ -236,6 +267,7 @@
           <tr>
             <td><strong>${escapeHtml(land.property_name || '—')}</strong></td>
             <td>${escapeHtml(land.district || '—')}</td>
+            ${IS_MANDI ? `<td>${land.distance_km !== null && land.distance_km !== undefined ? fmt(land.distance_km, 2) + ' km' : '—'}</td>` : ''}
             <td>${escapeHtml(land.crop || '—')}</td>
             <td>${fmt(land.area_hectare, 2)}</td>
             <td>${land.predicted_yield !== null && land.predicted_yield !== undefined ? fmt(land.predicted_yield, 3) + ' t/ha' : '—'}</td>
@@ -250,7 +282,7 @@
           </tr>
         `).join('');
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8" class="yd-empty">Could not load land records. Is the yield-detect backend running?</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${TABLE_COLSPAN}" class="yd-empty">Could not load land records. Is the yield-detect backend running?</td></tr>`;
       }
     }
 
