@@ -1694,10 +1694,6 @@
 
         const pillsContainer = document.getElementById('farmer-pills-container');
         if (pillsContainer) pillsContainer.style.display = 'none';
-
-        if (currentSession && currentSession.email) {
-          currentFarmerQuery = currentSession.email;
-        }
       } else if (currentRole === 'state_admin' || currentRole === 'district_admin') {
         // Directory/search stay, but every response is already scoped
         // server-side to this admin's state (and district, if applicable).
@@ -1728,11 +1724,9 @@
             document.getElementById("kpi-total-credit").innerHTML = `&#8377; ${(stats.total_approved_credit_pool / 100000).toFixed(1)} L`;
             document.getElementById("kpi-kcc-ratio").textContent = `${stats.kcc_eligible_ratio}%`;
           }
-        }
 
-        // Farmers only ever see their own record (server-enforced too), so
-        // there's no directory to fetch — just load their own scorecard.
-        if (currentRole !== 'farmer') {
+          // Farmers only ever see their own record (server-enforced too), so
+          // there's no directory to fetch — just load their own scorecard.
           const res = await fetch(`${API_BASE}/farmers`, { headers: authHeaders() }).catch(() => null);
           if (res && res.ok) {
             const data = await res.json();
@@ -1746,11 +1740,28 @@
           if (farmersList.length > 0) {
             currentFarmerQuery = farmersList[0].farmer_id;
           }
+        } else {
+          const fid = await resolveMyFarmerId();
+          currentFarmerQuery = fid || currentSession.email || "F001";
         }
         loadFarmerScorecard(currentFarmerQuery);
       } catch (err) {
         console.error("Initialization error", err);
       }
+    }
+
+    async function resolveMyFarmerId() {
+      if (currentRole !== 'farmer' || !currentSession || !currentSession.email) return null;
+      try {
+        const res = await fetch(`${API_BASE}/by_email?email=${encodeURIComponent(currentSession.email)}`, { headers: authHeaders() }).catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json();
+          return data.farmer_id || null;
+        }
+      } catch (e) {
+        console.error("Failed to resolve farmer_id", e);
+      }
+      return null;
     }
 
     function renderFarmerPills() {

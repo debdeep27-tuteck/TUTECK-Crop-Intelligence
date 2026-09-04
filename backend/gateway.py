@@ -8,6 +8,14 @@ from pathlib import Path
 app = Flask(__name__)
 CORS(app)
 
+# ── CORS: PRIVATE NETWORK ACCESS ────────────────────────────────────────
+# Chrome blocks cross-origin requests from private IPs to public IPs unless
+# the server explicitly opts in with this header.
+@app.after_request
+def _allow_private_network(resp):
+    resp.headers["Access-Control-Allow-Private-Network"] = "true"
+    return resp
+
 # ── CONFIG ─────────────────────────────────────────────────────────────
 
 # Tripura backends
