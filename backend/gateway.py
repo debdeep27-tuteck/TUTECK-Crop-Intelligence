@@ -56,6 +56,29 @@ ADVISORY_API = "http://127.0.0.1:6013"
 # Credit Score — Farmer Agri-Credit Score & Loan Risk Assessment
 CREDIT_SCORE_API = "http://127.0.0.1:6014"
 
+# Cache for session email → farmer_id lookups (avoids repeated backend calls).
+_EMAIL_TO_FARMER_ID = {}
+
+
+def _resolve_farmer_id(email):
+    """Resolve a session email to its F001-style farmer_id via the credit-score backend."""
+    if not email:
+        return None
+    cached = _EMAIL_TO_FARMER_ID.get(email)
+    if cached:
+        return cached
+    try:
+        resp = requests.get(f"{CREDIT_SCORE_API}/by_email", params={"email": email}, timeout=10)
+        if resp.ok:
+            data = resp.json()
+            fid = data.get("farmer_id")
+            if fid:
+                _EMAIL_TO_FARMER_ID[email] = fid
+                return fid
+    except Exception:
+        pass
+    return None
+
 
 # ── HELPERS ────────────────────────────────────────────────────────────
 
@@ -578,10 +601,10 @@ def credit_score_api(path=""):
 
       - farmer: every request that would otherwise reveal another farmer's
         data — /credit_score/<anything>, /farmers, /stats — is redirected
-        server-side to /credit_score/<their own session email>, so a
-        farmer can only ever see their own credit score and loan
-        eligibility, no matter what id they type in the search box or what
-        they send directly to the API.
+        server-side to /credit_score/<their own farmer_id>, resolved from
+        their session email via a backend lookup. A farmer can only ever
+        see their own credit score and loan eligibility, no matter what
+        id they type in the search box or what they send directly to the API.
       - district_admin: /farmers and /stats are scoped to their session's
         state + district (forced, can't be overridden by the client); a
         direct /credit_score/<id> lookup outside their district is
@@ -606,10 +629,13 @@ def credit_score_api(path=""):
         if role == "farmer":
             if not email:
                 return jsonify({"error": "No email on file for this account"}), 403
-            # Whatever was requested — a specific id, the full directory,
-            # or aggregate stats — a farmer only ever gets their own record.
             if full_path in ("farmers", "stats") or full_path.startswith("credit_score"):
-                full_path = f"credit_score/{email}"
+                farmer_id = _resolve_farmer_id(email)
+                if farmer_id:
+                    full_path = f"credit_score/{farmer_id}"
+                else:
+                    full_path = "credit_score"
+                    override_params["email"] = email
 
         elif role in ("state_admin", "district_admin"):
             scope_state = (session.get("state") or "").strip()

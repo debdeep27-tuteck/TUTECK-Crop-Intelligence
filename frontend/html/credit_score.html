@@ -1744,7 +1744,7 @@
 
           // Default to first farmer if available
           if (farmersList.length > 0) {
-            currentFarmerQuery = farmersList[0].email || farmersList[0].farmer_id;
+            currentFarmerQuery = farmersList[0].farmer_id;
           }
         }
         loadFarmerScorecard(currentFarmerQuery);
@@ -1757,7 +1757,7 @@
       const container = document.getElementById("farmer-pills-container");
       if (!container) return;
       container.innerHTML = farmersList.map(f => `
-        <button class="farmer-pill ${(f.farmer_id === currentFarmerQuery || f.email === currentFarmerQuery) ? 'active' : ''}" onclick="selectFarmer('${f.email || f.farmer_id}')">
+        <button class="farmer-pill ${(f.farmer_id === currentFarmerQuery || f.email === currentFarmerQuery) ? 'active' : ''}" onclick="selectFarmer('${f.farmer_id}')">
           <span>${f.name.split(' ')[0]}</span>
           <span style="font-size:10.5px;opacity:0.8;">(${f.credit_score})</span>
         </button>
@@ -1969,7 +1969,7 @@
             </td>
             <td><strong>${formatINR(f.max_loan_limit)}</strong></td>
             <td>
-              <button class="btn-action-sm" onclick="selectFarmer('${f.email || f.farmer_id}'); switchTab('scorecard');">
+              <button class="btn-action-sm" onclick="selectFarmer('${f.farmer_id}'); switchTab('scorecard');">
                 View &rarr;
               </button>
             </td>

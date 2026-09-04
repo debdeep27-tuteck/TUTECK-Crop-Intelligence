@@ -283,11 +283,15 @@ def _in_scope(rec, scope_state, scope_district):
 # ── API ROUTES ─────────────────────────────────────────────────────────────────
 
 @app.route('/credit_score/<query>')
-def get_credit_score(query):
+@app.route('/credit_score')
+def get_credit_score(query=None):
     """
     Get credit score for a farmer by farmer_id (e.g. F001) or user_email (e.g. farmer1@gmail.com).
+    Accepts the identifier either as a path segment or as a ?email= query parameter.
     """
-    q = str(query).strip()
+    q = str(query).strip() if query else ""
+    if not q:
+        q = (request.args.get("email") or "").strip()
     with get_db() as conn:
         sync_new_farmers_from_yield_lands(conn)
 
@@ -307,7 +311,7 @@ def get_credit_score(query):
         if not row:
             return jsonify({
                 "error": "Farmer not found in credit database",
-                "searched": query
+                "searched": query or q
             }), 404
 
         rec = dict(row)
@@ -377,6 +381,23 @@ def list_farmers():
                 "max_loan_limit": assessment["max_loan_limit"]
             })
         return jsonify({"farmers": result, "count": len(result)})
+
+
+@app.route('/by_email')
+def lookup_farmer_id_by_email():
+    """Resolve a user_email to its farmer_id (F001-style)."""
+    email = (request.args.get("email") or "").strip()
+    if not email:
+        return jsonify({"error": "email query parameter is required"}), 400
+    with get_db() as conn:
+        sync_new_farmers_from_yield_lands(conn)
+        row = conn.execute("""
+            SELECT farmer_id, user_email FROM farmer_credit_records
+            WHERE LOWER(user_email) = LOWER(?)
+        """, (email,)).fetchone()
+        if not row:
+            return jsonify({"error": "Farmer not found", "email": email}), 404
+        return jsonify({"farmer_id": row["farmer_id"], "email": row["user_email"]})
 
 
 @app.route('/calculate_score', methods=['POST'])
