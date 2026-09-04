@@ -41,8 +41,10 @@ except ImportError:
 import sqlite3
 import time
 import uuid
+from datetime import datetime, timezone, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from html import escape as _html_escape
 from pathlib import Path
 from typing import Optional
 
@@ -1270,6 +1272,263 @@ def refresh_mandi_sender_status(db: sqlite3.Connection, mandi_email: str) -> str
     return row["status"]
 
 
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def _format_ist(epoch_ms) -> str:
+    """Formats an epoch-milliseconds timestamp as e.g. '4 Sep 2026, 6:30 PM IST'.
+    Falls back to a plain dash if the timestamp is missing/invalid — a
+    malformed date shouldn't take down the whole email send."""
+    if not epoch_ms:
+        return "—"
+    try:
+        dt = datetime.fromtimestamp(int(epoch_ms) / 1000, tz=IST)
+        return dt.strftime("%-d %b %Y, %-I:%M %p IST")
+    except (ValueError, OSError, OverflowError):
+        return "—"
+
+
+def _format_quantity(qty) -> str:
+    try:
+        return f"{float(qty):,.2f} MT"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _format_price(price) -> str:
+    try:
+        return f"₹{float(price):,.2f} / quintal"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def build_auction_started_email(auction: dict, farmer_link: str) -> tuple[str, str]:
+    """
+    Returns (html_body, plain_text_body) for the "new auction open" email.
+
+    COLOR THEME — matches the app's real palette (see :root CSS variables
+    in admin.html), not an invented one:
+        --primary        #1B4332  (deep forest green — header/CTA)
+        --primary-dark    #0F291E  (gradient end, used in brand-icon)
+        --primary-light   #E8F5E9  (soft green tint — used sparingly)
+        --accent          #10B981  (emerald — used for the "New Auction
+                                     Open" eyebrow label, matching how the
+                                     admin console uses it for positive/
+                                     active-state accents)
+        --accent-hover    #059669
+        --text-main       #0F172A
+        --text-muted      #64748B
+        --text-sub        #475569
+        --danger          #EF4444  (used for the closing-time row, same
+                                     as the admin console's danger color)
+        --bg              #F8FAFC  (email body background)
+        --surface         #FFFFFF
+        --border          #E2E8F0
+        --border-subtle   #EDF2F7
+    The header also uses the same 135deg gradient (#1B4332 -> #2D6A4F)
+    as admin.html's .brand-icon, so the email visually matches the app
+    shell rather than introducing a new brand feel.
+
+    Design notes for anyone editing this template:
+    - Table-based layout, not flexbox/grid — required for consistent
+      rendering across Outlook desktop (which uses Word's rendering
+      engine), Gmail, and mobile mail apps, which all support tables far
+      more reliably than modern CSS layout.
+    - A <style> block AND inline styles on the key elements (button,
+      headings) — modern clients (Gmail, Apple Mail, most phone apps)
+      render the <style> block fine, but some corporate/older clients
+      strip <head> entirely, so the inline styles are the safety net.
+    - max-width: 600px container — this is the standard "renders well on
+      both desktop preview panes and phone screens" width; phone mail
+      apps render HTML email at full device width regardless, so this
+      just keeps line lengths readable rather than stretching edge to
+      edge on a tablet or desktop screen.
+    - The CTA button is a real <a> styled as a button (not an <img> or a
+      bare text link) with generous padding — this is what makes it
+      reliably tappable with a thumb, and it's the actual `farmer_link`
+      URL, so tapping anywhere on it opens exactly that auction on the
+      Mandi Auction Floor page in the phone's browser, not just a fixed 
+      "go to homepage" link.
+    - A plain-text version is attached alongside the HTML version
+      (see send_auction_started_email below) — this both meaningfully
+      improves spam-filter scoring and gives a readable fallback for any
+      client that can't render HTML at all.
+    """
+    crop_type = _html_escape(str(auction.get("cropType") or "Crop"))
+    auction_name = _html_escape(str(auction.get("auctionName") or "Mandi Auction"))
+    state = _html_escape(str(auction.get("state") or "—"))
+    district = _html_escape(str(auction.get("district") or "—"))
+    quantity = _format_quantity(auction.get("targetQuantity"))
+    base_price = _format_price(auction.get("basePrice"))
+    closes_at = _format_ist(auction.get("endsAt"))
+    auction_type = _html_escape(str(auction.get("auctionType") or "Open").replace("_", " ").title())
+    safe_link = _html_escape(farmer_link, quote=True)
+
+    html = f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>{auction_name}</title>
+<style>
+  body, table, td, a {{ -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }}
+  table, td {{ mso-table-lspace: 0pt; mso-table-rspace: 0pt; }}
+  img {{ -ms-interpolation-mode: bicubic; }}
+  body {{ margin: 0; padding: 0; width: 100% !important; background-color: #F8FAFC;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
+  .email-container {{ max-width: 600px; margin: 0 auto; }}
+  .cta-button {{ background-color: #1B4332; border-radius: 8px; }}
+  .cta-button a {{ display: block; padding: 16px 28px; color: #ffffff !important;
+                    font-size: 16px; font-weight: 700; text-decoration: none; text-align: center; }}
+  @media only screen and (max-width: 600px) {{
+    .email-container {{ width: 100% !important; }}
+    .fluid-padding {{ padding-left: 20px !important; padding-right: 20px !important; }}
+  }}
+</style>
+</head>
+<body>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC;">
+    <tr>
+      <td align="center" style="padding: 24px 12px;">
+        <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0"
+               style="background-color:#FFFFFF; border-radius: 12px; overflow: hidden; border: 1px solid #E2E8F0;">
+
+          <!-- Header / branding — same gradient as admin.html's .brand-icon -->
+          <tr>
+            <td style="background:#1B4332; background:linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%); padding: 22px 32px;">
+              <span style="color:#ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.02em;">
+                🌾 CropAI Mandi Auctions
+              </span>
+            </td>
+          </tr>
+
+          <!-- Headline -->
+          <tr>
+            <td class="fluid-padding" style="padding: 32px 32px 8px 32px;">
+              <p style="margin:0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+                        color:#10B981; text-transform: uppercase;">New Auction Open</p>
+              <h1 style="margin: 8px 0 0 0; font-size: 22px; line-height: 1.35; color:#0F172A;">
+                A mandi buyer wants your {crop_type}
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Intro copy -->
+          <tr>
+            <td class="fluid-padding" style="padding: 8px 32px 20px 32px;">
+              <p style="margin:0; font-size: 15px; line-height: 1.6; color:#475569;">
+                A new mandi auction — <strong>{auction_name}</strong> — has opened for
+                <strong>{crop_type}</strong> in your area, and you're invited to place a bid.
+                Tap the button below to open the auction floor and bid directly from your phone.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Auction details card -->
+          <tr>
+            <td class="fluid-padding" style="padding: 0 32px 24px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="background-color:#E8F5E9; border-radius: 10px; border: 1px solid #E2E8F0;">
+                <tr>
+                  <td style="padding: 18px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 14px; color:#64748B; width: 44%;">Crop</td>
+                        <td style="padding: 6px 0; font-size: 14px; color:#0F172A; font-weight: 600; text-align: right;">{crop_type}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 14px; color:#64748B;">Location</td>
+                        <td style="padding: 6px 0; font-size: 14px; color:#0F172A; font-weight: 600; text-align: right;">{district}, {state}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 14px; color:#64748B;">Quantity sought</td>
+                        <td style="padding: 6px 0; font-size: 14px; color:#0F172A; font-weight: 600; text-align: right;">{quantity}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 14px; color:#64748B;">Base price</td>
+                        <td style="padding: 6px 0; font-size: 14px; color:#0F172A; font-weight: 600; text-align: right;">{base_price}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 14px; color:#64748B;">Auction type</td>
+                        <td style="padding: 6px 0; font-size: 14px; color:#0F172A; font-weight: 600; text-align: right;">{auction_type}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0 0 0; font-size: 14px; color:#64748B; border-top: 1px solid #E2E8F0; padding-top: 12px; margin-top: 6px;">Closes</td>
+                        <td style="padding: 6px 0 0 0; font-size: 14px; color:#EF4444; font-weight: 700; text-align: right; border-top: 1px solid #E2E8F0; padding-top: 12px;">{closes_at}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA button -->
+          <tr>
+            <td class="fluid-padding" align="center" style="padding: 0 32px 32px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center" class="cta-button" style="background-color:#1B4332; border-radius:8px;">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{safe_link}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="15%" fillcolor="#1B4332" stroke="f">
+                    <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">Open Auction Floor</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="{safe_link}" target="_blank" rel="noopener"
+                       style="display:block; padding:16px 28px; color:#ffffff; font-size:16px;
+                              font-weight:700; text-decoration:none; text-align:center;">
+                      Open Auction Floor →
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 14px 0 0 0; font-size: 12px; color:#94A3B8;">
+                Or copy this link into your phone's browser:<br>
+                <a href="{safe_link}" style="color:#1B4332; word-break: break-all;">{safe_link}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#F8FAFC; padding: 20px 32px; border-top: 1px solid #E2E8F0;">
+              <p style="margin:0; font-size: 12px; line-height: 1.6; color:#94A3B8;">
+                This is an automated notification from CropAI Mandi Auctions on behalf of the mandi buyer
+                who opened this auction. If you no longer wish to receive auction invitations, contact
+                your local CropAI support desk.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    plain = (
+        f"New Auction Open — {auction.get('auctionName') or 'Mandi Auction'}\n\n"
+        f"A mandi buyer wants your {auction.get('cropType') or 'crop'}.\n\n"
+        f"Crop: {auction.get('cropType') or '—'}\n"
+        f"Location: {auction.get('district') or '—'}, {auction.get('state') or '—'}\n"
+        f"Quantity sought: {_format_quantity(auction.get('targetQuantity'))}\n"
+        f"Base price: {_format_price(auction.get('basePrice'))}\n"
+        f"Auction type: {(auction.get('auctionType') or 'open').replace('_', ' ').title()}\n"
+        f"Closes: {_format_ist(auction.get('endsAt'))}\n\n"
+        f"Open the auction floor and place your bid here:\n{farmer_link}\n\n"
+        f"— CropAI Mandi Auctions\n"
+        f"This is an automated notification. If you no longer wish to receive auction "
+        f"invitations, contact your local CropAI support desk."
+    )
+    return html, plain
+
+
 def send_auction_started_email(auction: dict, farmer_emails: list[str]) -> int:
     if not farmer_emails:
         return 0
@@ -1279,20 +1538,22 @@ def send_auction_started_email(auction: dict, farmer_emails: list[str]) -> int:
         return 0
 
     db = get_db()
-    link = f"{APP_BASE_URL}/auction-farmer"
+    # Deep link straight to THIS auction on the farmer-facing Mandi
+    # Auction Floor page (/auction-farmer), not just the page in general —
+    # the frontend reads ?auction_id= to open/scroll to it directly. This
+    # is a plain https:// link (works from any phone's mail app — Gmail,
+    # Outlook, Apple Mail — by opening the device's default browser, no
+    # app-scheme/deep-link config required), so as long as APP_BASE_URL is
+    # set to your real public domain (not 127.0.0.1) farmers can tap it
+    # straight from their phone.
+    link = f"{APP_BASE_URL}/auction-farmer?auction_id={auction['id']}"
     mandi_email = auction.get("mandiEmail") or SMTP_FROM
     sender_status = refresh_mandi_sender_status(db, mandi_email) if mandi_email != SMTP_FROM else "verified"
     use_mandi_as_from = sender_status == "verified"
     from_addr = mandi_email if use_mandi_as_from else SMTP_FROM
 
     subject = f"New auction open — {auction['cropType']} — {auction['auctionName']}"
-    html = f"""
-    <p>A mandi buyer has opened a new auction for <b>{auction['cropType']}</b> in your area and
-    invited you to bid. <a href="{link}">Open the auction floor</a>.</p>
-    <table>
-      <tr><td style="padding:8px 0;font-weight:600;">{auction['cropType']}</td></tr>
-    </table>
-    """
+    html, plain = build_auction_started_email(auction, link)
 
     sent = 0
     try:
@@ -1308,6 +1569,13 @@ def send_auction_started_email(auction: dict, farmer_emails: list[str]) -> int:
             msg["To"] = email
             if not use_mandi_as_from:
                 msg["Reply-To"] = mandi_email
+            # Plain-text part MUST be attached first, HTML second — email
+            # clients render the LAST part in a multipart/alternative that
+            # they're capable of displaying, so this order makes HTML-
+            # capable clients show the styled version while still giving
+            # plain-text-only clients (and spam filters, which weigh the
+            # presence of a text alternative) a real fallback.
+            msg.attach(MIMEText(plain, "plain"))
             msg.attach(MIMEText(html, "html"))
             server.sendmail(from_addr, [email], msg.as_string())
             sent += 1

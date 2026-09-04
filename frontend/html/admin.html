@@ -784,6 +784,14 @@
           </select>
         </div>
 
+        <div class="form-group field-hidden" id="addressGroup">
+          <label class="form-label">Mandi Address</label>
+          <input class="form-input" id="modalAddress" placeholder="e.g. Krishi Mandi Road, Agartala, Tripura">
+          <div style="font-size:12px;color:#8a8470;margin-top:4px;">
+            Used to locate the mandi and find farmer lands within radius on the Yield Detect page.
+          </div>
+        </div>
+
         <div class="form-group" id="statusGroup">
           <label class="form-label">Account Status</label>
           <select class="form-select" id="modalStatus">
@@ -868,15 +876,19 @@
       const role = document.getElementById("modalRole").value;
       const stateGroup = document.getElementById("stateGroup");
       const districtGroup = document.getElementById("districtGroup");
+      const addressGroup = document.getElementById("addressGroup");
 
       const needsState = role === "state_admin" || role === "district_admin" || role === "mandi";
       const needsDistrict = role === "district_admin" || role === "mandi";
+      const needsAddress = role === "mandi";
 
       stateGroup.classList.toggle("field-hidden", !needsState);
       districtGroup.classList.toggle("field-hidden", !needsDistrict);
+      addressGroup.classList.toggle("field-hidden", !needsAddress);
 
       if (!needsState) document.getElementById("modalState").value = "";
       if (!needsDistrict) document.getElementById("modalDistrict").value = "";
+      if (!needsAddress) document.getElementById("modalAddress").value = "";
     }
 
     function onModalStateChange() {
@@ -899,9 +911,15 @@
       document.getElementById("modalPassword").placeholder = user ? "Leave blank to keep current password" : "At least 6 characters";
       document.getElementById("modalRole").value = user ? user.role : "admin";
       document.getElementById("modalStatus").value = user ? (user.status || "active") : "active";
+      document.getElementById("modalAddress").value = user ? (user.address || "") : "";
 
       document.getElementById("statusGroup").classList.toggle("field-hidden", !user);
       onModalRoleChange();
+      // onModalRoleChange() blanks modalAddress if the role isn't mandi —
+      // re-set it here so editing an existing mandi keeps showing its address.
+      if (user && user.role === "mandi") {
+        document.getElementById("modalAddress").value = user.address || "";
+      }
 
       if (user && user.state) {
         document.getElementById("modalState").value = user.state;
@@ -924,6 +942,7 @@
       const role = document.getElementById("modalRole").value;
       const state = document.getElementById("modalState").value;
       const district = document.getElementById("modalDistrict").value;
+      const address = document.getElementById("modalAddress").value.trim();
 
       if (!email || (modalMode === "create" && !password)) {
         showToast("Please fill all required fields.", true);
@@ -938,13 +957,17 @@
         showToast("Please select a district for this role.", true);
         return;
       }
+      if (role === "mandi" && !address) {
+        showToast("Please enter an address for this mandi.", true);
+        return;
+      }
 
       let res, data;
       if (modalMode === "create") {
         res = await fetch("/api/users", {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({ email, password, role, state, district })
+          body: JSON.stringify({ email, password, role, state, district, address })
         });
         data = await res.json();
         if (!res.ok) {
@@ -953,7 +976,7 @@
         }
         showToast("User created successfully.");
       } else {
-        const body = { email, role, state, district };
+        const body = { email, role, state, district, address };
         if (password) body.password = password;
 
         res = await fetch(`/api/users/${modalEditingUid}`, {

@@ -50,6 +50,7 @@ import json
 from contextlib import contextmanager
 from pathlib import Path
 
+import requests
 from flask import Blueprint, request, jsonify, g
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
@@ -74,6 +75,12 @@ VALID_STATUSES = {"active", "restricted"}
 # always resolve to exactly one state/district pair).
 STATE_SCOPED_ROLES = {"state_admin", "district_admin", "mandi"}
 DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
+
+# A mandi is a physical buying post, so it additionally needs a street
+# address that we can geocode into lat/lon — that's what lets the Yield
+# Detect page filter farmer lands within N km of the mandi instead of by
+# district match. No other role requires this.
+ADDRESS_SCOPED_ROLES = {"mandi"}
 
 # Default permissions, used only to seed role_permissions the first time
 # the DB is created. After that, the table is the single source of truth
@@ -100,7 +107,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         "crud": False,
     },
     "mandi": {
-        "pages": ["/auction-mandi", "/nearest-mandi", "/credit-score"],
+        "pages": ["/auction-mandi", "/nearest-mandi", "/credit-score", "/yield-detect"],
         "crud": False,
     },
 }
@@ -138,6 +145,9 @@ def _persist_token(token, payload):
             "role": payload.get("role", ""),
             "state": payload.get("state", ""),
             "district": payload.get("district", ""),
+            "address": payload.get("address", ""),
+            "latitude": payload.get("latitude"),
+            "longitude": payload.get("longitude"),
             "created_at": payload.get("created_at", time.time()),
         }
         try:
@@ -181,6 +191,90 @@ def _drop_tokens_for_uid(uid):
 auth_bp = Blueprint("auth_excel", __name__)
 
 
+# ── GEOCODING (address -> lat/lon, for mandi accounts) ───────────────────
+# Free-text address typed in the admin panel gets resolved to coordinates
+# here, server-side, once at create/update time — not on every request.
+# Uses Nominatim (OpenStreetMap), same as the geocode fallback already used
+# elsewhere in this app (yield_detect_backend.py), so no extra API keys are
+# required to get this feature working out of the box.
+
+# Google Maps "copy address" on a dropped pin frequently returns a Plus
+# Code (Open Location Code) instead of, or glued onto, a real address —
+# e.g. "8PR6+V56, Balwanta, Rajasthan-305401". Nominatim has no idea what
+# to do with the code token itself and fails the whole query outright,
+# even though the locality after the comma is perfectly geocodable on its
+# own. A short (non-global) Plus Code is 2-8 alphanumeric chars + "+" +
+# 2-3 more, drawn from a fixed base-20 alphabet — this regex matches that
+# shape so we can strip it out before geocoding rather than give up.
+import re as _re
+_PLUS_CODE_RE = _re.compile(r"\b[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{2,3}\b", _re.IGNORECASE)
+
+
+def _strip_plus_code(address: str) -> str:
+    """Remove a Plus Code token (and any stray leading comma/space left
+    behind) from an address string, e.g.
+    '8PR6+V56, Balwanta, Rajasthan-305401' -> 'Balwanta, Rajasthan-305401'.
+    Returns the address unchanged if no Plus Code pattern is found."""
+    stripped = _PLUS_CODE_RE.sub("", address)
+    stripped = _re.sub(r"^[,\s]+", "", stripped)  # leading ", " left behind
+    return stripped.strip()
+
+
+def _nominatim_search(query: str):
+    resp = requests.get(
+        "https://nominatim.openstreetmap.org/search",
+        params={"format": "json", "limit": 1, "q": query},
+        headers={"Accept": "application/json", "User-Agent": "cropai-auth/1.0"},
+        timeout=8,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def geocode_address(address: str):
+    """Return (lat, lon) floats for a free-text address, or (None, None) if
+    it couldn't be resolved (bad address, network issue, no results).
+
+    If the address contains a Google Plus Code (which Nominatim can't
+    parse), retries with the code stripped out, geocoding just the
+    locality that follows it. This lands on the town/village center
+    rather than the exact pin — close enough for mandi radius filtering,
+    and far better than an outright failure."""
+    address = (address or "").strip()
+    if not address:
+        return None, None
+
+    has_plus_code = bool(_PLUS_CODE_RE.search(address))
+    locality = _strip_plus_code(address) if has_plus_code else None
+    retry_worthwhile = bool(locality) and locality != address
+
+    results = None
+    try:
+        results = _nominatim_search(address)
+    except requests.exceptions.RequestException as e:
+        print(f"auth_excel: geocoding failed for address={address!r}: {e}", flush=True)
+        if not retry_worthwhile:
+            return None, None
+
+    if not results and retry_worthwhile:
+        print(
+            f"auth_excel: address {address!r} looks like it contains a Plus Code "
+            f"Nominatim can't parse; retrying with just {locality!r}.",
+            flush=True,
+        )
+        try:
+            results = _nominatim_search(locality)
+        except requests.exceptions.RequestException as e:
+            print(f"auth_excel: geocoding retry failed for {locality!r}: {e}", flush=True)
+            return None, None
+
+    if not results:
+        return None, None
+    try:
+        return float(results[0]["lat"]), float(results[0]["lon"])
+    except (KeyError, ValueError, TypeError):
+        return None, None
+
 # ── DB CONNECTION / SCHEMA ───────────────────────────────────────────────
 
 @contextmanager
@@ -214,7 +308,10 @@ def init_excel():
                 role TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'active',
                 state TEXT NOT NULL DEFAULT '',
-                district TEXT NOT NULL DEFAULT ''
+                district TEXT NOT NULL DEFAULT '',
+                address TEXT NOT NULL DEFAULT '',
+                latitude REAL,
+                longitude REAL
             )
         """)
         conn.execute("""
@@ -295,6 +392,41 @@ def init_excel():
                 "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
                 ("credit_score_page_backfill_v1", time.time()),
             )
+
+        # One-time backfill: mandi accounts now get access to "/yield-detect"
+        # (radius-based geofenced land lookup), added after some installs
+        # already had a populated role_permissions table.
+        already_migrated_mandi_yd = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = ?", ("mandi_yield_detect_backfill_v1",)
+        ).fetchone()
+        if not already_migrated_mandi_yd:
+            row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", ("mandi",)).fetchone()
+            if row is not None:
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/yield-detect" not in current_pages:
+                    current_pages.append("/yield-detect")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        (",".join(current_pages), "mandi"),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                ("mandi_yield_detect_backfill_v1", time.time()),
+            )
+
+        # One-time migration: existing installs' `users` table predates the
+        # address/latitude/longitude columns added for mandi geofencing.
+        # ALTER TABLE ADD COLUMN is safe to attempt repeatedly (SQLite has
+        # no "IF NOT EXISTS" for columns), so guard it with a pragma check
+        # rather than schema_migrations, in case a previous run partially
+        # applied it.
+        existing_cols = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+        if "address" not in existing_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN address TEXT NOT NULL DEFAULT ''")
+        if "latitude" not in existing_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN latitude REAL")
+        if "longitude" not in existing_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN longitude REAL")
 
     if db_is_new:
         _migrate_legacy_excel_files()
@@ -494,7 +626,34 @@ def _validate_state_district(role, state, district):
     return state, district
 
 
-def create_user(email, password, role, state="", district=""):
+def _validate_and_geocode_address(role, address, prev_lat=None, prev_lon=None, prev_address=""):
+    """Enforce that address-scoped roles (mandi) carry an address, and
+    geocode it to lat/lon when it's new or has changed. Returns
+    (address, latitude, longitude). Non-address-scoped roles always get
+    ("", None, None) — mirrors how _validate_state_district clears
+    state/district for roles that shouldn't have them."""
+    address = (address or "").strip()
+
+    if role not in ADDRESS_SCOPED_ROLES:
+        return "", None, None
+
+    if not address:
+        raise ValueError(f"'{role}' accounts require an address.")
+
+    if address == (prev_address or "").strip() and prev_lat is not None and prev_lon is not None:
+        # Address unchanged — don't re-hit the geocoder.
+        return address, prev_lat, prev_lon
+
+    lat, lon = geocode_address(address)
+    if lat is None or lon is None:
+        raise ValueError(
+            "Could not resolve that address to a location. Please check it and try again, "
+            "or make it more specific (e.g. add city/state)."
+        )
+    return address, lat, lon
+
+
+def create_user(email, password, role, state="", district="", address=""):
     email = email.strip().lower()
     role = role.strip().lower()
 
@@ -504,6 +663,7 @@ def create_user(email, password, role, state="", district=""):
         raise ValueError("Password must be at least 6 characters.")
 
     state, district = _validate_state_district(role, state, district)
+    address, latitude, longitude = _validate_and_geocode_address(role, address)
 
     with _db_lock, _conn() as conn:
         dupe = conn.execute("SELECT 1 FROM users WHERE lower(email) = ?", (email,)).fetchone()
@@ -512,18 +672,26 @@ def create_user(email, password, role, state="", district=""):
 
         uid = _new_uid()
         conn.execute(
-            "INSERT INTO users (uid, email, password, role, status, state, district) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (uid, email, password, role, "active", state, district),
+            """
+            INSERT INTO users (uid, email, password, role, status, state, district, address, latitude, longitude)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (uid, email, password, role, "active", state, district, address, latitude, longitude),
         )
 
     # Seed this user's individual page permissions from their role's defaults.
     get_user_permissions(uid, role=role)
 
-    return {"uid": uid, "email": email, "role": role, "status": "active", "state": state, "district": district}
+    return {
+        "uid": uid, "email": email, "role": role, "status": "active",
+        "state": state, "district": district,
+        "address": address, "latitude": latitude, "longitude": longitude,
+    }
 
 
 def verify_login(email, password):
-    """Return {'uid','email','role','status','state','district'} on success, or None on bad credentials."""
+    """Return {'uid','email','role','status','state','district','address',
+    'latitude','longitude'} on success, or None on bad credentials."""
     email = email.strip().lower()
     with _db_lock, _conn() as conn:
         row = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
@@ -532,15 +700,18 @@ def verify_login(email, password):
     return {
         "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
         "state": row["state"], "district": row["district"],
+        "address": row["address"], "latitude": row["latitude"], "longitude": row["longitude"],
     }
 
 
 def list_users():
     """Return all users WITHOUT password hashes — for the admin panel.
-    Includes each user's current status, state/district scope, and their
-    individual page permissions."""
+    Includes each user's current status, state/district scope, address/
+    coordinates (mandi), and their individual page permissions."""
     with _db_lock, _conn() as conn:
-        rows = conn.execute("SELECT uid, email, role, status, state, district FROM users").fetchall()
+        rows = conn.execute(
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude FROM users"
+        ).fetchall()
     users = [dict(row) for row in rows]
     for user in users:
         user["pages"] = get_user_permissions(user["uid"], role=user["role"])["pages"]
@@ -549,11 +720,14 @@ def list_users():
 
 def get_user(uid):
     with _db_lock, _conn() as conn:
-        row = conn.execute("SELECT uid, email, role, status, state, district FROM users WHERE uid = ?", (uid,)).fetchone()
+        row = conn.execute(
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude FROM users WHERE uid = ?",
+            (uid,),
+        ).fetchone()
     return dict(row) if row else None
 
 
-def update_user(uid, email=None, password=None, role=None, state=None, district=None):
+def update_user(uid, email=None, password=None, role=None, state=None, district=None, address=None):
     with _db_lock, _conn() as conn:
         row = conn.execute("SELECT * FROM users WHERE uid = ?", (uid,)).fetchone()
         if row is None:
@@ -579,13 +753,24 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
         norm_state, norm_district = _validate_state_district(effective_role, effective_state, effective_district)
         conn.execute("UPDATE users SET state = ?, district = ? WHERE uid = ?", (norm_state, norm_district, uid))
 
+        effective_address = address if address is not None else row["address"]
+        norm_address, latitude, longitude = _validate_and_geocode_address(
+            effective_role, effective_address,
+            prev_lat=row["latitude"], prev_lon=row["longitude"], prev_address=row["address"],
+        )
+        conn.execute(
+            "UPDATE users SET address = ?, latitude = ?, longitude = ? WHERE uid = ?",
+            (norm_address, latitude, longitude, uid),
+        )
+
         if password:
             if len(password) < 6:
                 raise ValueError("Password must be at least 6 characters.")
             conn.execute("UPDATE users SET password = ? WHERE uid = ?", (password, uid))
 
         updated = conn.execute(
-            "SELECT uid, email, role, status, state, district FROM users WHERE uid = ?", (uid,)
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude FROM users WHERE uid = ?",
+            (uid,),
         ).fetchone()
         return dict(updated)
 
@@ -625,11 +810,12 @@ def set_user_status(uid, status):
 
 # ── SESSIONS (unchanged: in-memory) ───────────────────────────────────────
 
-def issue_session(uid, email, role, state="", district=""):
+def issue_session(uid, email, role, state="", district="", address="", latitude=None, longitude=None):
     token = uuid.uuid4().hex + uuid.uuid4().hex  # 64 hex chars
     payload = {
         "uid": uid, "email": email, "role": role,
         "state": state or "", "district": district or "",
+        "address": address or "", "latitude": latitude, "longitude": longitude,
         "created_at": time.time(),
     }
     SESSIONS[token] = payload
@@ -698,7 +884,10 @@ def signup():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    token = issue_session(user["uid"], user["email"], user["role"], user.get("state"), user.get("district"))
+    token = issue_session(
+        user["uid"], user["email"], user["role"], user.get("state"), user.get("district"),
+        user.get("address"), user.get("latitude"), user.get("longitude"),
+    )
     return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 201
 
 
@@ -715,7 +904,10 @@ def login():
     if user.get("status") == "restricted":
         return jsonify({"error": "This account has been restricted. Contact an admin."}), 403
 
-    token = issue_session(user["uid"], user["email"], user["role"], user.get("state"), user.get("district"))
+    token = issue_session(
+        user["uid"], user["email"], user["role"], user.get("state"), user.get("district"),
+        user.get("address"), user.get("latitude"), user.get("longitude"),
+    )
     return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 200
 
 
@@ -778,11 +970,12 @@ def admin_create_user():
     role = str(body.get("role", "")).strip().lower()
     state = str(body.get("state", "")).strip()
     district = str(body.get("district", "")).strip()
+    address = str(body.get("address", "")).strip()
 
     if "@" not in email or "." not in email:
         return jsonify({"error": "Please enter a valid email address."}), 400
     try:
-        user = create_user(email, password, role, state=state, district=district)
+        user = create_user(email, password, role, state=state, district=district, address=address)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify(user), 201
@@ -809,6 +1002,7 @@ def admin_update_user(uid):
             role=body.get("role"),
             state=body.get("state"),
             district=body.get("district"),
+            address=body.get("address"),
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

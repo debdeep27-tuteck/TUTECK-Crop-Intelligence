@@ -112,6 +112,21 @@ STATE_BACKEND_PORTS = {
 
 DEFAULT_STATE = "tripura"
 
+# Default search radius (km) for mandi users when the frontend doesn't
+# explicitly pass ?radius_km=. 5km matches the original ask.
+DEFAULT_MANDI_RADIUS_KM = 5.0
+
+
+def haversine_km(lat1, lon1, lat2, lon2) -> float:
+    """Great-circle distance between two lat/lon points, in kilometers."""
+    import math
+    r = 6371.0088  # mean Earth radius, km
+    lat1, lon1, lat2, lon2 = map(math.radians, (lat1, lon1, lat2, lon2))
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
 # Soil-type lookup and yield prediction now live in crop_yield_service.py
 # (see the CROP YIELD SERVICE client section below).
 
@@ -234,6 +249,9 @@ def verify_token(token: str) -> dict | None:
             "role": data.get("role"),
             "state": data.get("state") or "",
             "district": data.get("district") or "",
+            "address": data.get("address") or "",
+            "latitude": data.get("latitude"),
+            "longitude": data.get("longitude"),
         }
     except requests.exceptions.RequestException as exc:
         logger.warning("Could not verify token against gateway (%s): %s", GATEWAY_INTERNAL_URL, exc)
@@ -266,12 +284,22 @@ def trusted_header_identity() -> dict | None:
     email = request.headers.get("X-User-Email", "").strip()
     if not email:
         return None
+    def _float_header(name):
+        raw = request.headers.get(name, "").strip()
+        try:
+            return float(raw) if raw else None
+        except ValueError:
+            return None
+
     return {
         "uid": email,
         "email": email,
         "role": request.headers.get("X-User-Role", "").strip(),
         "state": request.headers.get("X-User-State", "").strip(),
         "district": request.headers.get("X-User-District", "").strip(),
+        "address": request.headers.get("X-User-Address", "").strip(),
+        "latitude": _float_header("X-User-Latitude"),
+        "longitude": _float_header("X-User-Longitude"),
     }
 
 
@@ -619,6 +647,37 @@ def list_lands():
 
     if state:
         lands = [l for l in lands if (l.get("state") or "").lower() == state.lower()]
+
+    if role == "mandi":
+        # Mandis are location-scoped, not district-scoped: show every
+        # farmer's geofenced land within radius_km of the mandi's own
+        # address, regardless of which district it falls in. This
+        # intentionally does NOT apply the district_admin/state_admin
+        # district-equality filters below.
+        mandi_lat, mandi_lon = g.user.get("latitude"), g.user.get("longitude")
+        if mandi_lat is None or mandi_lon is None:
+            return jsonify({
+                "error": "This mandi account has no address set yet. Ask an admin to add one "
+                         "so nearby farmer lands can be found."
+            }), 409
+
+        try:
+            radius_km = float(request.args.get("radius_km", DEFAULT_MANDI_RADIUS_KM))
+        except (TypeError, ValueError):
+            radius_km = DEFAULT_MANDI_RADIUS_KM
+
+        nearby = []
+        for l in lands:
+            lat, lon = l.get("latitude"), l.get("longitude")
+            if lat is None or lon is None:
+                continue
+            dist = haversine_km(mandi_lat, mandi_lon, lat, lon)
+            if dist <= radius_km:
+                l["distance_km"] = round(dist, 2)
+                nearby.append(l)
+        nearby.sort(key=lambda l: l["distance_km"])
+        return jsonify(nearby)
+
     if role == "district_admin":
         if g.user.get("district"):
             lands = [l for l in lands if l.get("district") == g.user["district"]]
@@ -703,6 +762,21 @@ def get_land(land_id):
     role = (g.user.get("role") or "").lower()
     if role == "farmer" and land["user_email"] != g.user["email"]:
         return jsonify({"error": "Forbidden — not your land record"}), 403
+    if role == "mandi":
+        mandi_lat, mandi_lon = g.user.get("latitude"), g.user.get("longitude")
+        land_lat, land_lon = land.get("latitude"), land.get("longitude")
+        if mandi_lat is None or mandi_lon is None:
+            return jsonify({"error": "This mandi account has no address set yet."}), 409
+        if land_lat is None or land_lon is None:
+            return jsonify({"error": "Forbidden — this land has no coordinates to check against your radius"}), 403
+        try:
+            radius_km = float(request.args.get("radius_km", DEFAULT_MANDI_RADIUS_KM))
+        except (TypeError, ValueError):
+            radius_km = DEFAULT_MANDI_RADIUS_KM
+        dist = haversine_km(mandi_lat, mandi_lon, land_lat, land_lon)
+        if dist > radius_km:
+            return jsonify({"error": "Forbidden — outside your mandi's radius"}), 403
+        land["distance_km"] = round(dist, 2)
     if role == "district_admin":
         if g.user.get("district") and land["district"] != g.user["district"]:
             return jsonify({"error": "Forbidden — outside your assigned district"}), 403
