@@ -64,9 +64,9 @@ LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
 LEGACY_PERMISSIONS_XLSX = BASE_DIR / "permissions.xlsx"
 LEGACY_USER_PERMISSIONS_XLSX = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config"]
 
-VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi"}
+VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi", "storage_provider"}
 VALID_STATUSES = {"active", "restricted"}
 
 # Roles that must be tied to a state (state_admin needs just the state;
@@ -110,6 +110,10 @@ DEFAULT_ROLE_PERMISSIONS = {
         "pages": ["/auction-mandi", "/nearest-mandi", "/credit-score", "/yield-detect"],
         "crud": False,
     },
+    "storage_provider": {
+        "pages": ["/dashboard", "/cold-storage", "/storage-config"],
+        "crud": False,
+    },
 }
 
 _db_lock = threading.RLock()
@@ -148,6 +152,7 @@ def _persist_token(token, payload):
             "address": payload.get("address", ""),
             "latitude": payload.get("latitude"),
             "longitude": payload.get("longitude"),
+            "storage_id": payload.get("storage_id"),
             "created_at": payload.get("created_at", time.time()),
         }
         try:
@@ -274,6 +279,30 @@ def geocode_address(address: str):
         return float(results[0]["lat"]), float(results[0]["lon"])
     except (KeyError, ValueError, TypeError):
         return None, None
+
+
+# ── COLD STORAGE VALIDATION ──────────────────────────────────────────────
+# Used to validate storage_id for storage_provider accounts.
+
+COLD_STORAGE_DB = BASE_DIR.parent.parent / "micro_services" / "cold_storage" / "cold_storage.db"
+
+
+def _validate_storage_id(storage_id):
+    """Verify that a cold storage facility exists. Returns the id on success,
+    raises ValueError if the DB is missing or the id is invalid."""
+    if not COLD_STORAGE_DB.exists():
+        raise ValueError("Cold storage database not available.")
+
+    conn = sqlite3.connect(COLD_STORAGE_DB)
+    try:
+        row = conn.execute("SELECT id FROM cold_storages WHERE id = ?", (storage_id,)).fetchone()
+        if not row:
+            raise ValueError("Selected cold storage facility does not exist.")
+    finally:
+        conn.close()
+
+    return storage_id
+
 
 # ── DB CONNECTION / SCHEMA ───────────────────────────────────────────────
 
@@ -414,6 +443,30 @@ def init_excel():
                 ("mandi_yield_detect_backfill_v1", time.time()),
             )
 
+        # One-time backfill: "/storage-config" was added to DEFAULT_ROLE_PERMISSIONS
+        # for storage_provider after some installs already had a populated role_permissions table.
+        already_migrated_storage_config = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = ?", ("storage_config_page_backfill_v1",)
+        ).fetchone()
+        if not already_migrated_storage_config:
+            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+                if "/storage-config" not in cfg["pages"]:
+                    continue
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                if row is None:
+                    continue
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/storage-config" not in current_pages:
+                    current_pages.append("/storage-config")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        (",".join(current_pages), role),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                ("storage_config_page_backfill_v1", time.time()),
+            )
+
         # One-time migration: existing installs' `users` table predates the
         # address/latitude/longitude columns added for mandi geofencing.
         # ALTER TABLE ADD COLUMN is safe to attempt repeatedly (SQLite has
@@ -427,6 +480,8 @@ def init_excel():
             conn.execute("ALTER TABLE users ADD COLUMN latitude REAL")
         if "longitude" not in existing_cols:
             conn.execute("ALTER TABLE users ADD COLUMN longitude REAL")
+        if "storage_id" not in existing_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN storage_id INTEGER")
 
     if db_is_new:
         _migrate_legacy_excel_files()
@@ -653,7 +708,7 @@ def _validate_and_geocode_address(role, address, prev_lat=None, prev_lon=None, p
     return address, lat, lon
 
 
-def create_user(email, password, role, state="", district="", address=""):
+def create_user(email, password, role, state="", district="", address="", storage_id=None):
     email = email.strip().lower()
     role = role.strip().lower()
 
@@ -665,6 +720,13 @@ def create_user(email, password, role, state="", district="", address=""):
     state, district = _validate_state_district(role, state, district)
     address, latitude, longitude = _validate_and_geocode_address(role, address)
 
+    if role == "storage_provider":
+        if not storage_id:
+            raise ValueError("Storage provider accounts require a storage selection.")
+        storage_id = _validate_storage_id(storage_id)
+    else:
+        storage_id = None
+
     with _db_lock, _conn() as conn:
         dupe = conn.execute("SELECT 1 FROM users WHERE lower(email) = ?", (email,)).fetchone()
         if dupe:
@@ -673,10 +735,10 @@ def create_user(email, password, role, state="", district="", address=""):
         uid = _new_uid()
         conn.execute(
             """
-            INSERT INTO users (uid, email, password, role, status, state, district, address, latitude, longitude)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (uid, email, password, role, status, state, district, address, latitude, longitude, storage_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (uid, email, password, role, "active", state, district, address, latitude, longitude),
+            (uid, email, password, role, "active", state, district, address, latitude, longitude, storage_id),
         )
 
     # Seed this user's individual page permissions from their role's defaults.
@@ -686,6 +748,7 @@ def create_user(email, password, role, state="", district="", address=""):
         "uid": uid, "email": email, "role": role, "status": "active",
         "state": state, "district": district,
         "address": address, "latitude": latitude, "longitude": longitude,
+        "storage_id": storage_id,
     }
 
 
@@ -701,6 +764,7 @@ def verify_login(email, password):
         "uid": row["uid"], "email": row["email"], "role": row["role"], "status": row["status"],
         "state": row["state"], "district": row["district"],
         "address": row["address"], "latitude": row["latitude"], "longitude": row["longitude"],
+        "storage_id": row["storage_id"],
     }
 
 
@@ -710,7 +774,7 @@ def list_users():
     coordinates (mandi), and their individual page permissions."""
     with _db_lock, _conn() as conn:
         rows = conn.execute(
-            "SELECT uid, email, role, status, state, district, address, latitude, longitude FROM users"
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users"
         ).fetchall()
     users = [dict(row) for row in rows]
     for user in users:
@@ -721,13 +785,13 @@ def list_users():
 def get_user(uid):
     with _db_lock, _conn() as conn:
         row = conn.execute(
-            "SELECT uid, email, role, status, state, district, address, latitude, longitude FROM users WHERE uid = ?",
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = ?",
             (uid,),
         ).fetchone()
     return dict(row) if row else None
 
 
-def update_user(uid, email=None, password=None, role=None, state=None, district=None, address=None):
+def update_user(uid, email=None, password=None, role=None, state=None, district=None, address=None, storage_id=None):
     with _db_lock, _conn() as conn:
         row = conn.execute("SELECT * FROM users WHERE uid = ?", (uid,)).fetchone()
         if row is None:
@@ -763,13 +827,22 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
             (norm_address, latitude, longitude, uid),
         )
 
+        if effective_role == "storage_provider":
+            effective_storage_id = storage_id if storage_id is not None else row["storage_id"]
+            if not effective_storage_id:
+                raise ValueError("Storage provider accounts require a storage selection.")
+            effective_storage_id = _validate_storage_id(effective_storage_id)
+        else:
+            effective_storage_id = None
+        conn.execute("UPDATE users SET storage_id = ? WHERE uid = ?", (effective_storage_id, uid))
+
         if password:
             if len(password) < 6:
                 raise ValueError("Password must be at least 6 characters.")
             conn.execute("UPDATE users SET password = ? WHERE uid = ?", (password, uid))
 
         updated = conn.execute(
-            "SELECT uid, email, role, status, state, district, address, latitude, longitude FROM users WHERE uid = ?",
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = ?",
             (uid,),
         ).fetchone()
         return dict(updated)
@@ -810,12 +883,13 @@ def set_user_status(uid, status):
 
 # ── SESSIONS (unchanged: in-memory) ───────────────────────────────────────
 
-def issue_session(uid, email, role, state="", district="", address="", latitude=None, longitude=None):
+def issue_session(uid, email, role, state="", district="", address="", latitude=None, longitude=None, storage_id=None):
     token = uuid.uuid4().hex + uuid.uuid4().hex  # 64 hex chars
     payload = {
         "uid": uid, "email": email, "role": role,
         "state": state or "", "district": district or "",
         "address": address or "", "latitude": latitude, "longitude": longitude,
+        "storage_id": storage_id,
         "created_at": time.time(),
     }
     SESSIONS[token] = payload
@@ -875,18 +949,20 @@ def signup():
     email = str(body.get("email", "")).strip()
     password = str(body.get("password", ""))
     role = str(body.get("role", "")).strip().lower()
+    storage_id = body.get("storage_id")
 
     if "@" not in email or "." not in email:
         return jsonify({"error": "Please enter a valid email address."}), 400
 
     try:
-        user = create_user(email, password, role)
+        user = create_user(email, password, role, storage_id=storage_id)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
     token = issue_session(
         user["uid"], user["email"], user["role"], user.get("state"), user.get("district"),
         user.get("address"), user.get("latitude"), user.get("longitude"),
+        user.get("storage_id"),
     )
     return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 201
 
@@ -971,11 +1047,12 @@ def admin_create_user():
     state = str(body.get("state", "")).strip()
     district = str(body.get("district", "")).strip()
     address = str(body.get("address", "")).strip()
+    storage_id = body.get("storage_id")
 
     if "@" not in email or "." not in email:
         return jsonify({"error": "Please enter a valid email address."}), 400
     try:
-        user = create_user(email, password, role, state=state, district=district, address=address)
+        user = create_user(email, password, role, state=state, district=district, address=address, storage_id=storage_id)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify(user), 201
@@ -1003,6 +1080,7 @@ def admin_update_user(uid):
             state=body.get("state"),
             district=body.get("district"),
             address=body.get("address"),
+            storage_id=body.get("storage_id"),
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

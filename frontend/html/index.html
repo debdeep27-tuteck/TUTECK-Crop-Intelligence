@@ -1213,6 +1213,13 @@
           <span class="nav-label">Cold Storage</span>
         </a>
 
+        <a class="gn-link" id="nav-storage-config-link" data-target="/storage-config" data-content="/content/storage-config" href="#" title="Storage Config" style="display:none;">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </span>
+          <span class="nav-label">Storage Config</span>
+        </a>
+
         <a class="gn-link" data-target="/mandi-prices" data-content="/content/mandi-prices" href="#" title="Mandi Prices">
           <span class="nav-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-7"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
@@ -1475,6 +1482,7 @@
         '/auction',
         '/auction-mandi',
         '/cold-storage',
+        '/storage-config',
         '/mandi-prices',
         '/nearest-mandi',
         '/credit-score'
@@ -1488,6 +1496,7 @@
         '/mandi-prices',
         '/nearest-mandi',
         '/cold-storage',
+        '/storage-config',
         '/credit-score'
       ],
       state_admin: [
@@ -1499,6 +1508,7 @@
         '/mandi-prices',
         '/nearest-mandi',
         '/cold-storage',
+        '/storage-config',
         '/credit-score'
       ],
       default: [
@@ -1509,6 +1519,7 @@
         '/auction',
         '/auction-mandi',
         '/cold-storage',
+        '/storage-config',
         '/mandi-prices',
         '/nearest-mandi',
         '/credit-score'
@@ -1585,6 +1596,7 @@
       if (!session) return;
       const isAdmin = String(session.role || '').trim().toLowerCase() === 'admin';
       const isMandi = String(session.role || '').trim().toLowerCase() === 'mandi';
+      const isStorageProvider = String(session.role || '').trim().toLowerCase() === 'storage_provider';
 
       if (ALLOWED_PAGES.length > 0) {
         const dashGroup = document.getElementById('dashboard-nav-group');
@@ -1600,6 +1612,12 @@
           link.style.display = 'flex';
         }
       });
+
+      const storageConfigLink = document.getElementById('nav-storage-config-link');
+      if (storageConfigLink) {
+        const canAccess = ALLOWED_PAGES.length === 0 || ALLOWED_PAGES.includes('/storage-config');
+        storageConfigLink.style.display = canAccess ? 'flex' : 'none';
+      }
       
       const adminNav = document.getElementById('nav-admin-link');
       if (isAdmin) {
@@ -2112,6 +2130,7 @@
       '/auction': 'AUCTION FLOOR',
       '/auction-mandi': 'AUCTION MANDI',
       '/cold-storage': 'COLD STORAGE',
+      '/storage-config': 'STORAGE CONFIG',
       '/mandi-prices': 'MARKET PRICES',
       '/nearest-mandi': 'NEAREST MANDI',
       '/credit-score': 'AGRI CREDIT SCORE',

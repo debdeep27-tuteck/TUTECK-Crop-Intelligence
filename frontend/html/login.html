@@ -205,11 +205,19 @@
       </div>
       <div class="form-group">
         <label class="form-label">Account Role</label>
-        <select class="form-select" id="signup-role" style="width:100%;" required>
+        <select class="form-select" id="signup-role" style="width:100%;" required onchange="onSignupRoleChange()">
           <option value="farmer">Farmer / Field Operator</option>
           <option value="district_admin">District Agriculture Officer</option>
           <option value="state_admin">State Administrator</option>
           <option value="analyst">Agronomic Analyst</option>
+          <option value="storage_provider">Storage Provider</option>
+        </select>
+      </div>
+
+      <div class="form-group hidden" id="signup-storage-group">
+        <label class="form-label">Select Storage</label>
+        <select class="form-select" id="signup-storage" style="width:100%;">
+          <option value="">Select a storage facility</option>
         </select>
       </div>
       <button type="submit" class="btn btn-primary" id="signup-btn" style="width:100%;height:40px;margin-top:10px;">
@@ -230,6 +238,7 @@
         <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#1D4ED8;" data-role="state_admin">State Admin</button>
         <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#7C3AED;" data-role="district_admin">District Admin</button>
         <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#B45309;" data-role="mandi">Mandi</button>
+        <button type="button" class="btn btn-primary role-demo-btn" style="flex:1;min-width:90px;height:36px;background:#64748B;" data-role="storage_provider">Storage Provider</button>
       </div>
     </div>
   </div>
@@ -249,11 +258,13 @@
       return data;
     }
 
-    async function signUp(email, password, role) {
+    async function signUp(email, password, role, storageId) {
+      const body = { email, password, role };
+      if (storageId) body.storage_id = storageId;
       const res = await fetch(`${API_BASE}/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Sign up failed');
@@ -300,7 +311,8 @@
           role: user.role,
           loggedInAt: Date.now(),
           state: user.state,
-          district: user.district
+          district: user.district,
+          storage_id: user.storage_id || null,
         })
       );
 
@@ -333,15 +345,18 @@
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
       const role = document.getElementById('signup-role').value;
+      const storageId = document.getElementById('signup-storage').value;
       if (!email || !password || !role) { showError('Please fill in all fields.'); return; }
       if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+      if (role === 'storage_provider' && !storageId) { showError('Please select a storage facility.'); return; }
 
       const btn = document.getElementById('signup-btn');
       btn.disabled = true; btn.textContent = 'Creating account…';
       try {
-        await signUp(email, password, role);
+        await signUp(email, password, role, role === 'storage_provider' ? storageId : undefined);
         showSuccess('Account created successfully. You can now sign in.');
         signupForm.reset();
+        document.getElementById('signup-storage-group').classList.add('hidden');
         setTimeout(() => setMode('signin'), 900);
       } catch (err) {
         showError(err.message || 'Registration failed.');
@@ -371,6 +386,28 @@
         showSuccess(`Demo ${role.replace('_',' ')} credentials loaded`);
       } catch (err) {
         showError(err.message || 'Unable to load demo credentials.');
+      }
+    }
+
+    async function loadSignupStorageOptions() {
+      const select = document.getElementById('signup-storage');
+      try {
+        const res = await fetch('/api/cold-storage/names');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load storages');
+        select.innerHTML = '<option value="">Select a storage facility</option>' +
+          data.map(s => `<option value="${s.id}">${s.name} (${s.district || 'Unknown'}, ${s.state || 'Unknown'})</option>`).join('');
+      } catch (err) {
+        select.innerHTML = '<option value="">Failed to load storages</option>';
+      }
+    }
+
+    function onSignupRoleChange() {
+      const role = document.getElementById('signup-role').value;
+      const storageGroup = document.getElementById('signup-storage-group');
+      storageGroup.classList.toggle('hidden', role !== 'storage_provider');
+      if (role === 'storage_provider') {
+        loadSignupStorageOptions();
       }
     }
 

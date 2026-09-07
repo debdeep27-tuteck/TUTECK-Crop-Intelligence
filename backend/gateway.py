@@ -1,4 +1,5 @@
 import os
+import sqlite3
 
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
@@ -186,6 +187,7 @@ def admin_page():
 @app.route("/yield-detect")
 @app.route("/auction")
 @app.route("/cold-storage")
+@app.route("/storage-config")
 @app.route("/auction-mandi")
 @app.route("/mandi-prices")
 @app.route("/nearest-mandi")
@@ -270,6 +272,11 @@ def content_advisory():
 @app.route("/content/credit-score")
 def content_credit_score():
     return send_from_directory(str(HTML_DIR), "credit_score.html")
+
+
+@app.route("/content/storage-config")
+def content_storage_config():
+    return send_from_directory(str(HTML_DIR), "storage_config.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -576,6 +583,11 @@ def cold_storage_api(path):
     return forward_request(COLD_STORAGE_API, f"api/cold-storage/{path}")
 
 
+@app.route("/api/storage-provider/<path:path>", methods=["GET", "POST", "PATCH", "DELETE"])
+def storage_provider_api(path):
+    return forward_request(COLD_STORAGE_API, f"api/storage-provider/{path}")
+
+
 @app.route("/api/mandi-prices/<path:path>", methods=["GET"])
 def mandi_prices_api(path):
     # mandi_prices_backend.py mounts its own routes under
@@ -737,6 +749,29 @@ def auction_health_direct():
 @app.route("/api/cold-storage-health")
 def cold_storage_health_direct():
     return forward_request(COLD_STORAGE_API, "api/cold-storage/health")
+
+
+_COLD_STORAGE_NAMES_DB = (BASE_DIR.parent / "micro_services" / "cold_storage" / "cold_storage.db").resolve()
+
+
+@app.route("/api/cold-storage/names", methods=["GET"])
+def cold_storage_names():
+    if not _COLD_STORAGE_NAMES_DB.exists():
+        return jsonify({"error": "Cold storage database not found"}), 503
+
+    try:
+        conn = sqlite3.connect(_COLD_STORAGE_NAMES_DB)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT id, name, state, district FROM cold_storages ORDER BY name COLLATE NOCASE"
+        ).fetchall()
+        conn.close()
+        return jsonify([
+            {"id": r["id"], "name": r["name"], "state": r["state"], "district": r["district"]}
+            for r in rows
+        ]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/mandi-prices-health")
