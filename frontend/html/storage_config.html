@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CropAI — Storage Provider Configuration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/design_system.css">
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --border-subtle: #EDF2F7;
+      --primary: #1B4332;
+      --primary-dark: #0F291E;
+      --primary-light: #E8F5E9;
+      --accent: #10B981;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-sub: #475569;
+      --danger: #EF4444;
+      --warning: #F59E0B;
+      --font-sans: 'Inter', system-ui, -apple-ui, sans-serif;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      padding: 24px 28px 48px;
+    }
+
+    .sp-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    .top-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 22px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; box-shadow: var(--shadow-sm);
+    }
+    .brand-title { font-size: 18px; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+    .brand-subtitle { font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+    .btn-nav { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; transition: all 0.15s ease; text-decoration: none; }
+    .btn-nav:hover { background: var(--primary-light); border-color: #A7F3D0; }
+    .btn-nav-logout { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
+    .btn-nav-logout:hover { background: #FEE2E2; border-color: #F87171; }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow-sm); }
+    .kpi-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 4px; }
+    .kpi-num { font-size: 22px; font-weight: 800; color: var(--text-main); font-family: var(--font-sans); letter-spacing: -0.02em; }
+
+    .main-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--border); background: #FFFFFF; }
+    .card-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+    .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .table-container { width: 100%; overflow-x: auto; }
+    table.sp-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+    table.sp-table thead tr { background: #F8FAFC; border-bottom: 1px solid var(--border); }
+    table.sp-table th { padding: 10px 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); white-space: nowrap; }
+    table.sp-table tbody tr { border-bottom: 1px solid var(--border-subtle); transition: background-color 0.1s ease; }
+    table.sp-table tbody tr:hover { background-color: #F8FAFC; }
+    table.sp-table td { padding: 10px 8px; vertical-align: middle; }
+    table.sp-table td.col-center { text-align: center; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-active { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .badge-inactive { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+    .btn-primary { background: #10B981; color: #FFFFFF; }
+    .btn-primary:hover { background: #059669; }
+    .btn-secondary { background: #FFFFFF; color: var(--text-sub); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #F8FAFC; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+    .form-input, .form-select, .form-textarea {
+      height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; font-family: var(--font-sans); color: var(--text-main); outline: none;
+      background: #FFFFFF; transition: border-color 0.15s ease;
+    }
+    .form-textarea { height: auto; padding: 8px 12px; min-height: 60px; resize: vertical; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #10B981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .modal-overlay.show { display: flex; }
+    .modal-card { background: #FFFFFF; border-radius: 14px; width: 520px; max-width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); overflow: hidden; animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes modalSlide { from { transform: translateY(12px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); background: #F8FAFC; }
+    .modal-head-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+    .modal-close-btn { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .modal-close-btn:hover { background: #E2E8F0; color: var(--text-main); }
+    .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--border); background: #F8FAFC; }
+    .btn-cancel { padding: 8px 16px; border: 1px solid var(--border); background: #FFFFFF; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
+    .btn-save { padding: 8px 18px; border: none; background: #10B981; border-radius: 6px; font-size: 13px; font-weight: 600; color: #FFFFFF; cursor: pointer; }
+    .btn-save:hover { background: #059669; }
+
+    .toast-box { position: fixed; top: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+    .toast { padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn 0.2s ease forwards; }
+    @keyframes toastIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast-success { background: #064E3B; color: #FFFFFF; border: 1px solid #059669; }
+    .toast-error { background: #7F1D1D; color: #FFFFFF; border: 1px solid #DC2626; }
+
+    .field-hidden { display: none !important; }
+    .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+    .section-title { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  </style>
+</head>
+
+<body>
+  <div class="toast-box" id="toastBox"></div>
+
+  <div class="sp-container">
+
+    <!-- Quick Stats -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-lbl">My Facilities</div>
+        <div class="kpi-num" id="stat-my-facilities">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Total Free Capacity (MT)</div>
+        <div class="kpi-num" id="stat-free-capacity">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Active Facilities</div>
+        <div class="kpi-num" id="stat-active">—</div>
+      </div>
+    </div>
+
+    <!-- My Configurations -->
+    <div class="main-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">My Facility Configurations</div>
+          <div class="card-subtitle">Manage free capacity, status, and notes for your assigned cold storage facilities.</div>
+        </div>
+        <button class="btn btn-primary" onclick="openConfigModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Configuration
+        </button>
+      </div>
+      <div class="table-container">
+        <table class="sp-table">
+          <thead>
+            <tr>
+              <th style="width:22%;">Facility</th>
+              <th style="width:14%;">Location</th>
+              <th class="col-center" style="width:12%;">Free Capacity (MT)</th>
+              <th class="col-center" style="width:10%;">Status</th>
+              <th style="width:24%;">Notes</th>
+              <th class="col-center" style="width:8%;">Updated</th>
+              <th class="col-center" style="width:10%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="configBody">
+            <tr><td colspan="7" class="empty-state">Loading configurations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- All Facilities Reference -->
+    <div class="main-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">All Cold Storage Facilities</div>
+          <div class="card-subtitle">Reference list of all facilities in the system.</div>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="sp-table">
+          <thead>
+            <tr>
+              <th style="width:30%;">Name</th>
+              <th style="width:20%;">State</th>
+              <th style="width:20%;">District</th>
+              <th class="col-center" style="width:15%;">Total Capacity (MT)</th>
+              <th class="col-center" style="width:15%;">Type</th>
+            </tr>
+          </thead>
+          <tbody id="facilitiesBody">
+            <tr><td colspan="5" class="empty-state">Loading facilities...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config Modal -->
+  <div class="modal-overlay" id="configModalOverlay" onclick="if(event.target===this) closeConfigModal()">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-head-title" id="configModalTitle">Add Facility Configuration</div>
+        <button class="modal-close-btn" onclick="closeConfigModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Cold Storage Facility</label>
+          <select class="form-select" id="cfgFacility">
+            <option value="">Select a facility</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Free Capacity (Metric Tonnes)</label>
+          <input class="form-input" id="cfgFreeCapacity" type="number" step="0.01" min="0" placeholder="e.g. 500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="cfgStatus">
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="cfgNotes" placeholder="Optional notes about this facility..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
+        <button class="btn-save" onclick="saveConfig()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SESSION_KEY = "cropai_session";
+
+    function showToast(msg, isError = false) {
+      const box = document.getElementById("toastBox");
+      const toast = document.createElement("div");
+      toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
+      toast.innerHTML = isError
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ${msg}`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+      box.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(40px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function getSession() {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) { window.location = "/"; return null; }
+      return JSON.parse(raw);
+    }
+
+    const session = getSession();
+    if (!session) throw new Error("No session");
+
+    function authHeaders() {
+      return { "Content-Type": "application/json", "Authorization": "Bearer " + session.token };
+    }
+
+    let allConfigs = [];
+    let allFacilities = [];
+    let editingConfigId = null;
+
+    function formatDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    async function loadFacilities() {
+      try {
+        const res = await fetch("/api/storage-provider/facilities", { headers: authHeaders() });
+        if (!res.ok) throw new Error("Failed to load facilities");
+        allFacilities = await res.json();
+        const tbody = document.getElementById("facilitiesBody");
+        tbody.innerHTML = allFacilities.map(f => `
+          <tr>
+            <td><strong>${f.name}</strong></td>
+            <td>${f.state || "—"}</td>
+            <td>${f.district || "—"}</td>
+            <td class="col-center">${f.total_capacity_mt != null ? f.total_capacity_mt.toLocaleString() : "—"}</td>
+            <td class="col-center">${f.storage_type || "—"}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        showToast("Error loading facilities.", true);
+      }
+    }
+
+    async function loadConfigs() {
+      try {
+        const res = await fetch("/api/storage-provider/config", { headers: authHeaders() });
+        if (!res.ok) throw new Error("Failed to load configs");
+        allConfigs = await res.json();
+        renderConfigs();
+        updateKpis();
+      } catch (err) {
+        showToast("Error loading configurations.", true);
+      }
+    }
+
+    function renderConfigs() {
+      const tbody = document.getElementById("configBody");
+      if (!allConfigs.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No configurations yet. Click "Add Configuration" to create one.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = allConfigs.map(c => `
+        <tr>
+          <td><strong>${c.facility_name || "Facility #" + c.facility_id}</strong></td>
+          <td>${[c.state, c.district, c.block, c.village].filter(Boolean).join(", ") || "—"}</td>
+          <td class="col-center"><strong>${c.free_capacity_mt != null ? c.free_capacity_mt.toLocaleString() : "0"}</strong></td>
+          <td class="col-center"><span class="badge ${c.is_active ? 'badge-active' : 'badge-inactive'}">${c.is_active ? "Active" : "Inactive"}</span></td>
+          <td>${c.notes ? c.notes.substring(0, 60) + (c.notes.length > 60 ? "..." : "") : "—"}</td>
+          <td class="col-center">${formatDate(c.updated_at)}</td>
+          <td class="col-center">
+            <button class="btn btn-secondary btn-sm" onclick="editConfig(${c.id})">Edit</button>
+            <button class="btn btn-secondary btn-sm" onclick="deleteConfig(${c.id})" style="color:#EF4444;border-color:#FECACA;">Delete</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function updateKpis() {
+      document.getElementById("stat-my-facilities").textContent = allConfigs.length;
+      const totalFree = allConfigs.reduce((sum, c) => sum + (parseFloat(c.free_capacity_mt) || 0), 0);
+      document.getElementById("stat-free-capacity").textContent = totalFree.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const activeCount = allConfigs.filter(c => c.is_active).length;
+      document.getElementById("stat-active").textContent = `${activeCount} / ${allConfigs.length}`;
+    }
+
+    async function openConfigModal(config = null) {
+      editingConfigId = config ? config.id : null;
+      document.getElementById("configModalTitle").innerText = config ? "Edit Facility Configuration" : "Add Facility Configuration";
+
+      const facilitySelect = document.getElementById("cfgFacility");
+      facilitySelect.innerHTML = '<option value="">Select a facility</option>' +
+        allFacilities.map(f => `<option value="${f.id}" ${config && config.facility_id == f.id ? "selected" : ""}>${f.name} (${f.district || "Unknown"}, ${f.state || "Unknown"})</option>`).join("");
+
+      document.getElementById("cfgFreeCapacity").value = config ? config.free_capacity_mt || "" : "";
+      document.getElementById("cfgStatus").value = config ? (config.is_active ? "1" : "0") : "1";
+      document.getElementById("cfgNotes").value = config ? (config.notes || "") : "";
+
+      document.getElementById("configModalOverlay").classList.add("show");
+    }
+
+    function closeConfigModal() {
+      document.getElementById("configModalOverlay").classList.remove("show");
+      editingConfigId = null;
+    }
+
+    async function saveConfig() {
+      const facility_id = document.getElementById("cfgFacility").value;
+      const free_capacity_mt = document.getElementById("cfgFreeCapacity").value;
+      const is_active = document.getElementById("cfgStatus").value;
+      const notes = document.getElementById("cfgNotes").value.trim();
+
+      if (!facility_id) { showToast("Please select a facility.", true); return; }
+
+      const body = { facility_id: parseInt(facility_id), free_capacity_mt: parseFloat(free_capacity_mt) || 0, is_active: is_active === "1", notes };
+
+      try {
+        let res;
+        if (editingConfigId) {
+          res = await fetch(`/api/storage-provider/config/${editingConfigId}`, {
+            method: "PATCH",
+            headers: authHeaders(),
+            body: JSON.stringify(body)
+          });
+        } else {
+          res = await fetch("/api/storage-provider/config", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify(body)
+          });
+        }
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || "Failed to save configuration", true); return; }
+        showToast("Configuration saved successfully.");
+        closeConfigModal();
+        loadConfigs();
+      } catch (err) {
+        showToast("Error saving configuration.", true);
+      }
+    }
+
+    function editConfig(id) {
+      const config = allConfigs.find(c => c.id === id);
+      if (config) openConfigModal(config);
+    }
+
+    async function deleteConfig(id) {
+      if (!confirm("Delete this configuration?")) return;
+      try {
+        const res = await fetch(`/api/storage-provider/config/${id}`, {
+          method: "DELETE",
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || "Failed to delete", true); return; }
+        showToast("Configuration deleted.");
+        loadConfigs();
+      } catch (err) {
+        showToast("Error deleting configuration.", true);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem(SESSION_KEY);
+      try { top.location.href = "/"; } catch { window.location = "/"; }
+    }
+
+    (async function init() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + session.token },
+        });
+        if (!res.ok) {
+          localStorage.removeItem(SESSION_KEY);
+          window.location.href = '/login';
+          return;
+        }
+        const me = await res.json();
+        const pages = (me.permissions && me.permissions.pages) || [];
+        if (!pages.includes('/storage-config')) {
+          document.body.innerHTML = `<div style="padding:40px;color:#EF4444;"><h2>Access Denied</h2><p>You do not have permission to view Storage Configuration.</p><a href="/dashboard" style="color:#10B981;">Go to Dashboard</a></div>`;
+          return;
+        }
+      } catch {
+        document.body.innerHTML = `<div style="padding:40px;color:#EF4444;"><h2>Authentication Error</h2><p>Please log in again.</p><a href="/login" style="color:#10B981;">Go to Login</a></div>`;
+        return;
+      }
+      await Promise.all([loadFacilities(), loadConfigs()]);
+    })();
+  </script>
+</body>
+</html>

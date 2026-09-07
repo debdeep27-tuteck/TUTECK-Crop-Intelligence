@@ -1728,6 +1728,150 @@ if __name__ == "__main__":
     # safe to run on every startup.
     sync_real_facility_data()
 
+    # ── STORAGE PROVIDER CONFIG ROUTES ────────────────────────────────────────
+    # Mounted here so they share the already-running cold-storage service
+    # instead of requiring a separate process on port 5020.
+
+    @app.route("/api/storage-provider/facilities", methods=["GET"])
+    @require_auth()
+    def sp_list_facilities():
+        db = get_db()
+        rows = db.execute(
+            "SELECT id, name, state, district, block, village, latitude, longitude, total_capacity_mt, storage_type FROM cold_storages ORDER BY name COLLATE NOCASE"
+        ).fetchall()
+        db.close()
+        return jsonify([row_to_dict(r) for r in rows])
+
+    @app.route("/api/storage-provider/facilities/<int:facility_id>", methods=["GET"])
+    @require_auth()
+    def sp_get_facility(facility_id):
+        db = get_db()
+        row = db.execute("SELECT * FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
+        db.close()
+        if not row:
+            return jsonify({"error": "facility not found"}), 404
+        return jsonify(row_to_dict(row))
+
+    @app.route("/api/storage-provider/config", methods=["GET"])
+    @require_auth(roles=["storage_provider", "admin"])
+    def sp_list_configs():
+        provider_email = (g.user.get("email") or "").strip().lower()
+        db = get_db()
+        rows = db.execute("""
+            SELECT spc.*, cs.name as facility_name, cs.state, cs.district, cs.block, cs.village
+            FROM storage_provider_configs spc
+            JOIN cold_storages cs ON cs.id = spc.facility_id
+            WHERE spc.provider_email = ?
+            ORDER BY spc.updated_at DESC
+        """, (provider_email,)).fetchall()
+        db.close()
+        return jsonify([row_to_dict(r) for r in rows])
+
+    @app.route("/api/storage-provider/config", methods=["POST"])
+    @require_auth(roles=["storage_provider", "admin"])
+    def sp_create_or_update_config():
+        provider_email = (g.user.get("email") or "").strip().lower()
+        body = request.get_json(silent=True) or {}
+        facility_id = body.get("facility_id")
+        free_capacity_mt = body.get("free_capacity_mt")
+        is_active = body.get("is_active")
+        notes = body.get("notes")
+
+        if not facility_id:
+            return jsonify({"error": "facility_id is required"}), 400
+
+        try:
+            facility_id = int(facility_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "facility_id must be an integer"}), 400
+
+        db = get_db()
+        facility = db.execute("SELECT id FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
+        if not facility:
+            db.close()
+            return jsonify({"error": "Facility not found"}), 404
+
+        now = datetime.now(timezone.utc).isoformat()
+        free_capacity_mt = float(free_capacity_mt) if free_capacity_mt is not None else 0.0
+        is_active = 1 if is_active else 0
+        notes = notes if notes is not None else ""
+
+        existing = db.execute(
+            "SELECT id FROM storage_provider_configs WHERE facility_id = ? AND provider_email = ?",
+            (facility_id, provider_email),
+        ).fetchone()
+
+        if existing:
+            db.execute("""
+                UPDATE storage_provider_configs
+                SET free_capacity_mt = ?, is_active = ?, notes = ?, updated_at = ?
+                WHERE id = ?
+            """, (free_capacity_mt, is_active, notes, now, existing["id"]))
+            config_id = existing["id"]
+        else:
+            cursor = db.execute("""
+                INSERT INTO storage_provider_configs (facility_id, provider_email, free_capacity_mt, is_active, notes, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (facility_id, provider_email, free_capacity_mt, is_active, notes, now))
+            config_id = cursor.lastrowid
+
+        db.commit()
+        row = db.execute("SELECT * FROM storage_provider_configs WHERE id = ?", (config_id,)).fetchone()
+        db.close()
+        return jsonify(row_to_dict(row)), 200
+
+    @app.route("/api/storage-provider/config/<int:config_id>", methods=["PATCH"])
+    @require_auth(roles=["storage_provider", "admin"])
+    def sp_update_config(config_id):
+        provider_email = (g.user.get("email") or "").strip().lower()
+        body = request.get_json(silent=True) or {}
+        db = get_db()
+        row = db.execute("SELECT * FROM storage_provider_configs WHERE id = ?", (config_id,)).fetchone()
+        if not row:
+            db.close()
+            return jsonify({"error": "Config not found"}), 404
+
+        if (g.user.get("role") or "").lower() != "admin" and row["provider_email"] != provider_email:
+            db.close()
+            return jsonify({"error": "Forbidden — not your config"}), 403
+
+        updates = {}
+        if "free_capacity_mt" in body:
+            updates["free_capacity_mt"] = float(body["free_capacity_mt"])
+        if "is_active" in body:
+            updates["is_active"] = 1 if body["is_active"] else 0
+        if "notes" in body:
+            updates["notes"] = body["notes"]
+        updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+        values = list(updates.values()) + [config_id]
+        db.execute(f"UPDATE storage_provider_configs SET {set_clause} WHERE id = ?", values)
+        db.commit()
+
+        updated = db.execute("SELECT * FROM storage_provider_configs WHERE id = ?", (config_id,)).fetchone()
+        db.close()
+        return jsonify(row_to_dict(updated))
+
+    @app.route("/api/storage-provider/config/<int:config_id>", methods=["DELETE"])
+    @require_auth(roles=["storage_provider", "admin"])
+    def sp_delete_config(config_id):
+        provider_email = (g.user.get("email") or "").strip().lower()
+        db = get_db()
+        row = db.execute("SELECT * FROM storage_provider_configs WHERE id = ?", (config_id,)).fetchone()
+        if not row:
+            db.close()
+            return jsonify({"error": "Config not found"}), 404
+
+        if (g.user.get("role") or "").lower() != "admin" and row["provider_email"] != provider_email:
+            db.close()
+            return jsonify({"error": "Forbidden — not your config"}), 403
+
+        db.execute("DELETE FROM storage_provider_configs WHERE id = ?", (config_id,))
+        db.commit()
+        db.close()
+        return jsonify({"status": "deleted", "id": config_id})
+
     print("=" * 60)
     print(f"  COLD STORAGE INTELLIGENCE — http://{args.host}:{args.port}")
     print(f"  DB: {DB_PATH}")
