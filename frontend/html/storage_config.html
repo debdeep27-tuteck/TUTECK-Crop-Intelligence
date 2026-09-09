@@ -11,23 +11,27 @@
   <link rel="stylesheet" href="/css/design_system.css">
   <style>
     :root {
-      --bg: #F8FAFC;
+      --bg: #F6F8F7;
       --surface: #FFFFFF;
-      --border: #E2E8F0;
-      --border-subtle: #EDF2F7;
+      --border: #E2E8E4;
+      --border-subtle: #EEF2EF;
       --primary: #1B4332;
       --primary-dark: #0F291E;
       --primary-light: #E8F5E9;
       --accent: #10B981;
-      --text-main: #0F172A;
-      --text-muted: #64748B;
-      --text-sub: #475569;
-      --danger: #EF4444;
-      --warning: #F59E0B;
+      --frost: #2B7A9E;
+      --frost-light: #E7F3F8;
+      --text-main: #12211B;
+      --text-muted: #6B7B74;
+      --text-sub: #435049;
+      --danger: #DC4C3F;
+      --warning: #C97A2B;
       --font-sans: 'Inter', system-ui, -apple-ui, sans-serif;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+      --font-mono: 'DM Mono', ui-monospace, monospace;
+      --shadow-sm: 0 1px 2px 0 rgba(15, 41, 30, 0.05);
+      --shadow-md: 0 4px 10px -2px rgba(15, 41, 30, 0.08);
+      --shadow-lg: 0 16px 32px -8px rgba(15, 41, 30, 0.16);
+      --radius: 12px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,84 +44,124 @@
       padding: 24px 28px 48px;
     }
 
-    .sp-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    .sp-container { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 
-    .top-nav {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 22px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; box-shadow: var(--shadow-sm);
+    /* ── KPI row ─────────────────────────────────────────────── */
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .kpi-card {
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-sm);
     }
-    .brand-title { font-size: 18px; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
-    .brand-subtitle { font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
-    .nav-actions { display: flex; align-items: center; gap: 10px; }
-    .btn-nav { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; transition: all 0.15s ease; text-decoration: none; }
-    .btn-nav:hover { background: var(--primary-light); border-color: #A7F3D0; }
-    .btn-nav-logout { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
-    .btn-nav-logout:hover { background: #FEE2E2; border-color: #F87171; }
+    .kpi-icon {
+      flex: none; width: 42px; height: 42px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .kpi-icon svg { width: 21px; height: 21px; }
+    .kpi-card--facilities .kpi-icon { background: var(--frost-light); color: var(--frost); }
+    .kpi-card--capacity .kpi-icon { background: var(--primary-light); color: var(--primary); }
+    .kpi-card--active .kpi-icon { background: #FDF1E4; color: var(--warning); }
+    .kpi-lbl { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 2px; }
+    .kpi-num { font-size: 24px; font-weight: 700; color: var(--text-main); letter-spacing: -0.01em; line-height: 1.15; }
+    .kpi-num span.kpi-unit { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
 
-    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow-sm); }
-    .kpi-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 4px; }
-    .kpi-num { font-size: 22px; font-weight: 800; color: var(--text-main); font-family: var(--font-sans); letter-spacing: -0.02em; }
-
-    .main-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--border); background: #FFFFFF; }
-    .card-title { font-size: 16px; font-weight: 700; color: var(--primary); }
-    .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    /* ── Section cards ───────────────────────────────────────── */
+    .main-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--border); gap: 16px; flex-wrap: wrap; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--text-main); }
+    .card-subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
 
     .table-container { width: 100%; overflow-x: auto; }
-    table.sp-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-    table.sp-table thead tr { background: #F8FAFC; border-bottom: 1px solid var(--border); }
-    table.sp-table th { padding: 10px 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); white-space: nowrap; }
+    table.sp-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    table.sp-table thead tr { background: var(--bg); }
+    table.sp-table th { padding: 11px 22px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--text-muted); white-space: nowrap; border-bottom: 1px solid var(--border); }
+    table.sp-table th:first-child, table.sp-table td:first-child { padding-left: 22px; }
+    table.sp-table th:last-child, table.sp-table td:last-child { padding-right: 22px; }
     table.sp-table tbody tr { border-bottom: 1px solid var(--border-subtle); transition: background-color 0.1s ease; }
-    table.sp-table tbody tr:hover { background-color: #F8FAFC; }
-    table.sp-table td { padding: 10px 8px; vertical-align: middle; }
+    table.sp-table tbody tr:last-child { border-bottom: none; }
+    table.sp-table tbody tr:hover { background-color: var(--bg); }
+    table.sp-table td { padding: 13px 22px; vertical-align: middle; color: var(--text-sub); }
+    table.sp-table td strong { color: var(--text-main); font-weight: 600; }
     table.sp-table td.col-center { text-align: center; }
+    table.sp-table td.col-num { text-align: right; font-family: var(--font-mono); font-weight: 500; }
 
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-    .badge-active { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
-    .badge-inactive { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .badge-active { background: #ECFDF5; color: #0E7C5C; }
+    .badge-inactive { background: #FDF1F0; color: #B0392E; }
 
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
-    .btn-primary { background: #10B981; color: #FFFFFF; }
-    .btn-primary:hover { background: #059669; }
+    .btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--primary); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--primary-dark); }
     .btn-secondary { background: #FFFFFF; color: var(--text-sub); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: #F8FAFC; }
-    .btn-sm { padding: 5px 10px; font-size: 11px; }
+    .btn-secondary:hover { background: var(--bg); border-color: #CBD5CF; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+    .btn-danger-text { color: var(--danger); border-color: #F6D6D2; }
+    .btn-danger-text:hover { background: #FDF1F0; }
+
+    /* ── Search toolbar (Find Nearby Farmers) ───────────────────── */
+    .search-toolbar {
+      display: grid; grid-template-columns: minmax(220px, 2fr) minmax(120px, 0.8fr) auto;
+      gap: 14px; align-items: end;
+      padding: 18px 22px; background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 720px) { .search-toolbar { grid-template-columns: 1fr; } }
 
     .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-sub); }
     .form-input, .form-select, .form-textarea {
-      height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px;
-      font-size: 13px; font-family: var(--font-sans); color: var(--text-main); outline: none;
-      background: #FFFFFF; transition: border-color 0.15s ease;
+      height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13.5px; font-family: var(--font-sans); color: var(--text-main); outline: none;
+      background: #FFFFFF; transition: border-color 0.15s ease, box-shadow 0.15s ease; width: 100%;
     }
-    .form-textarea { height: auto; padding: 8px 12px; min-height: 60px; resize: vertical; }
-    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #10B981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+     .form-textarea { height: auto; padding: 10px 12px; min-height: 64px; resize: vertical; }
+     .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
+     .form-select:disabled { background: #F1F4F2; color: var(--text-muted); cursor: not-allowed; border-color: #D6DED8; }
+     .facility-lock-row { display: flex; align-items: center; gap: 8px; }
+     .facility-lock-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #FDF1E4; color: #92400E; white-space: nowrap; }
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(18, 33, 27, 0.55); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
     .modal-overlay.show { display: flex; }
-    .modal-card { background: #FFFFFF; border-radius: 14px; width: 520px; max-width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); overflow: hidden; animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal-card { background: #FFFFFF; border-radius: 16px; width: 500px; max-width: 100%; box-shadow: var(--shadow-lg); overflow: hidden; animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes modalSlide { from { transform: translateY(12px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); background: #F8FAFC; }
-    .modal-head-title { font-size: 16px; font-weight: 700; color: var(--primary); }
-    .modal-close-btn { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .modal-close-btn:hover { background: #E2E8F0; color: var(--text-main); }
-    .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
-    .modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--border); background: #F8FAFC; }
-    .btn-cancel { padding: 8px 16px; border: 1px solid var(--border); background: #FFFFFF; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
-    .btn-save { padding: 8px 18px; border: none; background: #10B981; border-radius: 6px; font-size: 13px; font-weight: 600; color: #FFFFFF; cursor: pointer; }
-    .btn-save:hover { background: #059669; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .modal-head-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .modal-close-btn { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--bg); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .modal-close-btn:hover { background: #E5EAE6; color: var(--text-main); }
+    .modal-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg); }
+    .btn-cancel { padding: 9px 16px; border: 1px solid var(--border); background: #FFFFFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
+    .btn-cancel:hover { background: var(--bg); }
+    .btn-save { padding: 9px 18px; border: none; background: var(--primary); border-radius: 8px; font-size: 13px; font-weight: 600; color: #FFFFFF; cursor: pointer; }
+    .btn-save:hover { background: var(--primary-dark); }
 
     .toast-box { position: fixed; top: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-    .toast { padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn 0.2s ease forwards; }
+    .toast { padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn 0.2s ease forwards; }
     @keyframes toastIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .toast-success { background: #064E3B; color: #FFFFFF; border: 1px solid #059669; }
-    .toast-error { background: #7F1D1D; color: #FFFFFF; border: 1px solid #DC2626; }
+    .toast-success { background: var(--primary-dark); color: #FFFFFF; }
+    .toast-error { background: #7A2A22; color: #FFFFFF; }
 
     .field-hidden { display: none !important; }
-    .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
-    .section-title { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 13px; }
+    .empty-state svg { color: #C2CDC5; }
+    .empty-state strong { color: var(--text-sub); font-weight: 600; font-size: 13.5px; }
+
+    .find-farmers-banner {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 22px; box-shadow: var(--shadow-sm); text-decoration: none; color: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .find-farmers-banner:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
+    .find-farmers-banner-icon {
+      flex: none; width: 42px; height: 42px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--frost-light); color: var(--frost);
+    }
+    .find-farmers-banner-icon svg { width: 21px; height: 21px; }
+    .find-farmers-banner-title { font-size: 14.5px; font-weight: 700; color: var(--text-main); }
+    .find-farmers-banner-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
   </style>
 </head>
 
@@ -128,17 +172,32 @@
 
     <!-- Quick Stats -->
     <div class="kpi-row">
-      <div class="kpi-card">
-        <div class="kpi-lbl">My Facilities</div>
-        <div class="kpi-num" id="stat-my-facilities">—</div>
+      <div class="kpi-card kpi-card--facilities">
+        <div class="kpi-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
+        </div>
+        <div>
+          <div class="kpi-lbl">My Facilities</div>
+          <div class="kpi-num" id="stat-my-facilities">—</div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-lbl">Total Free Capacity (MT)</div>
-        <div class="kpi-num" id="stat-free-capacity">—</div>
+      <div class="kpi-card kpi-card--capacity">
+        <div class="kpi-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0Z"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        </div>
+        <div>
+          <div class="kpi-lbl">Total Free Capacity</div>
+          <div class="kpi-num"><span id="stat-free-capacity">—</span><span class="kpi-unit">MT</span></div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-lbl">Active Facilities</div>
-        <div class="kpi-num" id="stat-active">—</div>
+      <div class="kpi-card kpi-card--active">
+        <div class="kpi-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="kpi-lbl">Active Facilities</div>
+          <div class="kpi-num" id="stat-active">—</div>
+        </div>
       </div>
     </div>
 
@@ -146,10 +205,10 @@
     <div class="main-card">
       <div class="card-header">
         <div>
-          <div class="card-title">My Facility Configurations</div>
-          <div class="card-subtitle">Manage free capacity, status, and notes for your assigned cold storage facilities.</div>
+          <div class="card-title" id="configCardTitle">My Facility Configurations</div>
+          <div class="card-subtitle" id="configCardSubtitle">Manage free capacity, status, and notes for your assigned cold storage facilities.</div>
         </div>
-        <button class="btn btn-primary" onclick="openConfigModal()">
+        <button class="btn btn-primary" id="addConfigBtn" onclick="openConfigModal()" style="display:none;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add Configuration
         </button>
@@ -158,43 +217,17 @@
         <table class="sp-table">
           <thead>
             <tr>
-              <th style="width:22%;">Facility</th>
-              <th style="width:14%;">Location</th>
-              <th class="col-center" style="width:12%;">Free Capacity (MT)</th>
+              <th style="width:24%;">Facility</th>
+              <th style="width:16%;">Location</th>
+              <th class="col-center" style="width:14%;">Free Capacity</th>
               <th class="col-center" style="width:10%;">Status</th>
-              <th style="width:24%;">Notes</th>
+              <th style="width:20%;">Notes</th>
               <th class="col-center" style="width:8%;">Updated</th>
-              <th class="col-center" style="width:10%;">Actions</th>
+              <th class="col-center" style="width:8%;">Actions</th>
             </tr>
           </thead>
           <tbody id="configBody">
-            <tr><td colspan="7" class="empty-state">Loading configurations...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- All Facilities Reference -->
-    <div class="main-card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">All Cold Storage Facilities</div>
-          <div class="card-subtitle">Reference list of all facilities in the system.</div>
-        </div>
-      </div>
-      <div class="table-container">
-        <table class="sp-table">
-          <thead>
-            <tr>
-              <th style="width:30%;">Name</th>
-              <th style="width:20%;">State</th>
-              <th style="width:20%;">District</th>
-              <th class="col-center" style="width:15%;">Total Capacity (MT)</th>
-              <th class="col-center" style="width:15%;">Type</th>
-            </tr>
-          </thead>
-          <tbody id="facilitiesBody">
-            <tr><td colspan="5" class="empty-state">Loading facilities...</td></tr>
+            <tr><td colspan="7"><div class="empty-state">Loading configurations…</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -211,9 +244,15 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Cold Storage Facility</label>
-          <select class="form-select" id="cfgFacility">
-            <option value="">Select a facility</option>
-          </select>
+          <div class="facility-lock-row">
+            <select class="form-select" id="cfgFacility" style="flex:1;">
+              <option value="">Select a facility</option>
+            </select>
+            <span class="facility-lock-badge" id="facilityLockBadge" style="display:none;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Locked
+            </span>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Free Capacity (Metric Tonnes)</label>
@@ -285,16 +324,6 @@
         const res = await fetch("/api/storage-provider/facilities", { headers: authHeaders() });
         if (!res.ok) throw new Error("Failed to load facilities");
         allFacilities = await res.json();
-        const tbody = document.getElementById("facilitiesBody");
-        tbody.innerHTML = allFacilities.map(f => `
-          <tr>
-            <td><strong>${f.name}</strong></td>
-            <td>${f.state || "—"}</td>
-            <td>${f.district || "—"}</td>
-            <td class="col-center">${f.total_capacity_mt != null ? f.total_capacity_mt.toLocaleString() : "—"}</td>
-            <td class="col-center">${f.storage_type || "—"}</td>
-          </tr>
-        `).join("");
       } catch (err) {
         showToast("Error loading facilities.", true);
       }
@@ -314,21 +343,26 @@
 
     function renderConfigs() {
       const tbody = document.getElementById("configBody");
+      const role = (session.role || "").toLowerCase();
+      const canEdit = role === "storage_provider";
+      const canAdd = role === "storage_provider";
       if (!allConfigs.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No configurations yet. Click "Add Configuration" to create one.</td></tr>`;
+        let emptyMsg = "No configurations found.";
+        if (canAdd) emptyMsg += '<br>Click "Add Configuration" to create one.';
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><strong>${emptyMsg}</strong></div></td></tr>`;
         return;
       }
       tbody.innerHTML = allConfigs.map(c => `
         <tr>
           <td><strong>${c.facility_name || "Facility #" + c.facility_id}</strong></td>
           <td>${[c.state, c.district, c.block, c.village].filter(Boolean).join(", ") || "—"}</td>
-          <td class="col-center"><strong>${c.free_capacity_mt != null ? c.free_capacity_mt.toLocaleString() : "0"}</strong></td>
+          <td class="col-num">${c.free_capacity_mt != null ? c.free_capacity_mt.toLocaleString() + " MT" : "0 MT"}</td>
           <td class="col-center"><span class="badge ${c.is_active ? 'badge-active' : 'badge-inactive'}">${c.is_active ? "Active" : "Inactive"}</span></td>
-          <td>${c.notes ? c.notes.substring(0, 60) + (c.notes.length > 60 ? "..." : "") : "—"}</td>
+          <td>${c.notes ? c.notes.substring(0, 60) + (c.notes.length > 60 ? "…" : "") : "—"}</td>
           <td class="col-center">${formatDate(c.updated_at)}</td>
           <td class="col-center">
-            <button class="btn btn-secondary btn-sm" onclick="editConfig(${c.id})">Edit</button>
-            <button class="btn btn-secondary btn-sm" onclick="deleteConfig(${c.id})" style="color:#EF4444;border-color:#FECACA;">Delete</button>
+            ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="editConfig(${c.id})">Edit</button>` : ""}
+            <button class="btn btn-secondary btn-sm btn-danger-text" onclick="deleteConfig(${c.id})">Delete</button>
           </td>
         </tr>
       `).join("");
@@ -347,8 +381,19 @@
       document.getElementById("configModalTitle").innerText = config ? "Edit Facility Configuration" : "Add Facility Configuration";
 
       const facilitySelect = document.getElementById("cfgFacility");
+      const lockBadge = document.getElementById("facilityLockBadge");
+
       facilitySelect.innerHTML = '<option value="">Select a facility</option>' +
         allFacilities.map(f => `<option value="${f.id}" ${config && config.facility_id == f.id ? "selected" : ""}>${f.name} (${f.district || "Unknown"}, ${f.state || "Unknown"})</option>`).join("");
+
+      if (session.storage_id) {
+        facilitySelect.value = session.storage_id;
+        facilitySelect.disabled = true;
+        lockBadge.style.display = "inline-flex";
+      } else {
+        facilitySelect.disabled = false;
+        lockBadge.style.display = "none";
+      }
 
       document.getElementById("cfgFreeCapacity").value = config ? config.free_capacity_mt || "" : "";
       document.getElementById("cfgStatus").value = config ? (config.is_active ? "1" : "0") : "1";
@@ -363,10 +408,14 @@
     }
 
     async function saveConfig() {
-      const facility_id = document.getElementById("cfgFacility").value;
+      let facility_id = document.getElementById("cfgFacility").value;
       const free_capacity_mt = document.getElementById("cfgFreeCapacity").value;
       const is_active = document.getElementById("cfgStatus").value;
       const notes = document.getElementById("cfgNotes").value.trim();
+
+      if (session.storage_id) {
+        facility_id = session.storage_id;
+      }
 
       if (!facility_id) { showToast("Please select a facility.", true); return; }
 
@@ -438,6 +487,23 @@
         if (!pages.includes('/storage-config')) {
           document.body.innerHTML = `<div style="padding:40px;color:#EF4444;"><h2>Access Denied</h2><p>You do not have permission to view Storage Configuration.</p><a href="/dashboard" style="color:#10B981;">Go to Dashboard</a></div>`;
           return;
+        }
+
+        const role = (me.role || "").toLowerCase();
+        const canAdd = role === "storage_provider";
+        document.getElementById("addConfigBtn").style.display = canAdd ? "inline-flex" : "none";
+
+        const cardTitle = document.getElementById("configCardTitle");
+        const cardSubtitle = document.getElementById("configCardSubtitle");
+        if (role === "district_admin") {
+          cardTitle.textContent = `District Facility Configurations${me.district ? " — " + me.district : ""}`;
+          cardSubtitle.textContent = "View and delete facility configurations for your district.";
+        } else if (role === "state_admin") {
+          cardTitle.textContent = `State Facility Configurations${me.state ? " — " + me.state : ""}`;
+          cardSubtitle.textContent = "View and delete facility configurations for your state.";
+        } else if (role === "admin") {
+          cardTitle.textContent = "All Facility Configurations";
+          cardSubtitle.textContent = "View and delete facility configurations across all states.";
         }
       } catch {
         document.body.innerHTML = `<div style="padding:40px;color:#EF4444;"><h2>Authentication Error</h2><p>Please log in again.</p><a href="/login" style="color:#10B981;">Go to Login</a></div>`;
