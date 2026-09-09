@@ -832,4 +832,29 @@ if __name__ == "__main__":
     print("=" * 55)
     print("  API GATEWAY — Running on http://localhost:8085")
     print("=" * 55)
-    app.run(host="0.0.0.0", port=8085, debug=False)
+    # Flask's dev server (even with threaded=True) can behave inconsistently
+    # on Windows, especially with the reloader/watchdog in play elsewhere in
+    # this project. waitress is a real threaded WSGI server — no ambiguity
+    # about whether concurrent requests actually get handled concurrently,
+    # which matters here since gateway.py both proxies to backend services
+    # AND gets called back into (e.g. yield_detect verifying a token) while
+    # a proxied request is still in flight.
+    try:
+        from waitress import serve
+        # forward_request() is synchronous — every proxied call (crop
+        # stats, valid_crops, auth/me, yield/*, etc.) occupies one worker
+        # thread for the entire round-trip to whichever backend service
+        # owns it, and some of those calls allow up to 180s. A dashboard
+        # load fires several of these concurrently, so 8 threads was easy
+        # to exhaust — once that happened, any *new* inbound request
+        # including yield_detect calling back in to verify a token —
+        # just queued behind everything else, even though /api/auth/me
+        # itself answers in microseconds once it actually gets a thread.
+        # Threads here just block on network I/O (cheap), so there's no
+        # real cost to giving this a lot of headroom.
+        THREADS = int(os.environ.get("GATEWAY_THREADS", "100"))
+        print(f"  (using waitress, threads={THREADS})")
+        serve(app, host="0.0.0.0", port=8085, threads=THREADS)
+    except ImportError:
+        print("  waitress not installed (pip install waitress) — falling back to Flask dev server")
+        app.run(host="0.0.0.0", port=8085, debug=False, threaded=True, use_reloader=False)

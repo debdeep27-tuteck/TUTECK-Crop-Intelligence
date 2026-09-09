@@ -2,24 +2,29 @@
 auth_excel.py
 =============
 Authentication + role-based access control for CropAI — now backed by
-SQLite (users.db) instead of raw Excel files.
+Postgres (shared/db.py, users/role_permissions/user_permissions tables)
+instead of raw Excel files or the old SQLite users.db.
 
-WHAT CHANGED: all reads/writes used to go straight to users.xlsx. Now
-they go to users.db. The only thing the old .xlsx files are still used
-for is a ONE-TIME AUTOMATIC MIGRATION: the very first time init_excel()
-runs and users.db doesn't exist yet, this module looks for users.xlsx /
-permissions.xlsx / user_permissions.xlsx in this same folder and, if
-found, copies every record from them into users.db. After that, the
-.xlsx files are never read or written again — they're just left on
-disk untouched as a backup. Every new user created from now on goes
-straight into users.db.
+WHAT CHANGED: all reads/writes used to go straight to users.xlsx, then
+later to a local SQLite users.db. Now they go to Postgres. The only
+thing the old .xlsx files are still used for is a ONE-TIME AUTOMATIC
+MIGRATION: the first time init_excel() runs against a brand-new, empty
+Postgres database, this module looks for users.xlsx / permissions.xlsx /
+user_permissions.xlsx in this same folder and, if found, copies every
+record from them in. After that, the .xlsx files are never read or
+written again — they're just left on disk untouched as a backup. Every
+new user created from now on goes straight into Postgres.
 
-You do NOT need to run anything separately or change how you call this
-module — same import, same function, same routes as before:
+If you're migrating an *existing* SQLite users.db (not starting fresh),
+use the separate migrate_sqlite_to_postgres.py script instead — this
+module's legacy-import path is only for the older .xlsx-era installs.
+
+You do NOT need to change how you call this module — same import, same
+function, same routes as before:
 
     from auth_excel import auth_bp, init_excel
 
-    init_excel()                       # creates users.db + migrates old .xlsx data (first run only)
+    init_excel()                       # creates Postgres tables + migrates old .xlsx data (first run only)
     app.register_blueprint(auth_bp)    # mounts all /api/auth and /api/users routes
 
 Roles (defaults, editable from the admin panel)
@@ -28,12 +33,12 @@ Roles (defaults, editable from the admin panel)
   analyst  -> Dashboard, Irrigation, Recommender, Alerts
   farmer   -> Irrigation, Disease Detection, Recommender
 
-⚠️ SECURITY NOTE: passwords are stored as PLAIN TEXT in users.db, not
-hashed. Anyone who can open that file (or a backup/copy of it) can read
-every user's actual password. This is fine for a local prototype but is
-not safe for a real deployment, especially since people often reuse
-passwords across sites. Restrict file permissions on users.db, keep it
-out of version control, and consider switching to hashed storage
+⚠️ SECURITY NOTE: passwords are stored as PLAIN TEXT in Postgres, not
+hashed. Anyone with database access can read every user's actual
+password. This is fine for a local prototype but is not safe for a real
+deployment, especially since people often reuse passwords across sites.
+Restrict access to your Postgres instance, keep DATABASE_URL out of
+version control, and consider switching to hashed storage
 (werkzeug.security.generate_password_hash / check_password_hash) before
 this goes anywhere near production or real user data.
 
@@ -42,7 +47,6 @@ Run standalone for a quick sanity check:
 """
 
 import os
-import sqlite3
 import threading
 import time
 import uuid
@@ -53,11 +57,13 @@ from pathlib import Path
 import requests
 from flask import Blueprint, request, jsonify, g
 
+from shared.db import transaction as _pg_transaction, get_conn as _pg_get_conn, PGConnWrapper
+
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent
 
-DB_FILE = BASE_DIR / "users.db"
+DB_FILE = BASE_DIR / "users.db"  # vestigial — no longer opened directly; kept only so any external code/scripts still referencing auth_excel.DB_FILE don't hard-crash on import. Real connections go through shared/db.py now.
 
 # Old Excel files — only ever read once, during first-run auto-migration.
 LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
@@ -116,6 +122,20 @@ DEFAULT_ROLE_PERMISSIONS = {
     },
 }
 
+# NOTE: _db_lock used to wrap every `_conn()` call ("with _db_lock, _conn()
+# as conn:") back when this ran on a single shared sqlite3 connection —
+# sqlite connections aren't safe for concurrent use across threads, so the
+# lock prevented two requests stepping on the same connection at once.
+# On sqlite that lock was invisible (~1ms local queries). Now that _conn()
+# borrows an isolated connection per call from a real Postgres pool
+# (shared/db.py), the global lock no longer protects anything — every
+# caller already has its own connection — but it WAS still serializing
+# every DB-backed request in the whole process to one-at-a-time. With
+# Neon's network round-trip replacing sqlite's near-zero cost, that
+# serialization turned into real, stacking multi-second queuing delays
+# (e.g. yield_detect's callback to /api/auth/me timing out while it waited
+# behind other requests for this same lock). Removed from all call sites;
+# left defined here only in case anything external still imports it.
 _db_lock = threading.RLock()
 
 # token -> {"uid": str, "email": str, "role": str, "created_at": float}
@@ -282,25 +302,20 @@ def geocode_address(address: str):
 
 
 # ── COLD STORAGE VALIDATION ──────────────────────────────────────────────
-# Used to validate storage_id for storage_provider accounts.
-
-COLD_STORAGE_DB = BASE_DIR.parent.parent / "micro_services" / "cold_storage" / "cold_storage.db"
+# Used to validate storage_id for storage_provider accounts. Previously
+# this opened cold_storage.db directly via its own filesystem path — now
+# that every service shares one Postgres database, this is just a query
+# against the cold_storages table like anything else.
 
 
 def _validate_storage_id(storage_id):
-    """Verify that a cold storage facility exists. Returns the id on success,
-    raises ValueError if the DB is missing or the id is invalid."""
-    if not COLD_STORAGE_DB.exists():
-        raise ValueError("Cold storage database not available.")
-
-    conn = sqlite3.connect(COLD_STORAGE_DB)
-    try:
-        row = conn.execute("SELECT id FROM cold_storages WHERE id = ?", (storage_id,)).fetchone()
-        if not row:
-            raise ValueError("Selected cold storage facility does not exist.")
-    finally:
-        conn.close()
-
+    """Verify that a cold storage facility exists. Raises ValueError if
+    the id is invalid. Returns the id on success."""
+    with _pg_get_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT id FROM cold_storages WHERE id = %s", (storage_id,))
+        row = cur.fetchone()
+    if not row:
+        raise ValueError("Selected cold storage facility does not exist.")
     return storage_id
 
 
@@ -308,14 +323,8 @@ def _validate_storage_id(storage_id):
 
 @contextmanager
 def _conn():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    try:
+    with _pg_transaction() as conn:
         yield conn
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def init_excel():
@@ -326,9 +335,7 @@ def init_excel():
     Safe to call on every app startup; migration only runs once (when
     users.db doesn't exist yet).
     """
-    db_is_new = not DB_FILE.exists()
-
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 uid TEXT PRIMARY KEY,
@@ -363,11 +370,20 @@ def init_excel():
                 applied_at REAL NOT NULL
             )
         """)
+
+        # Postgres has no file to check for "does this DB already exist" —
+        # instead, treat it as a fresh install if the users table is still
+        # empty at this point (i.e. this is the very first boot against
+        # this database). Used below to decide whether to run the
+        # one-time legacy .xlsx import.
+        row_count = conn.execute("SELECT count(*) AS n FROM users").fetchone()
+        db_is_new = (row_count["n"] == 0)
+
         existing_roles = {r["role"] for r in conn.execute("SELECT role FROM role_permissions")}
         for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
             if role not in existing_roles:
                 conn.execute(
-                    "INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)",
+                    "INSERT INTO role_permissions (role, pages, crud) VALUES (%s, %s, %s)",
                     (role, ",".join(cfg["pages"]), int(bool(cfg["crud"]))),
                 )
 
@@ -378,47 +394,47 @@ def init_excel():
         # "/advisory" from a role via the admin panel, it stays removed on restart
         # instead of silently coming back.
         already_migrated = conn.execute(
-            "SELECT 1 FROM schema_migrations WHERE key = ?", ("advisory_page_backfill_v1",)
+            "SELECT 1 FROM schema_migrations WHERE key = %s", ("advisory_page_backfill_v1",)
         ).fetchone()
         if not already_migrated:
             for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
                 if "/advisory" not in cfg["pages"]:
                     continue
-                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = %s", (role,)).fetchone()
                 if row is None:
                     continue
                 current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
                 if "/advisory" not in current_pages:
                     current_pages.append("/advisory")
                     conn.execute(
-                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
                         (",".join(current_pages), role),
                     )
             conn.execute(
-                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
                 ("advisory_page_backfill_v1", time.time()),
             )
 
         # One-time backfill: "/credit-score" was added after some installs
         already_migrated_cs = conn.execute(
-            "SELECT 1 FROM schema_migrations WHERE key = ?", ("credit_score_page_backfill_v1",)
+            "SELECT 1 FROM schema_migrations WHERE key = %s", ("credit_score_page_backfill_v1",)
         ).fetchone()
         if not already_migrated_cs:
             for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
                 if "/credit-score" not in cfg["pages"]:
                     continue
-                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = %s", (role,)).fetchone()
                 if row is None:
                     continue
                 current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
                 if "/credit-score" not in current_pages:
                     current_pages.append("/credit-score")
                     conn.execute(
-                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
                         (",".join(current_pages), role),
                     )
             conn.execute(
-                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
                 ("credit_score_page_backfill_v1", time.time()),
             )
 
@@ -426,62 +442,56 @@ def init_excel():
         # (radius-based geofenced land lookup), added after some installs
         # already had a populated role_permissions table.
         already_migrated_mandi_yd = conn.execute(
-            "SELECT 1 FROM schema_migrations WHERE key = ?", ("mandi_yield_detect_backfill_v1",)
+            "SELECT 1 FROM schema_migrations WHERE key = %s", ("mandi_yield_detect_backfill_v1",)
         ).fetchone()
         if not already_migrated_mandi_yd:
-            row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", ("mandi",)).fetchone()
+            row = conn.execute("SELECT pages FROM role_permissions WHERE role = %s", ("mandi",)).fetchone()
             if row is not None:
                 current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
                 if "/yield-detect" not in current_pages:
                     current_pages.append("/yield-detect")
                     conn.execute(
-                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
                         (",".join(current_pages), "mandi"),
                     )
             conn.execute(
-                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
                 ("mandi_yield_detect_backfill_v1", time.time()),
             )
 
         # One-time backfill: "/storage-config" was added to DEFAULT_ROLE_PERMISSIONS
         # for storage_provider after some installs already had a populated role_permissions table.
         already_migrated_storage_config = conn.execute(
-            "SELECT 1 FROM schema_migrations WHERE key = ?", ("storage_config_page_backfill_v1",)
+            "SELECT 1 FROM schema_migrations WHERE key = %s", ("storage_config_page_backfill_v1",)
         ).fetchone()
         if not already_migrated_storage_config:
             for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
                 if "/storage-config" not in cfg["pages"]:
                     continue
-                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = %s", (role,)).fetchone()
                 if row is None:
                     continue
                 current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
                 if "/storage-config" not in current_pages:
                     current_pages.append("/storage-config")
                     conn.execute(
-                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
                         (",".join(current_pages), role),
                     )
             conn.execute(
-                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
                 ("storage_config_page_backfill_v1", time.time()),
             )
 
         # One-time migration: existing installs' `users` table predates the
         # address/latitude/longitude columns added for mandi geofencing.
-        # ALTER TABLE ADD COLUMN is safe to attempt repeatedly (SQLite has
-        # no "IF NOT EXISTS" for columns), so guard it with a pragma check
-        # rather than schema_migrations, in case a previous run partially
-        # applied it.
-        existing_cols = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
-        if "address" not in existing_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN address TEXT NOT NULL DEFAULT ''")
-        if "latitude" not in existing_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN latitude REAL")
-        if "longitude" not in existing_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN longitude REAL")
-        if "storage_id" not in existing_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN storage_id INTEGER")
+        # Postgres supports "ADD COLUMN IF NOT EXISTS" directly (unlike
+        # SQLite), so this no longer needs the old pragma-based existence
+        # check — each ALTER is just safe to run on every startup.
+        conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT NOT NULL DEFAULT ''")
+        conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS latitude REAL")
+        conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS longitude REAL")
+        conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS storage_id INTEGER")
 
     if db_is_new:
         _migrate_legacy_excel_files()
@@ -503,7 +513,7 @@ def _migrate_legacy_excel_files():
 
     migrated = {"users": 0, "role_permissions": 0, "user_permissions": 0}
 
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         if LEGACY_USERS_XLSX.exists():
             df = pd.read_excel(LEGACY_USERS_XLSX, engine="openpyxl", dtype=str).fillna("")
             for _, row in df.iterrows():
@@ -514,7 +524,7 @@ def _migrate_legacy_excel_files():
                 conn.execute(
                     """
                     INSERT INTO users (uid, email, password, role, status, state, district)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT(uid) DO UPDATE SET
                         email=excluded.email, password=excluded.password, role=excluded.role,
                         status=excluded.status, state=excluded.state, district=excluded.district
@@ -537,7 +547,7 @@ def _migrate_legacy_excel_files():
                 crud = str(row.get("crud", "")).strip().lower() in ("true", "1", "yes")
                 conn.execute(
                     """
-                    INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)
+                    INSERT INTO role_permissions (role, pages, crud) VALUES (%s, %s, %s)
                     ON CONFLICT(role) DO UPDATE SET pages=excluded.pages, crud=excluded.crud
                     """,
                     (role, str(row.get("pages", "")), int(crud)),
@@ -552,14 +562,14 @@ def _migrate_legacy_excel_files():
                     continue
                 conn.execute(
                     """
-                    INSERT INTO user_permissions (uid, pages) VALUES (?, ?)
+                    INSERT INTO user_permissions (uid, pages) VALUES (%s, %s)
                     ON CONFLICT(uid) DO UPDATE SET pages=excluded.pages
                     """,
                     (uid, str(row.get("pages", ""))),
                 )
                 migrated["user_permissions"] += 1
 
-    print(f"auth_excel: migrated legacy Excel data into {DB_FILE.name} -> "
+    print(f"auth_excel: migrated legacy Excel data into Postgres -> "
           f"{migrated['users']} user(s), {migrated['role_permissions']} role permission row(s), "
           f"{migrated['user_permissions']} user permission row(s). "
           f"The original .xlsx files were left untouched.")
@@ -573,7 +583,7 @@ def _new_uid():
 
 def get_role_permissions():
     """Return the ROLE_PERMISSIONS dict shape, read live from the DB."""
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         rows = conn.execute("SELECT role, pages, crud FROM role_permissions").fetchall()
     result = {}
     for row in rows:
@@ -598,18 +608,18 @@ def update_role_permissions(role, pages=None, crud=None):
         if bad:
             raise ValueError(f"Unknown page(s): {bad}. Valid pages are {ALL_PAGES}.")
 
-    with _db_lock, _conn() as conn:
-        existing = conn.execute("SELECT role FROM role_permissions WHERE role = ?", (role,)).fetchone()
+    with _conn() as conn:
+        existing = conn.execute("SELECT role FROM role_permissions WHERE role = %s", (role,)).fetchone()
         if existing is None:
             conn.execute(
-                "INSERT INTO role_permissions (role, pages, crud) VALUES (?, ?, ?)",
+                "INSERT INTO role_permissions (role, pages, crud) VALUES (%s, %s, %s)",
                 (role, ",".join(pages) if pages is not None else "", int(bool(crud)) if crud is not None else 0),
             )
         else:
             if pages is not None:
-                conn.execute("UPDATE role_permissions SET pages = ? WHERE role = ?", (",".join(pages), role))
+                conn.execute("UPDATE role_permissions SET pages = %s WHERE role = %s", (",".join(pages), role))
             if crud is not None:
-                conn.execute("UPDATE role_permissions SET crud = ? WHERE role = ?", (int(bool(crud)), role))
+                conn.execute("UPDATE role_permissions SET crud = %s WHERE role = %s", (int(bool(crud)), role))
 
     return get_role_permissions()[role]
 
@@ -622,15 +632,15 @@ def get_user_permissions(uid, role=None):
     yet in user_permissions, seed it from their role's default pages
     (looked up via `role`, or from the users table if not passed).
     """
-    with _db_lock, _conn() as conn:
-        row = conn.execute("SELECT pages FROM user_permissions WHERE uid = ?", (uid,)).fetchone()
+    with _conn() as conn:
+        row = conn.execute("SELECT pages FROM user_permissions WHERE uid = %s", (uid,)).fetchone()
         if row is None:
             if role is None:
                 user = get_user(uid)
                 role = user["role"] if user else None
             default_pages = get_role_permissions().get(role, {}).get("pages", [])
             conn.execute(
-                "INSERT INTO user_permissions (uid, pages) VALUES (?, ?)",
+                "INSERT INTO user_permissions (uid, pages) VALUES (%s, %s)",
                 (uid, ",".join(default_pages)),
             )
             return {"pages": default_pages}
@@ -645,19 +655,19 @@ def update_user_permissions(uid, pages):
     if bad:
         raise ValueError(f"Unknown page(s): {bad}. Valid pages are {ALL_PAGES}.")
 
-    with _db_lock, _conn() as conn:
-        existing = conn.execute("SELECT uid FROM user_permissions WHERE uid = ?", (uid,)).fetchone()
+    with _conn() as conn:
+        existing = conn.execute("SELECT uid FROM user_permissions WHERE uid = %s", (uid,)).fetchone()
         if existing is None:
-            conn.execute("INSERT INTO user_permissions (uid, pages) VALUES (?, ?)", (uid, ",".join(pages)))
+            conn.execute("INSERT INTO user_permissions (uid, pages) VALUES (%s, %s)", (uid, ",".join(pages)))
         else:
-            conn.execute("UPDATE user_permissions SET pages = ? WHERE uid = ?", (",".join(pages), uid))
+            conn.execute("UPDATE user_permissions SET pages = %s WHERE uid = %s", (",".join(pages), uid))
 
     return {"pages": pages}
 
 
 def delete_user_permissions(uid):
-    with _db_lock, _conn() as conn:
-        conn.execute("DELETE FROM user_permissions WHERE uid = ?", (uid,))
+    with _conn() as conn:
+        conn.execute("DELETE FROM user_permissions WHERE uid = %s", (uid,))
 
 
 # ── USER OPERATIONS ───────────────────────────────────────────────────────
@@ -727,8 +737,8 @@ def create_user(email, password, role, state="", district="", address="", storag
     else:
         storage_id = None
 
-    with _db_lock, _conn() as conn:
-        dupe = conn.execute("SELECT 1 FROM users WHERE lower(email) = ?", (email,)).fetchone()
+    with _conn() as conn:
+        dupe = conn.execute("SELECT 1 FROM users WHERE lower(email) = %s", (email,)).fetchone()
         if dupe:
             raise ValueError("An account with this email already exists.")
 
@@ -736,7 +746,7 @@ def create_user(email, password, role, state="", district="", address="", storag
         conn.execute(
             """
             INSERT INTO users (uid, email, password, role, status, state, district, address, latitude, longitude, storage_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (uid, email, password, role, "active", state, district, address, latitude, longitude, storage_id),
         )
@@ -756,8 +766,8 @@ def verify_login(email, password):
     """Return {'uid','email','role','status','state','district','address',
     'latitude','longitude'} on success, or None on bad credentials."""
     email = email.strip().lower()
-    with _db_lock, _conn() as conn:
-        row = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
+    with _conn() as conn:
+        row = conn.execute("SELECT * FROM users WHERE lower(email) = %s", (email,)).fetchone()
     if row is None or row["password"] != password:
         return None
     return {
@@ -772,7 +782,7 @@ def list_users():
     """Return all users WITHOUT password hashes — for the admin panel.
     Includes each user's current status, state/district scope, address/
     coordinates (mandi), and their individual page permissions."""
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         rows = conn.execute(
             "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users"
         ).fetchall()
@@ -783,39 +793,39 @@ def list_users():
 
 
 def get_user(uid):
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         row = conn.execute(
-            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = ?",
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = %s",
             (uid,),
         ).fetchone()
     return dict(row) if row else None
 
 
 def update_user(uid, email=None, password=None, role=None, state=None, district=None, address=None, storage_id=None):
-    with _db_lock, _conn() as conn:
-        row = conn.execute("SELECT * FROM users WHERE uid = ?", (uid,)).fetchone()
+    with _conn() as conn:
+        row = conn.execute("SELECT * FROM users WHERE uid = %s", (uid,)).fetchone()
         if row is None:
             raise ValueError("User not found.")
 
         if email:
             email = email.strip().lower()
             dupe = conn.execute(
-                "SELECT 1 FROM users WHERE lower(email) = ? AND uid != ?", (email, uid)
+                "SELECT 1 FROM users WHERE lower(email) = %s AND uid != %s", (email, uid)
             ).fetchone()
             if dupe:
                 raise ValueError("Another account already uses this email.")
-            conn.execute("UPDATE users SET email = ? WHERE uid = ?", (email, uid))
+            conn.execute("UPDATE users SET email = %s WHERE uid = %s", (email, uid))
 
         effective_role = (role.strip().lower() if role else row["role"])
         if role:
             if effective_role not in VALID_ROLES:
                 raise ValueError(f"Invalid role '{effective_role}'. Must be one of {sorted(VALID_ROLES)}.")
-            conn.execute("UPDATE users SET role = ? WHERE uid = ?", (effective_role, uid))
+            conn.execute("UPDATE users SET role = %s WHERE uid = %s", (effective_role, uid))
 
         effective_state = state if state is not None else row["state"]
         effective_district = district if district is not None else row["district"]
         norm_state, norm_district = _validate_state_district(effective_role, effective_state, effective_district)
-        conn.execute("UPDATE users SET state = ?, district = ? WHERE uid = ?", (norm_state, norm_district, uid))
+        conn.execute("UPDATE users SET state = %s, district = %s WHERE uid = %s", (norm_state, norm_district, uid))
 
         effective_address = address if address is not None else row["address"]
         norm_address, latitude, longitude = _validate_and_geocode_address(
@@ -823,7 +833,7 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
             prev_lat=row["latitude"], prev_lon=row["longitude"], prev_address=row["address"],
         )
         conn.execute(
-            "UPDATE users SET address = ?, latitude = ?, longitude = ? WHERE uid = ?",
+            "UPDATE users SET address = %s, latitude = %s, longitude = %s WHERE uid = %s",
             (norm_address, latitude, longitude, uid),
         )
 
@@ -834,27 +844,27 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
             effective_storage_id = _validate_storage_id(effective_storage_id)
         else:
             effective_storage_id = None
-        conn.execute("UPDATE users SET storage_id = ? WHERE uid = ?", (effective_storage_id, uid))
+        conn.execute("UPDATE users SET storage_id = %s WHERE uid = %s", (effective_storage_id, uid))
 
         if password:
             if len(password) < 6:
                 raise ValueError("Password must be at least 6 characters.")
-            conn.execute("UPDATE users SET password = ? WHERE uid = ?", (password, uid))
+            conn.execute("UPDATE users SET password = %s WHERE uid = %s", (password, uid))
 
         updated = conn.execute(
-            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = ?",
+            "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = %s",
             (uid,),
         ).fetchone()
         return dict(updated)
 
 
 def delete_user(uid):
-    with _db_lock, _conn() as conn:
-        row = conn.execute("SELECT 1 FROM users WHERE uid = ?", (uid,)).fetchone()
+    with _conn() as conn:
+        row = conn.execute("SELECT 1 FROM users WHERE uid = %s", (uid,)).fetchone()
         if row is None:
             raise ValueError("User not found.")
-        conn.execute("DELETE FROM users WHERE uid = ?", (uid,))
-        conn.execute("DELETE FROM user_permissions WHERE uid = ?", (uid,))
+        conn.execute("DELETE FROM users WHERE uid = %s", (uid,))
+        conn.execute("DELETE FROM user_permissions WHERE uid = %s", (uid,))
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
         _drop_tokens_for_uid(uid)
@@ -866,12 +876,12 @@ def set_user_status(uid, status):
     if status not in VALID_STATUSES:
         raise ValueError(f"Invalid status '{status}'. Must be one of {sorted(VALID_STATUSES)}.")
 
-    with _db_lock, _conn() as conn:
-        row = conn.execute("SELECT * FROM users WHERE uid = ?", (uid,)).fetchone()
+    with _conn() as conn:
+        row = conn.execute("SELECT * FROM users WHERE uid = %s", (uid,)).fetchone()
         if row is None:
             raise ValueError("User not found.")
-        conn.execute("UPDATE users SET status = ? WHERE uid = ?", (status, uid))
-        updated = conn.execute("SELECT uid, email, role, status FROM users WHERE uid = ?", (uid,)).fetchone()
+        conn.execute("UPDATE users SET status = %s WHERE uid = %s", (status, uid))
+        updated = conn.execute("SELECT uid, email, role, status FROM users WHERE uid = %s", (uid,)).fetchone()
 
     if status == "restricted":
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
@@ -925,17 +935,26 @@ def require_auth(roles=None):
     """
     def decorator(fn):
         def wrapper(*args, **kwargs):
+            _t0 = time.time()
+            print(f"[require_auth] ENTER pid={os.getpid()} t={_t0:.3f} path={request.path}")
             session = get_current_session()
+            _t1 = time.time()
+            print(f"[require_auth] got_session pid={os.getpid()} +{_t1-_t0:.3f}s session_found={session is not None}")
             if not session:
+                print(f"[require_auth] 401 EXIT pid={os.getpid()} total={time.time()-_t0:.3f}s")
                 return jsonify({"error": "Not authenticated"}), 401
             user = get_user(session["uid"])
+            _t2 = time.time()
+            print(f"[require_auth] got_user pid={os.getpid()} +{_t2-_t1:.3f}s (get_user call)")
             if not user or user.get("status") == "restricted":
                 SESSIONS.pop(_get_token_from_request(), None)
                 return jsonify({"error": "This account has been restricted."}), 403
             if roles and session["role"] not in roles:
                 return jsonify({"error": "Forbidden — insufficient role"}), 403
             g.user = session
-            return fn(*args, **kwargs)
+            result = fn(*args, **kwargs)
+            print(f"[require_auth] EXIT pid={os.getpid()} total={time.time()-_t0:.3f}s path={request.path}")
+            return result
         wrapper.__name__ = fn.__name__
         return wrapper
     return decorator
@@ -1001,9 +1020,9 @@ def get_demo_user(role):
     if role not in VALID_ROLES:
         return jsonify({"error": f"Invalid role '{role}'. Must be one of {sorted(VALID_ROLES)}."}), 400
 
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         row = conn.execute(
-            "SELECT uid, email, password, role, status, state, district FROM users WHERE role = ? AND status = 'active' ORDER BY uid LIMIT 1",
+            "SELECT uid, email, password, role, status, state, district FROM users WHERE role = %s AND status = 'active' ORDER BY uid LIMIT 1",
             (role,)
         ).fetchone()
 
@@ -1199,6 +1218,6 @@ def admin_update_permissions(role):
 
 if __name__ == "__main__":
     init_excel()
-    print(f"users.db ready at: {DB_FILE}")
+    print("Connected to Postgres via DATABASE_URL — auth tables ready.")
     print("Current users:", list_users())
     print("Current role permissions:", get_role_permissions())

@@ -37,33 +37,37 @@ from __future__ import annotations
 
 import argparse
 import os
-import sqlite3
+import sys
 from functools import wraps
 from pathlib import Path
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# This file lives in micro_services/auction/, several directories away from
+# backend/shared/, so `shared` won't resolve as a plain import from here no
+# matter how main.py launches it. Make this file self-sufficient by finding
+# backend/ relative to its own location — same fix already applied to
+# generic_auction_engine.py and credit_score_backend.py.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+
 from generic_auction_engine import AuctionEngine
+from shared.db import PGConnection, connect as db_connect
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
 DEFAULT_PORT = os.environ.get("AUCTION_SERVICE_PORT", 6200)
-DB_PATH = Path(__file__).resolve().parent / "auction_service.db"
 API_KEY = os.environ.get("AUCTION_SERVICE_API_KEY", "")
 
 app = Flask(__name__)
 CORS(app)
 
 
-# ── DB / ENGINE (one shared connection is fine for SQLite + Flask dev
-#    server; swap for a pooled connection or Postgres in production) ──────
+# ── DB / ENGINE (one shared connection is fine for a single-process Flask
+#    dev server; swap for a pooled connection in production) ─────────────
 
-def get_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+def get_conn() -> PGConnection:
+    return db_connect()
 
 
 _conn = None

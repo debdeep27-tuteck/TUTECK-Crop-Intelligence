@@ -53,7 +53,7 @@ import argparse
 import json
 import logging
 import os
-import sqlite3
+import sys
 import time
 from datetime import datetime, timezone
 from functools import wraps
@@ -63,13 +63,18 @@ import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+# This file lives in micro_services/yield-detect/, several directories away
+# from backend/shared/ — resolve backend/ relative to this file's own
+# location, same fix as auction_engine_service.py and credit_score_backend.py.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+from shared.db import connect as db_connect, PGConnection
+
 logger = logging.getLogger("yield_platform_service")
 logging.basicConfig(level=logging.INFO)
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
 DEFAULT_PORT = os.environ.get("YIELD_PLATFORM_SERVICE_PORT", 6100)
-DB_PATH = Path(__file__).resolve().parent / "yield_platform_service.db"
 API_KEY = os.environ.get("YIELD_PLATFORM_SERVICE_API_KEY", "")
 
 # Mappls (MapmyIndia) OAuth — optional. Geofence/geocode routes 502 with a
@@ -126,12 +131,12 @@ def require_api_key(fn):
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS parcels (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    id            SERIAL PRIMARY KEY,
     owner_id      TEXT NOT NULL,
     label         TEXT NOT NULL,
-    latitude      REAL,
-    longitude     REAL,
-    area_hectare  REAL,
+    latitude      DOUBLE PRECISION,
+    longitude     DOUBLE PRECISION,
+    area_hectare  DOUBLE PRECISION,
     bounds_json   TEXT,
     metadata_json TEXT,
     created_at    TEXT NOT NULL,
@@ -139,9 +144,9 @@ CREATE TABLE IF NOT EXISTS parcels (
 );
 
 CREATE TABLE IF NOT EXISTS soilgrids_cache (
-    lat         REAL NOT NULL,
-    lon         REAL NOT NULL,
-    fetched_at  REAL NOT NULL,
+    lat         DOUBLE PRECISION NOT NULL,
+    lon         DOUBLE PRECISION NOT NULL,
+    fetched_at  DOUBLE PRECISION NOT NULL,
     probs_json  TEXT NOT NULL,
     PRIMARY KEY (lat, lon)
 );
@@ -150,11 +155,10 @@ CREATE TABLE IF NOT EXISTS soilgrids_cache (
 _conn = None
 
 
-def get_db() -> sqlite3.Connection:
+def get_db() -> PGConnection:
     global _conn
     if _conn is None:
-        _conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-        _conn.row_factory = sqlite3.Row
+        _conn = db_connect()
         _conn.executescript(SCHEMA)
         _conn.commit()
     return _conn
@@ -164,7 +168,7 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def row_to_dict(row: sqlite3.Row) -> dict:
+def row_to_dict(row) -> dict:
     return {
         "id": row["id"],
         "ownerId": row["owner_id"],
@@ -183,7 +187,7 @@ def row_to_dict(row: sqlite3.Row) -> dict:
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "service": "yield_platform_service", "db": str(DB_PATH)})
+    return jsonify({"status": "ok", "service": "yield_platform_service", "db": "postgres"})
 
 
 # ── ROUTES: PARCEL CRUD (formerly land_service.py) ─────────────────────────
@@ -199,11 +203,14 @@ def create_parcel():
 
     ts = now_iso()
     db = get_db()
+    # Postgres has no sqlite-style lastrowid — use RETURNING id instead
+    # (parcels.id is now SERIAL, not INTEGER AUTOINCREMENT).
     cur = db.execute(
         """
         INSERT INTO parcels (owner_id, label, latitude, longitude, area_hectare,
                               bounds_json, metadata_json, created_at, updated_at)
         VALUES (?,?,?,?,?,?,?,?,?)
+        RETURNING id
         """,
         (
             owner_id,
@@ -217,8 +224,9 @@ def create_parcel():
             ts,
         ),
     )
+    new_id = cur.fetchone()["id"]
     db.commit()
-    row = db.execute("SELECT * FROM parcels WHERE id = ?", (cur.lastrowid,)).fetchone()
+    row = db.execute("SELECT * FROM parcels WHERE id = ?", (new_id,)).fetchone()
     return jsonify(row_to_dict(row)), 201
 
 

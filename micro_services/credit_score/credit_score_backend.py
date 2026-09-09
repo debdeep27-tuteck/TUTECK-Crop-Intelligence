@@ -1,30 +1,46 @@
 import os
 import json
 import sqlite3
+import sys
 from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+# This file lives in micro_services/credit_score/ — several directories
+# away from backend/shared/db.py. Unlike auction_backend.py and
+# advisory_backend.py (which live directly inside backend/ and so find
+# `shared` as an ordinary sibling package), this needs backend/ added to
+# sys.path explicitly before the import below, regardless of how main.py
+# launches this process or what its cwd/PYTHONPATH happens to be.
+_BACKEND_DIR = Path(__file__).resolve().parents[2] / "backend"
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
+from shared.db import connect as db_connect
 
 app = Flask(__name__)
 CORS(app)
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_FILE = BASE_DIR / "credit_score.db"
 
 # The Yield Detect page (port 6008, yield_platform_service.py) is the live
 # service the frontend actually talks to — it lives in a sibling folder
 # under micro_services/, not in the old top-level backend/ directory.
 # (backend/yield_lands.db turned out to be a stale, unused earlier version
 # of this feature — see chat history for how that was diagnosed.)
+#
+# NOTE: this still points at yield_platform_service.py's *sqlite* file.
+# That service hasn't been migrated to Postgres yet — when it is, this
+# needs to change to a plain `SELECT * FROM parcels` against
+# shared.db.connect() instead of a second sqlite3.connect() below, and
+# YIELD_LANDS_DB/the file-existence check can be deleted entirely.
 YIELD_LANDS_DB = (BASE_DIR / "../yield-detect/yield_platform_service.db").resolve()
 
 
 # ── DATABASE SETUP ─────────────────────────────────────────────────────────────
 
 def get_db():
-    conn = sqlite3.connect(str(DB_FILE))
-    conn.row_factory = sqlite3.Row
-    return conn
+    return db_connect()
 
 
 def init_db():
@@ -32,16 +48,16 @@ def init_db():
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS farmer_credit_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 farmer_id TEXT UNIQUE NOT NULL,
                 user_email TEXT,
                 farmer_name TEXT NOT NULL,
                 state TEXT DEFAULT 'tripura',
                 district TEXT DEFAULT '',
-                land_acres REAL NOT NULL DEFAULT 1.0,
+                land_acres DOUBLE PRECISION NOT NULL DEFAULT 1.0,
                 crop TEXT DEFAULT 'Paddy',
-                past_loan_amount REAL NOT NULL DEFAULT 0.0,
-                past_yield_quintals REAL NOT NULL DEFAULT 0.0,
+                past_loan_amount DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+                past_yield_quintals DOUBLE PRECISION NOT NULL DEFAULT 0.0,
                 repayment_status TEXT DEFAULT 'Repaid on time',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -450,7 +466,7 @@ def get_stats():
 
 @app.route('/health')
 def health():
-    return jsonify({"status": "ok", "service": "credit-score", "port": 6014, "database": "credit_score.db"})
+    return jsonify({"status": "ok", "service": "credit-score", "port": 6014, "database": "postgres:farmer_credit_records"})
 
 
 # ── INITIALIZE ON MODULE LOAD ──────────────────────────────────────────────────
