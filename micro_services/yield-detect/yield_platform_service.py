@@ -67,7 +67,7 @@ from flask_cors import CORS
 # from backend/shared/ — resolve backend/ relative to this file's own
 # location, same fix as auction_engine_service.py and credit_score_backend.py.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
-from shared.db import connect as db_connect, PGConnection
+from shared.db import connect as db_connect, get_db as _pool_get_db, close_db as _pool_close_db, PGConnection
 
 logger = logging.getLogger("yield_platform_service")
 logging.basicConfig(level=logging.INFO)
@@ -113,6 +113,13 @@ app = Flask(__name__)
 CORS(app)
 
 
+@app.teardown_appcontext
+def _close_db(_exc):
+    # Return this request's pooled connection instead of leaking it —
+    # same teardown pattern every other Flask service in this project uses.
+    _pool_close_db(_exc)
+
+
 # ── AUTH ──────────────────────────────────────────────────────────────────
 
 def require_api_key(fn):
@@ -155,13 +162,28 @@ CREATE TABLE IF NOT EXISTS soilgrids_cache (
 _conn = None
 
 
+def init_db() -> None:
+    """Create tables once at startup, using a short-lived connection (not
+    the per-request pool) — this runs a single time before app.run(),
+    same as every other service's init_db()."""
+    conn = db_connect()
+    try:
+        conn.executescript(SCHEMA)
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def get_db() -> PGConnection:
-    global _conn
-    if _conn is None:
-        _conn = db_connect()
-        _conn.executescript(SCHEMA)
-        _conn.commit()
-    return _conn
+    """Per-request connection from the shared pool (see shared/db.py) —
+    NOT a single connection cached for the lifetime of the process. The
+    previous version cached one global connection forever, which is
+    exactly what broke against Neon: Neon suspends its compute and drops
+    idle connections, so a long-lived cached connection eventually goes
+    stale and the next query on it throws 'server closed the connection
+    unexpectedly'. Borrowing per-request from the pool avoids that —
+    each request gets a connection that was validated live on checkout."""
+    return _pool_get_db()
 
 
 def now_iso() -> str:
@@ -787,5 +809,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args()
-    get_db()  # ensures DB/tables exist before serving
+    init_db()  # ensures tables exist before serving (one-off connection,
+               # not the per-request pool — this runs before any Flask
+               # app context exists, so flask.g isn't available yet)
     app.run(host="0.0.0.0", port=args.port, debug=False)

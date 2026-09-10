@@ -53,7 +53,6 @@ from contextlib import contextmanager
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
-import psycopg2.extensions
 from flask import g
 
 try:
@@ -70,41 +69,30 @@ if not DATABASE_URL:
         "  DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/cropai"
     )
 
-# ── Connection pool ────────────────────────────────────────────────────
+# ── CONNECTION POOL ─────────────────────────────────────────────────────
 #
-# Neon (and Postgres generally) is a remote server: every fresh
-# psycopg2.connect() pays a full TCP + TLS handshake + auth round-trip
-# before a single query runs. Sqlite never had this cost. Opening/closing
-# a physical connection on every Flask request (the original pattern here)
-# turns each request into an extra network round-trip on top of the
-# actual query — this is what caused the login/sidebar lag after the
-# sqlite -> Postgres migration.
+# Why this exists: connect() used to open a brand-new physical Postgres
+# connection (full TCP + TLS handshake + auth) on every call, and get_db()
+# called connect() once per Flask request, closing it again at teardown.
+# That was free-ish against a local sqlite file; it is NOT free against a
+# remote Postgres host (e.g. Neon) — every request was paying a network
+# round-trip handshake before it could even run a query, which is what was
+# showing up as slow sidebar/login refreshes (those routes fire several
+# sequential DB-backed calls: /api/auth/me, permission lookups, etc., each
+# one re-paying that handshake cost under the old code).
 #
-# Fix: keep a small pool of already-open connections per process and
-# borrow/return instead of connect()/close(). MINCONN/MAXCONN can be
-# tuned via env vars if a given service needs more headroom (e.g. under
-# multiple gunicorn workers, each worker gets its own pool).
-MINCONN = int(os.environ.get("DB_POOL_MINCONN", "0"))
-MAXCONN = int(os.environ.get("DB_POOL_MAXCONN", "10"))
+# A small pool of already-open connections fixes this: get_db() borrows an
+# existing connection instead of dialing out fresh, and close_db() returns
+# it to the pool instead of closing it. The handshake cost is paid once
+# per pooled connection (at pool warm-up / whenever the pool needs to grow),
+# not once per request.
+#
+# Tune via env vars if needed:
+#   POSTGRES_POOL_MIN (default 1), POSTGRES_POOL_MAX (default 10)
+_POOL_MIN = int(os.environ.get("POSTGRES_POOL_MIN", "1"))
+_POOL_MAX = int(os.environ.get("POSTGRES_POOL_MAX", "10"))
 
-_pool: psycopg2.pool.ThreadedConnectionPool | None = None
-
-
-def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
-    global _pool
-    if _pool is None:
-        _pool = psycopg2.pool.ThreadedConnectionPool(MINCONN, MAXCONN, DATABASE_URL)
-    return _pool
-
-
-def closeall_pools() -> None:
-    """Call on process shutdown (optional) to release every pooled
-    connection cleanly."""
-    global _pool
-    if _pool is not None:
-        _pool.closeall()
-        _pool = None
-
+_pool = psycopg2.pool.ThreadedConnectionPool(_POOL_MIN, _POOL_MAX, DATABASE_URL)
 
 _QMARK_RE = re.compile(r"\?")
 
@@ -170,13 +158,9 @@ class PGConnection:
     services: db.execute(sql, params), db.executescript(sql), db.commit(),
     db.rollback(), db.close(), and dict-style row access."""
 
-    def __init__(self, raw_conn, _release=None):
+    def __init__(self, raw_conn, from_pool: bool = False):
         self._conn = raw_conn
-        # If this connection came from the pool, `_release` puts it back
-        # instead of physically closing it. One-off connect() calls (e.g.
-        # migration scripts, init_db() setup outside a request) leave this
-        # None and get a real close(), same as before.
-        self._release = _release
+        self._from_pool = from_pool
 
     def execute(self, sql: str, params=None) -> PGCursorResult:
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -207,18 +191,12 @@ class PGConnection:
         self._conn.rollback()
 
     def close(self) -> None:
-        if self._release is not None:
-            # Guard against handing the next borrower a connection sitting
-            # mid-transaction (e.g. a request errored before calling
-            # .commit()). psycopg2's pool doesn't reliably clean this up
-            # on its own, and a leaked open transaction on a reused pooled
-            # connection is a much nastier bug than the lag we're fixing.
-            try:
-                if not self._conn.closed and self._conn.status != psycopg2.extensions.STATUS_READY:
-                    self._conn.rollback()
-            except Exception:
-                pass
-            self._release(self._conn)
+        # If this connection came from the pool, "closing" it means giving
+        # it back for reuse, not tearing down the physical socket — that's
+        # the whole point of pooling. Non-pooled connections (one-off
+        # scripts) still get a real close().
+        if self._from_pool:
+            _pool.putconn(self._conn)
         else:
             self._conn.close()
 
@@ -235,75 +213,56 @@ class PGConnection:
         # Postgres connection per request is not something we want to
         # leak. Call sites that used `with get_db() as conn:` against
         # sqlite3 get the same commit/rollback behavior here, plus the
-        # connection is actually closed afterward.
+        # connection is returned to the pool (or closed, if unpooled)
+        # afterward.
         try:
             if exc_type is None:
                 self._conn.commit()
             else:
                 self._conn.rollback()
         finally:
-            self._conn.close()
+            self.close()
+
+
+def _borrow_from_pool() -> "psycopg2.extensions.connection":
+    """Get a live connection out of the pool, discarding and replacing any
+    connection the remote server has silently closed (Neon and other
+    serverless/managed Postgres hosts suspend compute and drop idle
+    connections — a pooled connection that's been sitting unused can go
+    stale between checkouts). Detected with a cheap SELECT 1 probe; a dead
+    connection is evicted from the pool and a fresh one is opened in its
+    place, rather than handing back something that will fail on first
+    real use."""
+    raw = _pool.getconn()
+    try:
+        with raw.cursor() as probe:
+            probe.execute("SELECT 1")
+    except psycopg2.OperationalError:
+        _pool.putconn(raw, close=True)
+        raw = psycopg2.connect(DATABASE_URL)
+    return raw
 
 
 def connect() -> PGConnection:
-    """Open a brand-new Postgres connection (for one-off scripts / init_db()
-    style setup that runs outside a Flask request context, e.g. the
-    migration script). Not pooled on purpose — these are short-lived
-    processes where a pool would just add overhead for no reuse benefit."""
-    raw = psycopg2.connect(DATABASE_URL)
-    return PGConnection(raw)
-
-
-def _connect_pooled() -> PGConnection:
-    """Borrow a connection from the shared pool instead of opening a new
-    physical connection. `.close()` on the returned PGConnection returns
-    it to the pool rather than tearing down the TCP/TLS session.
-
-    Neon (and other serverless/managed Postgres) will silently drop
-    connections that sit idle for a while — the socket dies server-side
-    but the pool has no way to know unless something checks. Handing out
-    a dead connection produces exactly the "SSL connection has been closed
-    unexpectedly" / "connection already closed" loop seen in production:
-    once one dead connection lands in the pool, every request borrowing
-    it fails the same way, forever, since nothing ever replaces it.
-
-    So: ping with a trivial query before handing the connection back to
-    the caller. If it's dead, tell the pool to discard it (closed=True —
-    this frees the slot without returning it to the free list) and try
-    again; the pool opens a fresh physical connection to fill that slot.
-    """
-    pool = _get_pool()
-    for _attempt in range(MAXCONN + 1):
-        raw = pool.getconn()
-        try:
-            if raw.closed:
-                raise psycopg2.InterfaceError("connection already closed")
-            with raw.cursor() as probe:
-                probe.execute("SELECT 1")
-        except (psycopg2.OperationalError, psycopg2.InterfaceError):
-            pool.putconn(raw, close=True)
-            continue
-        return PGConnection(raw, _release=pool.putconn)
-    # Every pooled slot was dead (e.g. Neon suspended/reset all of them at
-    # once) — fall back to a brand-new, unpooled connection rather than
-    # failing the request outright.
-    raw = psycopg2.connect(DATABASE_URL)
-    return PGConnection(raw)
+    """Borrow a connection from the shared pool. Safe to call from a plain
+    script too (one-off migrations, etc.) — just remember to .close() it
+    when done so it goes back to the pool instead of sitting checked-out."""
+    raw = _borrow_from_pool()
+    return PGConnection(raw, from_pool=True)
 
 
 def get_db() -> PGConnection:
-    """Per-request connection, cached on flask.g — same call pattern every
-    service already used for sqlite3, but now borrowed from a pool instead
-    of opening a fresh physical connection (with its TCP + TLS + auth
-    handshake to Neon) on every single request."""
+    """Per-request connection, cached on flask.g — same pattern every
+    service already used for sqlite3. Now backed by the pool: borrowing
+    here is a fast in-process handoff, not a fresh network handshake."""
     if "db" not in g:
-        g.db = _connect_pooled()
+        g.db = connect()
     return g.db
 
 
 def close_db(_exc=None) -> None:
     """Call this from @app.teardown_appcontext in each service. Returns
-    the connection to the pool rather than closing it outright."""
+    the connection to the pool rather than physically closing it."""
     db = g.pop("db", None)
     if db is not None:
         db.close()
@@ -320,9 +279,8 @@ def transaction():
     """`with transaction() as conn:` — yields a PGConnection (same
     `?`-or-`%s`-placeholder `.execute()` shape as get_db()). Commits on a
     clean exit, rolls back on exception, always returns the connection to
-    the pool (rather than opening/closing a fresh physical connection on
-    every call, which is the same handshake cost get_db() used to pay)."""
-    conn = _connect_pooled()
+    the pool."""
+    conn = connect()
     try:
         yield conn
         conn.commit()
@@ -339,22 +297,9 @@ def get_conn():
     psycopg2 connection for call sites that want native cursor control
     instead of PGConnection's wrapped `.execute()`. Rows come back as
     RealDictCursor by default, so `row["col"]` still works. Commits on a
-    clean exit, rolls back on exception, and returns the connection to the
-    pool rather than closing it outright."""
-    pool = _get_pool()
-    for _attempt in range(MAXCONN + 1):
-        raw = pool.getconn()
-        try:
-            if raw.closed:
-                raise psycopg2.InterfaceError("connection already closed")
-            with raw.cursor() as probe:
-                probe.execute("SELECT 1")
-            break
-        except (psycopg2.OperationalError, psycopg2.InterfaceError):
-            pool.putconn(raw, close=True)
-    else:
-        raw = psycopg2.connect(DATABASE_URL)
-        pool = None  # signal below to just close(), not putconn()
+    clean exit, rolls back on exception, always returns the connection to
+    the pool."""
+    raw = _borrow_from_pool()
     raw.cursor_factory = psycopg2.extras.RealDictCursor
     try:
         yield raw
@@ -363,15 +308,7 @@ def get_conn():
         raw.rollback()
         raise
     finally:
-        try:
-            if not raw.closed and raw.status != psycopg2.extensions.STATUS_READY:
-                raw.rollback()
-        except Exception:
-            pass
-        if pool is not None:
-            pool.putconn(raw)
-        else:
-            raw.close()
+        _pool.putconn(raw)
 
 
 # auth_excel.py imports this name (originally written against a slightly

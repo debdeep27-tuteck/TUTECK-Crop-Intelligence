@@ -33,15 +33,6 @@ Roles (defaults, editable from the admin panel)
   analyst  -> Dashboard, Irrigation, Recommender, Alerts
   farmer   -> Irrigation, Disease Detection, Recommender
 
-⚠️ SECURITY NOTE: passwords are stored as PLAIN TEXT in Postgres, not
-hashed. Anyone with database access can read every user's actual
-password. This is fine for a local prototype but is not safe for a real
-deployment, especially since people often reuse passwords across sites.
-Restrict access to your Postgres instance, keep DATABASE_URL out of
-version control, and consider switching to hashed storage
-(werkzeug.security.generate_password_hash / check_password_hash) before
-this goes anywhere near production or real user data.
-
 Run standalone for a quick sanity check:
     python auth_excel.py
 """
@@ -58,6 +49,7 @@ import requests
 from flask import Blueprint, request, jsonify, g
 
 from shared.db import transaction as _pg_transaction, get_conn as _pg_get_conn, PGConnWrapper
+from shared.cache import ttl_cache, invalidate_prefix
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
@@ -70,7 +62,7 @@ LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
 LEGACY_PERMISSIONS_XLSX = BASE_DIR / "permissions.xlsx"
 LEGACY_USER_PERMISSIONS_XLSX = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers"]
 
 VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi", "storage_provider"}
 VALID_STATUSES = {"active", "restricted"}
@@ -85,15 +77,17 @@ DISTRICT_SCOPED_ROLES = {"district_admin", "mandi"}
 # A mandi is a physical buying post, so it additionally needs a street
 # address that we can geocode into lat/lon — that's what lets the Yield
 # Detect page filter farmer lands within N km of the mandi instead of by
-# district match. No other role requires this.
-ADDRESS_SCOPED_ROLES = {"mandi"}
+# district match. A storage_provider's facility address is geocoded the
+# same way (create_user falls back to these coordinates when no explicit
+# latitude/longitude is passed in — see create_user below).
+ADDRESS_SCOPED_ROLES = {"mandi", "storage_provider"}
 
 # Default permissions, used only to seed role_permissions the first time
 # the DB is created. After that, the table is the single source of truth
 # and is editable live from the admin panel (see /api/permissions routes).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers"],
         "crud": True,
     },
     "analyst": {
@@ -105,11 +99,11 @@ DEFAULT_ROLE_PERMISSIONS = {
         "crud": False,
     },
     "state_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers"],
         "crud": False,
     },
     "district_admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers"],
         "crud": False,
     },
     "mandi": {
@@ -117,7 +111,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         "crud": False,
     },
     "storage_provider": {
-        "pages": ["/dashboard", "/cold-storage", "/storage-config"],
+        "pages": ["/dashboard", "/cold-storage", "/storage-config", "/find-farmers"],
         "crud": False,
     },
 }
@@ -256,42 +250,71 @@ def _nominatim_search(query: str):
     return resp.json()
 
 
+def _progressively_broadened_candidates(address: str):
+    """Yield address strings to try, from most to least specific, by
+    dropping the leading comma-separated segment each time.
+    'Sukh Dham, Pushkar Road, Ram Nagar, Ajmer, Rajasthan - 305004' ->
+    tries the full string, then 'Pushkar Road, Ram Nagar, Ajmer, ...',
+    then 'Ram Nagar, Ajmer, ...', etc. Stops once only one segment is
+    left (a bare city/state is still worth trying; a single stray word
+    usually isn't useful and we bail before yielding nothing at all)."""
+    segments = [s.strip() for s in address.split(",") if s.strip()]
+    for i in range(len(segments) - 1):
+        candidate = ", ".join(segments[i:])
+        if candidate:
+            yield candidate
+
+
 def geocode_address(address: str):
     """Return (lat, lon) floats for a free-text address, or (None, None) if
     it couldn't be resolved (bad address, network issue, no results).
 
-    If the address contains a Google Plus Code (which Nominatim can't
-    parse), retries with the code stripped out, geocoding just the
-    locality that follows it. This lands on the town/village center
-    rather than the exact pin — close enough for mandi radius filtering,
-    and far better than an outright failure."""
+    Free-text addresses often include a building/society/landmark name
+    Nominatim's index simply doesn't have ('Sukh Dham, Pushkar Road, Ram
+    Nagar, Ajmer, Rajasthan') — its search fails the *entire* query on
+    the first unrecognized token rather than falling back to what it does
+    recognize. So on a miss, we retry with progressively broader
+    substrings (dropping the most specific leading segment each time)
+    until one resolves. This lands on a nearby, less precise point (e.g.
+    the locality/city center) rather than the exact building — close
+    enough for radius-based filtering, and far better than an outright
+    failure.
+
+    If the address also contains a Google Plus Code (which Nominatim
+    can't parse at all), that's stripped out first as its own dedicated
+    retry, same as before."""
     address = (address or "").strip()
     if not address:
         return None, None
 
     has_plus_code = bool(_PLUS_CODE_RE.search(address))
     locality = _strip_plus_code(address) if has_plus_code else None
-    retry_worthwhile = bool(locality) and locality != address
+    plus_code_retry_worthwhile = bool(locality) and locality != address
+
+    # Build the ordered list of queries to attempt: full address, then
+    # (if applicable) the Plus-Code-stripped locality, then progressively
+    # broader substrings of the original address.
+    candidates = [address]
+    if plus_code_retry_worthwhile:
+        candidates.append(locality)
+    candidates.extend(_progressively_broadened_candidates(address))
 
     results = None
-    try:
-        results = _nominatim_search(address)
-    except requests.exceptions.RequestException as e:
-        print(f"auth_excel: geocoding failed for address={address!r}: {e}", flush=True)
-        if not retry_worthwhile:
-            return None, None
-
-    if not results and retry_worthwhile:
-        print(
-            f"auth_excel: address {address!r} looks like it contains a Plus Code "
-            f"Nominatim can't parse; retrying with just {locality!r}.",
-            flush=True,
-        )
+    for i, query in enumerate(candidates):
         try:
-            results = _nominatim_search(locality)
+            results = _nominatim_search(query)
         except requests.exceptions.RequestException as e:
-            print(f"auth_excel: geocoding retry failed for {locality!r}: {e}", flush=True)
-            return None, None
+            print(f"auth_excel: geocoding failed for query={query!r}: {e}", flush=True)
+            results = None
+
+        if results:
+            if i > 0:
+                print(
+                    f"auth_excel: address {address!r} didn't resolve as-is; "
+                    f"landed on broader query {query!r} instead.",
+                    flush=True,
+                )
+            break
 
     if not results:
         return None, None
@@ -316,6 +339,29 @@ def _validate_storage_id(storage_id):
         row = cur.fetchone()
     if not row:
         raise ValueError("Selected cold storage facility does not exist.")
+    return storage_id
+
+
+def _sync_facility_coordinates(storage_id, latitude, longitude):
+    """Push a storage_provider's resolved lat/lon onto their linked facility
+    row in cold_storages, so the Storage Config page's Find Nearby Farmers
+    feature (which reads cold_storages.latitude/longitude) sees them too.
+    Without this, coordinates only ever land in the users table and the
+    facility row stays NULL until someone separately calls the
+    storage-provider /geofence or /geocode-address endpoints.
+
+    Now that cold storage data lives in Postgres alongside everything
+    else, this just goes through the same shared connection as
+    `_validate_storage_id` above — no more separate sqlite3 file."""
+    if not storage_id or latitude is None or longitude is None:
+        return
+
+    with _pg_get_conn() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE cold_storages SET latitude = %s, longitude = %s WHERE id = %s",
+            (latitude, longitude, storage_id),
+        )
+
     return storage_id
 
 
@@ -483,6 +529,58 @@ def init_excel():
                 ("storage_config_page_backfill_v1", time.time()),
             )
 
+        # One-time backfill: "Find Nearby Farmers" was split out of the
+        # Storage Config page into its own "/find-farmers" page. Any role
+        # that already had "/storage-config" should get "/find-farmers" too,
+        # for installs whose role_permissions table predates this split.
+        already_migrated_find_farmers = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = ?", ("find_farmers_page_backfill_v1",)
+        ).fetchone()
+        if not already_migrated_find_farmers:
+            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+                if "/find-farmers" not in cfg["pages"]:
+                    continue
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                if row is None:
+                    continue
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/find-farmers" not in current_pages:
+                    current_pages.append("/find-farmers")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
+                        (",".join(current_pages), role),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (?, ?)",
+                ("find_farmers_page_backfill_v1", time.time()),
+            )
+
+        # One-time backfill: "Find Nearby Farmers" was split out of the
+        # Storage Config page into its own "/find-farmers" page. Any role
+        # that already had "/storage-config" should get "/find-farmers" too,
+        # for installs whose role_permissions table predates this split.
+        already_migrated_find_farmers = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = ?", ("find_farmers_page_backfill_v1",)
+        ).fetchone()
+        if not already_migrated_find_farmers:
+            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+                if "/find-farmers" not in cfg["pages"]:
+                    continue
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                if row is None:
+                    continue
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/find-farmers" not in current_pages:
+                    current_pages.append("/find-farmers")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        (",".join(current_pages), role),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
+                ("find_farmers_page_backfill_v1", time.time()),
+            )
+
         # One-time migration: existing installs' `users` table predates the
         # address/latitude/longitude columns added for mandi geofencing.
         # Postgres supports "ADD COLUMN IF NOT EXISTS" directly (unlike
@@ -581,8 +679,11 @@ def _new_uid():
 
 # ── ROLE PERMISSIONS ──────────────────────────────────────────────────────
 
+@ttl_cache(seconds=60, key_prefix="auth:get_role_permissions")
 def get_role_permissions():
-    """Return the ROLE_PERMISSIONS dict shape, read live from the DB."""
+    """Return the ROLE_PERMISSIONS dict shape, read live from the DB.
+    Cached for 60s — permissions/roles change rarely, this is the query
+    that feeds the sidebar on every page load."""
     with _conn() as conn:
         rows = conn.execute("SELECT role, pages, crud FROM role_permissions").fetchall()
     result = {}
@@ -621,11 +722,13 @@ def update_role_permissions(role, pages=None, crud=None):
             if crud is not None:
                 conn.execute("UPDATE role_permissions SET crud = %s WHERE role = %s", (int(bool(crud)), role))
 
+    invalidate_prefix("auth:get_role_permissions")
     return get_role_permissions()[role]
 
 
 # ── PER-USER PERMISSIONS ──────────────────────────────────────────────────
 
+@ttl_cache(seconds=30, key_prefix="auth:get_user_permissions")
 def get_user_permissions(uid, role=None):
     """
     Return {"pages": [...]} for this specific user. If the user has no row
@@ -662,12 +765,14 @@ def update_user_permissions(uid, pages):
         else:
             conn.execute("UPDATE user_permissions SET pages = %s WHERE uid = %s", (",".join(pages), uid))
 
+    invalidate_prefix("auth:get_user_permissions")
     return {"pages": pages}
 
 
 def delete_user_permissions(uid):
     with _conn() as conn:
         conn.execute("DELETE FROM user_permissions WHERE uid = %s", (uid,))
+    invalidate_prefix("auth:get_user_permissions")
 
 
 # ── USER OPERATIONS ───────────────────────────────────────────────────────
@@ -692,7 +797,7 @@ def _validate_state_district(role, state, district):
 
 
 def _validate_and_geocode_address(role, address, prev_lat=None, prev_lon=None, prev_address=""):
-    """Enforce that address-scoped roles (mandi) carry an address, and
+    """Enforce that address-scoped roles (mandi, storage_provider) carry an address, and
     geocode it to lat/lon when it's new or has changed. Returns
     (address, latitude, longitude). Non-address-scoped roles always get
     ("", None, None) — mirrors how _validate_state_district clears
@@ -718,7 +823,7 @@ def _validate_and_geocode_address(role, address, prev_lat=None, prev_lon=None, p
     return address, lat, lon
 
 
-def create_user(email, password, role, state="", district="", address="", storage_id=None):
+def create_user(email, password, role, state="", district="", address="", storage_id=None, latitude=None, longitude=None):
     email = email.strip().lower()
     role = role.strip().lower()
 
@@ -728,14 +833,19 @@ def create_user(email, password, role, state="", district="", address="", storag
         raise ValueError("Password must be at least 6 characters.")
 
     state, district = _validate_state_district(role, state, district)
-    address, latitude, longitude = _validate_and_geocode_address(role, address)
+    address, geocoded_lat, geocoded_lon = _validate_and_geocode_address(role, address)
 
     if role == "storage_provider":
         if not storage_id:
             raise ValueError("Storage provider accounts require a storage selection.")
         storage_id = _validate_storage_id(storage_id)
+        if latitude is None or longitude is None:
+            latitude = geocoded_lat
+            longitude = geocoded_lon
     else:
         storage_id = None
+        latitude = geocoded_lat
+        longitude = geocoded_lon
 
     with _conn() as conn:
         dupe = conn.execute("SELECT 1 FROM users WHERE lower(email) = %s", (email,)).fetchone()
@@ -751,8 +861,10 @@ def create_user(email, password, role, state="", district="", address="", storag
             (uid, email, password, role, "active", state, district, address, latitude, longitude, storage_id),
         )
 
-    # Seed this user's individual page permissions from their role's defaults.
     get_user_permissions(uid, role=role)
+
+    if role == "storage_provider":
+        _sync_facility_coordinates(storage_id, latitude, longitude)
 
     return {
         "uid": uid, "email": email, "role": role, "status": "active",
@@ -792,6 +904,7 @@ def list_users():
     return users
 
 
+@ttl_cache(seconds=30, key_prefix="auth:get_user")
 def get_user(uid):
     with _conn() as conn:
         row = conn.execute(
@@ -828,10 +941,16 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
         conn.execute("UPDATE users SET state = %s, district = %s WHERE uid = %s", (norm_state, norm_district, uid))
 
         effective_address = address if address is not None else row["address"]
-        norm_address, latitude, longitude = _validate_and_geocode_address(
+        norm_address, geocoded_lat, geocoded_lon = _validate_and_geocode_address(
             effective_role, effective_address,
             prev_lat=row["latitude"], prev_lon=row["longitude"], prev_address=row["address"],
         )
+        if effective_role == "storage_provider":
+            effective_lat = latitude if latitude is not None else (geocoded_lat if geocoded_lat is not None else row["latitude"])
+            effective_lon = longitude if longitude is not None else (geocoded_lon if geocoded_lon is not None else row["longitude"])
+        else:
+            effective_lat = geocoded_lat
+            effective_lon = geocoded_lon
         conn.execute(
             "UPDATE users SET address = %s, latitude = %s, longitude = %s WHERE uid = %s",
             (norm_address, latitude, longitude, uid),
@@ -855,7 +974,12 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
             "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users WHERE uid = %s",
             (uid,),
         ).fetchone()
-        return dict(updated)
+
+    if effective_role == "storage_provider":
+        _sync_facility_coordinates(effective_storage_id, effective_lat, effective_lon)
+
+    invalidate_prefix(f"auth:get_user:('{uid}',)")
+    return dict(updated)
 
 
 def delete_user(uid):
@@ -868,6 +992,9 @@ def delete_user(uid):
         for tok in [t for t, s in SESSIONS.items() if s["uid"] == uid]:
             SESSIONS.pop(tok, None)
         _drop_tokens_for_uid(uid)
+
+    invalidate_prefix(f"auth:get_user:('{uid}',)")
+    invalidate_prefix(f"auth:get_user_permissions:('{uid}',)")
 
 
 def set_user_status(uid, status):
@@ -888,6 +1015,7 @@ def set_user_status(uid, status):
             SESSIONS.pop(tok, None)
         _drop_tokens_for_uid(uid)
 
+    invalidate_prefix(f"auth:get_user:('{uid}',)")
     return dict(updated)
 
 
@@ -920,10 +1048,6 @@ def get_current_session():
     if not token:
         return None
     session = SESSIONS.get(token)
-    # TEMP DEBUG — remove once the 401 is diagnosed.
-    print(f"[get_current_session] pid={os.getpid()} token_received={token!r} "
-          f"found={session is not None} sessions_count={len(SESSIONS)} "
-          f"known_tokens={list(SESSIONS.keys())}")
     return session
 
 
@@ -935,17 +1059,10 @@ def require_auth(roles=None):
     """
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            _t0 = time.time()
-            print(f"[require_auth] ENTER pid={os.getpid()} t={_t0:.3f} path={request.path}")
             session = get_current_session()
-            _t1 = time.time()
-            print(f"[require_auth] got_session pid={os.getpid()} +{_t1-_t0:.3f}s session_found={session is not None}")
             if not session:
-                print(f"[require_auth] 401 EXIT pid={os.getpid()} total={time.time()-_t0:.3f}s")
                 return jsonify({"error": "Not authenticated"}), 401
             user = get_user(session["uid"])
-            _t2 = time.time()
-            print(f"[require_auth] got_user pid={os.getpid()} +{_t2-_t1:.3f}s (get_user call)")
             if not user or user.get("status") == "restricted":
                 SESSIONS.pop(_get_token_from_request(), None)
                 return jsonify({"error": "This account has been restricted."}), 403
@@ -953,7 +1070,6 @@ def require_auth(roles=None):
                 return jsonify({"error": "Forbidden — insufficient role"}), 403
             g.user = session
             result = fn(*args, **kwargs)
-            print(f"[require_auth] EXIT pid={os.getpid()} total={time.time()-_t0:.3f}s path={request.path}")
             return result
         wrapper.__name__ = fn.__name__
         return wrapper
@@ -1002,6 +1118,7 @@ def login():
     token = issue_session(
         user["uid"], user["email"], user["role"], user.get("state"), user.get("district"),
         user.get("address"), user.get("latitude"), user.get("longitude"),
+        user.get("storage_id"),
     )
     return jsonify({"token": token, **user, "permissions": get_user_permissions(user["uid"], role=user["role"])}), 200
 
@@ -1067,11 +1184,16 @@ def admin_create_user():
     district = str(body.get("district", "")).strip()
     address = str(body.get("address", "")).strip()
     storage_id = body.get("storage_id")
+    latitude = body.get("latitude")
+    longitude = body.get("longitude")
 
     if "@" not in email or "." not in email:
         return jsonify({"error": "Please enter a valid email address."}), 400
     try:
-        user = create_user(email, password, role, state=state, district=district, address=address, storage_id=storage_id)
+        user = create_user(
+            email, password, role, state=state, district=district, address=address,
+            storage_id=storage_id, latitude=latitude, longitude=longitude,
+        )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify(user), 201
@@ -1100,6 +1222,8 @@ def admin_update_user(uid):
             district=body.get("district"),
             address=body.get("address"),
             storage_id=body.get("storage_id"),
+            latitude=body.get("latitude"),
+            longitude=body.get("longitude"),
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

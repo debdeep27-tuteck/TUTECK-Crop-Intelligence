@@ -248,11 +248,12 @@
     /* Table Container */
     .table-container {
       width: 100%;
-      overflow-x: hidden;
+      overflow-x: auto;
     }
 
     table.admin-table {
       width: 100%;
+      min-width: 1200px;
       border-collapse: collapse;
       font-size: 12px;
       text-align: left;
@@ -440,10 +441,16 @@
       color: var(--danger);
     }
 
+    .icon-action-btn.delete-btn {
+      color: #DC2626;
+      border-color: #FCA5A5;
+      background: #FEF2F2;
+    }
+
     .icon-action-btn.delete-btn:hover {
-      background: var(--danger-bg);
-      border-color: #FECACA;
-      color: var(--danger);
+      background: #FEE2E2;
+      border-color: #EF4444;
+      color: #B91C1C;
     }
 
     .icon-action-btn:disabled {
@@ -726,7 +733,7 @@
               <th class="col-center" style="width:6.5%;">Mandi</th>
               <th class="col-center" style="width:6%;">Storage</th>
               <th class="col-center" style="width:6%;">Advisory</th>
-              <th class="col-center" style="width:7.5%;">Actions</th>
+              <th class="col-center" style="width:9%;">Actions</th>
             </tr>
           </thead>
           <tbody id="usersBody">
@@ -787,9 +794,9 @@
         </div>
 
         <div class="form-group field-hidden" id="addressGroup">
-          <label class="form-label">Mandi Address</label>
+          <label class="form-label" id="addressGroupLabel">Mandi Address</label>
           <input class="form-input" id="modalAddress" placeholder="e.g. Krishi Mandi Road, Agartala, Tripura">
-          <div style="font-size:12px;color:#8a8470;margin-top:4px;">
+          <div style="font-size:12px;color:#8a8470;margin-top:4px;" id="addressGroupHint">
             Used to locate the mandi and find farmer lands within radius on the Yield Detect page.
           </div>
         </div>
@@ -800,6 +807,7 @@
             <option value="">Loading storages...</option>
           </select>
         </div>
+
 
         <div class="form-group" id="statusGroup">
           <label class="form-label">Account Status</label>
@@ -816,6 +824,7 @@
       </div>
     </div>
   </div>
+
 
   <script>
     const SESSION_KEY = "cropai_session";
@@ -890,7 +899,7 @@
 
       const needsState = role === "state_admin" || role === "district_admin" || role === "mandi";
       const needsDistrict = role === "district_admin" || role === "mandi";
-      const needsAddress = role === "mandi";
+      const needsAddress = role === "mandi" || role === "storage_provider";
       const needsStorage = role === "storage_provider";
 
       stateGroup.classList.toggle("field-hidden", !needsState);
@@ -898,10 +907,24 @@
       addressGroup.classList.toggle("field-hidden", !needsAddress);
       storageGroup.classList.toggle("field-hidden", !needsStorage);
 
+      if (role === "storage_provider") {
+        document.getElementById("addressGroupLabel").innerText = "Facility Address";
+        document.getElementById("modalAddress").placeholder = "e.g. Ajmer Cold Storage Complex, Ajmer, Rajasthan";
+        document.getElementById("addressGroupHint").innerText = "Used to locate the storage facility.";
+      } else {
+        document.getElementById("addressGroupLabel").innerText = "Mandi Address";
+        document.getElementById("modalAddress").placeholder = "e.g. Krishi Mandi Road, Agartala, Tripura";
+        document.getElementById("addressGroupHint").innerText = "Used to locate the mandi and find farmer lands within radius on the Yield Detect page.";
+      }
+
       if (!needsState) document.getElementById("modalState").value = "";
       if (!needsDistrict) document.getElementById("modalDistrict").value = "";
       if (!needsAddress) document.getElementById("modalAddress").value = "";
-      if (!needsStorage) document.getElementById("modalStorage").value = "";
+      if (!needsStorage) {
+        document.getElementById("modalStorage").value = "";
+      } else {
+        loadStorageOptions();
+      }
     }
 
     function onModalStateChange() {
@@ -942,7 +965,7 @@
 
       document.getElementById("statusGroup").classList.toggle("field-hidden", !user);
       onModalRoleChange();
-      if (user && user.role === "mandi") {
+      if (user && (user.role === "mandi" || user.role === "storage_provider")) {
         document.getElementById("modalAddress").value = user.address || "";
       }
       if (user && user.role === "storage_provider") {
@@ -991,6 +1014,10 @@
         showToast("Please enter an address for this mandi.", true);
         return;
       }
+      if (role === "storage_provider" && !address) {
+        showToast("Please enter an address for this storage facility.", true);
+        return;
+      }
       if (role === "storage_provider" && !storageId) {
         showToast("Please select a storage facility for this provider.", true);
         return;
@@ -1037,8 +1064,37 @@
         showToast("User account updated.");
       }
 
+      if (role === "storage_provider" && address && storageId) {
+        await geocodeAndSaveFacilityLocation(storageId, address);
+      }
+
       closeUserModal();
       loadUsers();
+    }
+
+    // Best-effort: turns a free-text facility address into lat/lng using
+    // the backend's geocode-address route (which tries Mappls — much better
+    // at Indian village/tehsil style addresses — before falling back to
+    // Nominatim) and saves it onto the linked cold_storages facility row.
+    // Never blocks user creation/edit — failures just show a warning toast.
+    async function geocodeAndSaveFacilityLocation(facilityId, address) {
+      try {
+        const res = await fetch(`/api/storage-provider/facilities/${facilityId}/geocode-address`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ address })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showToast(data.error || "User saved, but the facility address couldn't be located. Set coordinates manually later.", true);
+          return;
+        }
+
+        showToast(`Facility location set${data.matched_address ? ": " + data.matched_address : "."}`);
+      } catch (err) {
+        showToast("User saved, but auto-locating the facility failed. Set coordinates manually later.", true);
+      }
     }
 
     const PAGE_MODULES = [
@@ -1052,6 +1108,7 @@
       { id: "/auction-mandi", name: "Mandi", title: "Mandi Trading Floor" },
       { id: "/cold-storage", name: "Storage", title: "Cold Storage Intelligence" },
       { id: "/storage-config", name: "Storage Config", title: "Storage Provider Configuration" },
+      { id: "/find-farmers", name: "Find Farmers", title: "Find Nearby Farmers" },
       { id: "/mandi-prices", name: "Mandi Prices", title: "Daily Mandi Prices" },
       { id: "/nearest-mandi", name: "Nearest Mandi", title: "Nearest Mandi Intelligence" },
       { id: "/advisory", name: "Advisory", title: "Farm Advisory Chatbot" },
@@ -1160,7 +1217,7 @@
                   <button class="icon-action-btn delete-btn"
                     title="${isSelf ? "You cannot delete your own account" : "Delete user"}"
                     ${isSelf ? "disabled" : `onclick="deleteUser('${user.uid}')"`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                   </button>
                 </div>
               </td>
@@ -1248,6 +1305,8 @@
       localStorage.removeItem(SESSION_KEY);
       window.location = "/";
     }
+
+
 
     (async function () {
       if (session.role !== "admin") {

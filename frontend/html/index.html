@@ -1220,6 +1220,13 @@
           <span class="nav-label">Storage Config</span>
         </a>
 
+        <a class="gn-link" id="nav-find-farmers-link" data-target="/find-farmers" data-content="/content/find-farmers" href="#" title="Find Farmers" style="display:none;">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          <span class="nav-label">Find Farmers</span>
+        </a>
+
         <a class="gn-link" data-target="/mandi-prices" data-content="/content/mandi-prices" href="#" title="Mandi Prices">
           <span class="nav-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-7"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
@@ -1306,7 +1313,7 @@
           </div>
 
           <!-- Notifications -->
-          <div class="notif-menu" id="notif-menu">
+          <div class="notif-menu" id="notif-menu" style="display:none;">
             <button class="notif-btn" type="button" onclick="toggleNotifMenu(event)" title="Live Notifications">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
               <div class="notif-badge-count" id="notif-badge-count" style="display:none">0</div>
@@ -1483,6 +1490,7 @@
         '/auction-mandi',
         '/cold-storage',
         '/storage-config',
+        '/find-farmers',
         '/mandi-prices',
         '/nearest-mandi',
         '/credit-score'
@@ -1497,6 +1505,7 @@
         '/nearest-mandi',
         '/cold-storage',
         '/storage-config',
+        '/find-farmers',
         '/credit-score'
       ],
       state_admin: [
@@ -1509,6 +1518,7 @@
         '/nearest-mandi',
         '/cold-storage',
         '/storage-config',
+        '/find-farmers',
         '/credit-score'
       ],
       default: [
@@ -1520,6 +1530,7 @@
         '/auction-mandi',
         '/cold-storage',
         '/storage-config',
+        '/find-farmers',
         '/mandi-prices',
         '/nearest-mandi',
         '/credit-score'
@@ -1618,6 +1629,12 @@
         const canAccess = ALLOWED_PAGES.length === 0 || ALLOWED_PAGES.includes('/storage-config');
         storageConfigLink.style.display = canAccess ? 'flex' : 'none';
       }
+
+      const findFarmersLink = document.getElementById('nav-find-farmers-link');
+      if (findFarmersLink) {
+        const canAccess = ALLOWED_PAGES.length === 0 || ALLOWED_PAGES.includes('/find-farmers');
+        findFarmersLink.style.display = canAccess ? 'flex' : 'none';
+      }
       
       const adminNav = document.getElementById('nav-admin-link');
       if (isAdmin) {
@@ -1634,6 +1651,45 @@
       }
       if (!canUseAdvisory && advisoryModal) {
         advisoryModal.classList.remove('active');
+      }
+
+      const notifMenu = document.getElementById('notif-menu');
+      if (notifMenu) {
+        const canAccessAlerts = ALLOWED_PAGES.length === 0 || ALLOWED_PAGES.includes('/alerts');
+        notifMenu.style.display = canAccessAlerts ? '' : 'none';
+      }
+
+      hideEmptyNavSections();
+    }
+
+    function hideEmptyNavSections() {
+      const dashGroup = document.getElementById('dashboard-nav-group');
+      const mainTitle = document.querySelector('.nav-section-title');
+      if (mainTitle && dashGroup) {
+        mainTitle.style.display = dashGroup.style.display === 'none' ? 'none' : '';
+      }
+
+      const opsTitle = document.getElementById('operations-section-title');
+      const sysTitle = document.getElementById('system-section-title');
+      if (opsTitle && sysTitle) {
+        let node = opsTitle.nextElementSibling;
+        let hasVisible = false;
+        while (node && node !== sysTitle) {
+          if (node.style.display !== 'none') {
+            hasVisible = true;
+            break;
+          }
+          node = node.nextElementSibling;
+        }
+        opsTitle.style.display = hasVisible ? '' : 'none';
+      }
+
+      const sysSectionTitle = document.getElementById('system-section-title');
+      const adminLink = document.getElementById('nav-admin-link');
+      if (sysSectionTitle) {
+        const reportsVisible = true;
+        const adminVisible = adminLink ? adminLink.style.display !== 'none' : false;
+        sysSectionTitle.style.display = (reportsVisible || adminVisible) ? '' : 'none';
       }
     }
 
@@ -1703,11 +1759,7 @@
     function goToAlertRecord(event, idx) {
       if (event) event.preventDefault();
 
-      // Respect role-based access: if this user's dashboard isn't in their
-      // allowed pages, clicking an alert notification must not force-navigate
-      // them there — that would bypass the same restriction the sidebar link
-      // already enforces via applyRoleAccess().
-      if (ALLOWED_PAGES.length > 0 && !ALLOWED_PAGES.includes('/dashboard')) {
+      if (ALLOWED_PAGES.length > 0 && !ALLOWED_PAGES.includes('/alerts')) {
         closeNotifMenu();
         return;
       }
@@ -2131,6 +2183,7 @@
       '/auction-mandi': 'AUCTION MANDI',
       '/cold-storage': 'COLD STORAGE',
       '/storage-config': 'STORAGE CONFIG',
+      '/find-farmers': 'FIND FARMERS',
       '/mandi-prices': 'MARKET PRICES',
       '/nearest-mandi': 'NEAREST MANDI',
       '/credit-score': 'AGRI CREDIT SCORE',

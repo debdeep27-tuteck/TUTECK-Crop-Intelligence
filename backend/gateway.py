@@ -188,6 +188,7 @@ def admin_page():
 @app.route("/auction")
 @app.route("/cold-storage")
 @app.route("/storage-config")
+@app.route("/find-farmers")
 @app.route("/auction-mandi")
 @app.route("/mandi-prices")
 @app.route("/nearest-mandi")
@@ -277,6 +278,11 @@ def content_credit_score():
 @app.route("/content/storage-config")
 def content_storage_config():
     return send_from_directory(str(HTML_DIR), "storage_config.html")
+
+
+@app.route("/content/find-farmers")
+def content_find_farmers():
+    return send_from_directory(str(HTML_DIR), "find_farmers.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────

@@ -16,7 +16,8 @@ Usage:
         --credit-score-db credit_score.db \
         --auction-service-db auction_service.db \
         --auction-db auction.db \
-        --yield-platform-db yield_platform_service.db
+        --yield-platform-db yield_platform_service.db \
+        --cold-storage-db cold_storage.db
 
 Deliberately NOT covered here: yield_lands.db. That file belongs to an
 older, now-unused data source and is not part of the Postgres migration —
@@ -219,6 +220,178 @@ def migrate_auction_backend(pg_conn, db_path: str):
     )
 
 
+def migrate_cold_storage(pg_conn, db_path: str):
+    print(f"\n== cold-storage (cold_storage.db -> cold_storages + 4 dependent tables) ==")
+
+    # 1. cold_storages — parent table, id is SERIAL now (was INTEGER
+    # AUTOINCREMENT), so we drop the old sqlite id and let Postgres assign
+    # fresh ones. Every child table below references cold_storage_id/
+    # facility_id by that old id, so we build an old_id -> new_id map here
+    # and use it to remap the children's foreign keys before inserting them
+    # — otherwise the children would point at the wrong (or nonexistent)
+    # facility once ids are renumbered.
+    old_to_new_facility_id: dict[int, int] = {}
+    rows = sqlite_rows(db_path, "cold_storages")
+    inserted = 0
+    for row in rows:
+        # Same natural key sync_real_facility_data() already uses for its
+        # own idempotency check (name + state + district) — use it here too
+        # so re-running this migration after the app has synced its own
+        # bundled facility list doesn't create duplicates.
+        existing = pg_conn.execute(
+            "SELECT id FROM cold_storages WHERE lower(name)=lower(?) AND lower(state)=lower(?) AND lower(district)=lower(?)",
+            (row["name"], row["state"], row["district"]),
+        ).fetchone()
+        if existing:
+            old_to_new_facility_id[row["id"]] = existing["id"]
+            continue
+        cur = pg_conn.execute(
+            """
+            INSERT INTO cold_storages (
+                nhb_id, name, state, district, block, village, latitude, longitude,
+                total_capacity_mt, storage_type, source, source_year, data_quality,
+                last_updated, created_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            RETURNING id
+            """,
+            (
+                row["nhb_id"], row["name"], row["state"], row["district"],
+                row["block"], row["village"], row["latitude"], row["longitude"],
+                row["total_capacity_mt"], row["storage_type"], row["source"],
+                row["source_year"], row["data_quality"], row["last_updated"],
+                row["created_at"],
+            ),
+        )
+        new_id = cur.fetchone()["id"]
+        pg_conn.commit()
+        old_to_new_facility_id[row["id"]] = new_id
+        inserted += 1
+    print(f"  cold_storages: {len(rows)} rows in source, {inserted} newly inserted "
+          f"({len(rows) - inserted} already present / skipped)")
+
+    # 2. cold_storage_crop_capacity — child of cold_storages, has a real
+    # UNIQUE(cold_storage_id, crop) constraint, so ON CONFLICT works once
+    # cold_storage_id is remapped to the new facility id.
+    rows = sqlite_rows(db_path, "cold_storage_crop_capacity")
+    inserted = 0
+    for row in rows:
+        new_facility_id = old_to_new_facility_id.get(row["cold_storage_id"])
+        if new_facility_id is None:
+            print(f"  cold_storage_crop_capacity: skipping row {row['id']} — "
+                  f"its cold_storage_id {row['cold_storage_id']} wasn't migrated above")
+            continue
+        cur = pg_conn.execute(
+            "INSERT INTO cold_storage_crop_capacity (cold_storage_id, crop, capacity_mt) "
+            "VALUES (?,?,?) ON CONFLICT (cold_storage_id, crop) DO NOTHING",
+            (new_facility_id, row["crop"], row["capacity_mt"]),
+        )
+        if cur.rowcount > 0:
+            inserted += 1
+    pg_conn.commit()
+    print(f"  cold_storage_crop_capacity: {len(rows)} rows in source, {inserted} newly inserted "
+          f"({len(rows) - inserted} already present / skipped)")
+
+    # 3. storage_snapshots — child of cold_storages, no natural unique key.
+    # Dedupe in Python on (new cold_storage_id, recorded_at, recorded_by),
+    # same approach as parcels in migrate_yield_platform above.
+    rows = sqlite_rows(db_path, "storage_snapshots")
+    inserted = 0
+    for row in rows:
+        new_facility_id = old_to_new_facility_id.get(row["cold_storage_id"])
+        if new_facility_id is None:
+            print(f"  storage_snapshots: skipping row {row['id']} — "
+                  f"its cold_storage_id {row['cold_storage_id']} wasn't migrated above")
+            continue
+        existing = pg_conn.execute(
+            "SELECT 1 FROM storage_snapshots WHERE cold_storage_id = ? AND recorded_at = ? AND recorded_by IS NOT DISTINCT FROM ?",
+            (new_facility_id, row["recorded_at"], row["recorded_by"]),
+        ).fetchone()
+        if existing:
+            continue
+        pg_conn.execute(
+            """
+            INSERT INTO storage_snapshots (
+                cold_storage_id, occupied_mt, reserved_mt, committed_mt,
+                expected_release_mt, data_quality, recorded_at, recorded_by
+            ) VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                new_facility_id, row["occupied_mt"], row["reserved_mt"],
+                row["committed_mt"], row["expected_release_mt"],
+                row["data_quality"], row["recorded_at"], row["recorded_by"],
+            ),
+        )
+        inserted += 1
+    pg_conn.commit()
+    print(f"  storage_snapshots: {len(rows)} rows in source, {inserted} newly inserted "
+          f"({len(rows) - inserted} already present / skipped)")
+
+    # 4. storage_provider_configs — child of cold_storages, has a real
+    # UNIQUE(facility_id, provider_email) constraint, so ON CONFLICT works
+    # once facility_id is remapped.
+    rows = sqlite_rows(db_path, "storage_provider_configs")
+    inserted = 0
+    for row in rows:
+        new_facility_id = old_to_new_facility_id.get(row["facility_id"])
+        if new_facility_id is None:
+            print(f"  storage_provider_configs: skipping row {row['id']} — "
+                  f"its facility_id {row['facility_id']} wasn't migrated above")
+            continue
+        cur = pg_conn.execute(
+            """
+            INSERT INTO storage_provider_configs
+                (facility_id, provider_email, free_capacity_mt, is_active, notes, updated_at)
+            VALUES (?,?,?,?,?,?)
+            ON CONFLICT (facility_id, provider_email) DO NOTHING
+            """,
+            (
+                new_facility_id, row["provider_email"], row["free_capacity_mt"],
+                row["is_active"], row["notes"], row["updated_at"],
+            ),
+        )
+        if cur.rowcount > 0:
+            inserted += 1
+    pg_conn.commit()
+    print(f"  storage_provider_configs: {len(rows)} rows in source, {inserted} newly inserted "
+          f"({len(rows) - inserted} already present / skipped)")
+
+    # 5. farmer_crop_storage_plans — independent, no FK into cold_storages.
+    # No natural unique key besides the old id (SERIAL now), so dedupe on
+    # (user_email, crop, state, district, created_at) — created_at is set
+    # at insert time and effectively unique per row, same reasoning as
+    # parcels/soilgrids.
+    rows = sqlite_rows(db_path, "farmer_crop_storage_plans")
+    inserted = 0
+    for row in rows:
+        existing = pg_conn.execute(
+            "SELECT 1 FROM farmer_crop_storage_plans WHERE user_email = ? AND crop = ? "
+            "AND state = ? AND district = ? AND created_at = ?",
+            (row["user_email"], row["crop"], row["state"], row["district"], row["created_at"]),
+        ).fetchone()
+        if existing:
+            continue
+        pg_conn.execute(
+            """
+            INSERT INTO farmer_crop_storage_plans (
+                user_email, state, district, crop, area, area_unit, sowing_date,
+                expected_harvest_date, expected_production_mt, storage_required_mt,
+                status, created_at, updated_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                row["user_email"], row["state"], row["district"], row["crop"],
+                row["area"], row["area_unit"], row["sowing_date"],
+                row["expected_harvest_date"], row["expected_production_mt"],
+                row["storage_required_mt"], row["status"], row["created_at"],
+                row["updated_at"],
+            ),
+        )
+        inserted += 1
+    pg_conn.commit()
+    print(f"  farmer_crop_storage_plans: {len(rows)} rows in source, {inserted} newly inserted "
+          f"({len(rows) - inserted} already present / skipped)")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--chatbot-db")
@@ -226,11 +399,12 @@ def main():
     parser.add_argument("--auction-service-db")
     parser.add_argument("--auction-db")
     parser.add_argument("--yield-platform-db")
+    parser.add_argument("--cold-storage-db")
     args = parser.parse_args()
 
     if not any([
         args.chatbot_db, args.credit_score_db, args.auction_service_db,
-        args.auction_db, args.yield_platform_db,
+        args.auction_db, args.yield_platform_db, args.cold_storage_db,
     ]):
         parser.error("pass at least one --*-db flag")
 
@@ -246,6 +420,8 @@ def main():
         migrate_auction_backend(pg_conn, args.auction_db)
     if args.yield_platform_db:
         migrate_yield_platform(pg_conn, args.yield_platform_db)
+    if args.cold_storage_db:
+        migrate_cold_storage(pg_conn, args.cold_storage_db)
 
     print("\nDone.")
 
