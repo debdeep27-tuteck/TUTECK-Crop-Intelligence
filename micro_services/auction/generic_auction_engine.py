@@ -19,18 +19,19 @@ Design goals
   state and pricing decisions. Wire it into Flask/FastAPI/Django, whatever
   auth you use, and whatever notification channel you want, from the
   outside.
-* Single SQLite schema (swap out `sqlite3` calls for another driver if you
-  need Postgres/MySQL — the SQL is intentionally simple/portable).
+* Backed by Postgres via shared/db.py's PGConnection, which preserves the
+  same `conn.execute(sql_with_question_marks, params)` / row["col"] shape
+  this engine was originally written against (it started as a SQLite
+  engine — this is the same SQL, translated where Postgres needed it).
 * Deterministic, side-effect-light functions: nothing here sends emails,
   calls a gateway, or assumes a particular user model.
 
 Usage sketch
 ------------
-    import sqlite3
+    from shared.db import connect
     from generic_auction_engine import AuctionEngine
 
-    conn = sqlite3.connect("auctions.db")
-    conn.row_factory = sqlite3.Row
+    conn = connect()  # uses DATABASE_URL
     engine = AuctionEngine(conn)
     engine.init_db()
 
@@ -51,10 +52,23 @@ Usage sketch
 
 from __future__ import annotations
 
-import sqlite3
+import sys
 import time
 import uuid
+from pathlib import Path
 from typing import Optional
+
+# This file lives in micro_services/auction/ — several directories away
+# from backend/shared/db.py. Unlike auction_backend.py and
+# advisory_backend.py (which live directly inside backend/ and so find
+# `shared` as an ordinary sibling package), this needs backend/ added to
+# sys.path explicitly before the import below, regardless of how main.py
+# launches this process or what its cwd/PYTHONPATH happens to be.
+_BACKEND_DIR = Path(__file__).resolve().parents[2] / "backend"
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
+from shared.db import PGConnection
 
 
 # ── ID / TIME HELPERS ────────────────────────────────────────────────────
@@ -71,13 +85,14 @@ def now_ms() -> int:
 
 class AuctionEngine:
     """
-    A reusable bidding engine over a SQLite connection.
+    A reusable bidding engine over a Postgres connection (shared/db.py's
+    PGConnection).
 
-    The connection's row_factory should be set to sqlite3.Row by the caller
-    (the engine relies on name-based column access).
+    Column access is by name (row["col"]) — PGConnection returns
+    RealDictCursor rows, so this works the same way sqlite3.Row did.
     """
 
-    def __init__(self, conn: sqlite3.Connection):
+    def __init__(self, conn: PGConnection):
         self.conn = conn
 
     # ── SCHEMA ──────────────────────────────────────────────────────────
@@ -91,31 +106,31 @@ class AuctionEngine:
                 item_label          TEXT NOT NULL,   -- free-text item description
                 category            TEXT,             -- optional matching/grouping key
                 metadata            TEXT,             -- optional JSON blob for domain extras
-                target_quantity     REAL NOT NULL,
-                remaining_quantity  REAL NOT NULL,
-                base_price          REAL NOT NULL,
-                owner_price         REAL,             -- owner's latest counter-offer, if any
-                counter_gap         REAL DEFAULT 0,   -- required margin per new bid/counter
+                target_quantity     DOUBLE PRECISION NOT NULL,
+                remaining_quantity  DOUBLE PRECISION NOT NULL,
+                base_price          DOUBLE PRECISION NOT NULL,
+                owner_price         DOUBLE PRECISION,             -- owner's latest counter-offer, if any
+                counter_gap         DOUBLE PRECISION DEFAULT 0,   -- required margin per new bid/counter
                 auction_type        TEXT NOT NULL CHECK (auction_type IN ('forward','reverse')),
                 duration_minutes    INTEGER NOT NULL,
                 extension_minutes   INTEGER DEFAULT 0,
-                starts_at           INTEGER NOT NULL,
-                ends_at             INTEGER NOT NULL,
+                starts_at           BIGINT NOT NULL,
+                ends_at             BIGINT NOT NULL,
                 status              TEXT NOT NULL DEFAULT 'scheduled'
                                     CHECK (status IN ('scheduled','active','closed')),
-                created_at          INTEGER NOT NULL
+                created_at          BIGINT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS bids (
                 id                  TEXT PRIMARY KEY,
                 auction_id          TEXT NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
                 bidder_id           TEXT NOT NULL,
-                price               REAL NOT NULL,
-                quantity            REAL NOT NULL,
-                accepted_quantity   REAL DEFAULT 0,
+                price               DOUBLE PRECISION NOT NULL,
+                quantity            DOUBLE PRECISION NOT NULL,
+                accepted_quantity   DOUBLE PRECISION DEFAULT 0,
                 status              TEXT NOT NULL DEFAULT 'pending'
                                     CHECK (status IN ('pending','accepted','rejected','expired')),
-                created_at          INTEGER NOT NULL
+                created_at          BIGINT NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS invitations (
@@ -124,8 +139,8 @@ class AuctionEngine:
                 invitee_id          TEXT NOT NULL,
                 status              TEXT NOT NULL DEFAULT 'pending'
                                     CHECK (status IN ('pending','accepted','declined')),
-                created_at          INTEGER NOT NULL,
-                responded_at        INTEGER,
+                created_at          BIGINT NOT NULL,
+                responded_at        BIGINT,
                 UNIQUE(auction_id, invitee_id)
             );
 
@@ -177,7 +192,7 @@ class AuctionEngine:
         self.conn.commit()
         return auction_id
 
-    def _sync_status(self, row: sqlite3.Row) -> sqlite3.Row:
+    def _sync_status(self, row: dict) -> dict:
         """
         Lazily advances an auction's status against the clock. Call this
         before reading or mutating an auction — there's no background
@@ -212,7 +227,7 @@ class AuctionEngine:
 
     # ── PRICING ─────────────────────────────────────────────────────────
 
-    def _leading_price(self, row: sqlite3.Row) -> float:
+    def _leading_price(self, row: dict) -> float:
         """
         The price the auction currently sits at: the owner's own counter-
         offer (or base price if none yet), compared against the best live
@@ -383,8 +398,9 @@ class AuctionEngine:
     def invite(self, auction_id: str, invitee_id: str) -> str:
         invite_id = new_id("inv")
         self.conn.execute(
-            "INSERT OR IGNORE INTO invitations (id, auction_id, invitee_id, status, created_at) "
-            "VALUES (?,?,?,'pending',?)",
+            "INSERT INTO invitations (id, auction_id, invitee_id, status, created_at) "
+            "VALUES (?,?,?,'pending',?) "
+            "ON CONFLICT (auction_id, invitee_id) DO NOTHING",
             (invite_id, auction_id, invitee_id, now_ms()),
         )
         self.conn.commit()
@@ -419,7 +435,7 @@ class AuctionEngine:
 
     # ── SERIALIZATION ─────────────────────────────────────────────────
 
-    def _serialize_bid(self, row: sqlite3.Row) -> dict:
+    def _serialize_bid(self, row: dict) -> dict:
         return {
             "id": row["id"],
             "auctionId": row["auction_id"],
@@ -431,7 +447,7 @@ class AuctionEngine:
             "createdAt": row["created_at"],
         }
 
-    def _serialize_auction(self, row: sqlite3.Row, include_bids: bool = True) -> dict:
+    def _serialize_auction(self, row: dict, include_bids: bool = True) -> dict:
         out = {
             "id": row["id"],
             "ownerId": row["owner_id"],
@@ -476,8 +492,11 @@ class AuctionEngine:
 # ── SELF-TEST / DEMO ────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
+    # Uses DATABASE_URL from the environment (see shared/db.py). Run this
+    # against a scratch/dev database — it creates real rows.
+    from shared.db import connect
+
+    conn = connect()
     engine = AuctionEngine(conn)
     engine.init_db()
 

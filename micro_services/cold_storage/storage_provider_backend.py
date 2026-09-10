@@ -25,7 +25,7 @@ from __future__ import annotations
 import argparse
 import math
 import os
-import sqlite3
+import sys
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
@@ -34,10 +34,17 @@ import requests
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
+# This file lives in micro_services/storage_provider/ (or wherever it's
+# deployed alongside cold_storage), several directories away from
+# backend/shared/ — resolve backend/ relative to this file's own location,
+# same fix as every other converted micro-service.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+from shared.db import connect as db_connect, PGConnection
+from shared.cache import ttl_cache, invalidate_prefix
+
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "cold_storage.db"
 
 GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
 
@@ -59,21 +66,18 @@ CORS(app)
 
 # ── DB HELPERS ────────────────────────────────────────────────────────────────
 
-def get_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+def get_db() -> PGConnection:
+    return db_connect()
 
 
 def init_db():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = db_connect()
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS storage_provider_configs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             facility_id INTEGER NOT NULL REFERENCES cold_storages(id) ON DELETE CASCADE,
             provider_email TEXT NOT NULL,
-            free_capacity_mt REAL NOT NULL DEFAULT 0,
+            free_capacity_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
             is_active INTEGER NOT NULL DEFAULT 1,
             notes TEXT,
             updated_at TEXT NOT NULL,
@@ -86,13 +90,18 @@ def init_db():
     conn.close()
 
 
-def row_to_dict(row: sqlite3.Row) -> dict:
-    return {k: row[k] for k in row.keys()}
+def row_to_dict(row) -> dict:
+    return dict(row)
 
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 
+@ttl_cache(seconds=20, key_prefix="storage_provider:verify_token")
 def verify_token(token: str) -> dict | None:
+    """Cached for 20s — same fix as cold_storage_backend.py's verify_token:
+    without this, every request here pays a synchronous HTTP round-trip
+    to the gateway's /api/auth/me before doing any work, which is what
+    turns a slow/busy auth service into a 504 here too."""
     if not token:
         return None
     try:
@@ -174,12 +183,18 @@ def _scope_clause(user: dict) -> tuple[str, list]:
 @app.route("/api/storage-provider/facilities", methods=["GET"])
 @require_auth()
 def list_facilities():
+    rows = _fetch_facilities_list()
+    return jsonify(rows)
+
+
+@ttl_cache(seconds=45, key_prefix="storage_provider:facilities_list")
+def _fetch_facilities_list() -> list[dict]:
     db = get_db()
     rows = db.execute(
-        "SELECT id, name, state, district, block, village, latitude, longitude, total_capacity_mt, storage_type FROM cold_storages ORDER BY name COLLATE NOCASE"
+        "SELECT id, name, state, district, block, village, latitude, longitude, total_capacity_mt, storage_type FROM cold_storages ORDER BY LOWER(name)"
     ).fetchall()
     db.close()
-    return jsonify([row_to_dict(r) for r in rows])
+    return [row_to_dict(r) for r in rows]
 
 
 @app.route("/api/storage-provider/facilities/<int:facility_id>", methods=["GET"])
@@ -296,6 +311,7 @@ def update_facility_geofence(facility_id):
     db.commit()
     updated = db.execute("SELECT * FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
     db.close()
+    invalidate_prefix("storage_provider:facilities_list")
     return jsonify(row_to_dict(updated))
 
 
@@ -357,6 +373,7 @@ def geocode_facility_address(facility_id):
     db.commit()
     updated = db.execute("SELECT * FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
     db.close()
+    invalidate_prefix("storage_provider:facilities_list")
     return jsonify({
         "facility": row_to_dict(updated),
         "geocoded_address": address,
@@ -429,8 +446,9 @@ def create_or_update_config():
         cursor = db.execute("""
             INSERT INTO storage_provider_configs (facility_id, provider_email, free_capacity_mt, is_active, notes, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING id
         """, (facility_id, provider_email, free_capacity_mt, is_active, notes, now))
-        config_id = cursor.lastrowid
+        config_id = cursor.fetchone()["id"]
 
     db.commit()
 
@@ -520,4 +538,11 @@ if __name__ == "__main__":
     print("=" * 55)
     print("  STORAGE PROVIDER BACKEND — Running on http://localhost:5020")
     print("=" * 55)
+
+    try:
+        warmed = _fetch_facilities_list()
+        print(f"  Warmed facilities cache: {len(warmed)} facilities")
+    except Exception as exc:
+        print(f"  Cache warm-up failed (non-fatal, will fetch on first request): {exc}")
+
     app.run(host="0.0.0.0", port=5020, debug=False)

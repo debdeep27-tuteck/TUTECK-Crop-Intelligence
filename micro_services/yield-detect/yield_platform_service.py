@@ -53,7 +53,7 @@ import argparse
 import json
 import logging
 import os
-import sqlite3
+import sys
 import time
 from datetime import datetime, timezone
 from functools import wraps
@@ -63,13 +63,19 @@ import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+# This file lives in micro_services/yield-detect/, several directories away
+# from backend/shared/ — resolve backend/ relative to this file's own
+# location, same fix as auction_engine_service.py and credit_score_backend.py.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+from shared.db import connect as db_connect, get_db as _pool_get_db, close_db as _pool_close_db, PGConnection
+from shared.cache import cached_route
+
 logger = logging.getLogger("yield_platform_service")
 logging.basicConfig(level=logging.INFO)
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
 DEFAULT_PORT = os.environ.get("YIELD_PLATFORM_SERVICE_PORT", 6100)
-DB_PATH = Path(__file__).resolve().parent / "yield_platform_service.db"
 API_KEY = os.environ.get("YIELD_PLATFORM_SERVICE_API_KEY", "")
 
 # Mappls (MapmyIndia) OAuth — optional. Geofence/geocode routes 502 with a
@@ -108,6 +114,13 @@ app = Flask(__name__)
 CORS(app)
 
 
+@app.teardown_appcontext
+def _close_db(_exc):
+    # Return this request's pooled connection instead of leaking it —
+    # same teardown pattern every other Flask service in this project uses.
+    _pool_close_db(_exc)
+
+
 # ── AUTH ──────────────────────────────────────────────────────────────────
 
 def require_api_key(fn):
@@ -126,12 +139,12 @@ def require_api_key(fn):
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS parcels (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    id            SERIAL PRIMARY KEY,
     owner_id      TEXT NOT NULL,
     label         TEXT NOT NULL,
-    latitude      REAL,
-    longitude     REAL,
-    area_hectare  REAL,
+    latitude      DOUBLE PRECISION,
+    longitude     DOUBLE PRECISION,
+    area_hectare  DOUBLE PRECISION,
     bounds_json   TEXT,
     metadata_json TEXT,
     created_at    TEXT NOT NULL,
@@ -139,9 +152,9 @@ CREATE TABLE IF NOT EXISTS parcels (
 );
 
 CREATE TABLE IF NOT EXISTS soilgrids_cache (
-    lat         REAL NOT NULL,
-    lon         REAL NOT NULL,
-    fetched_at  REAL NOT NULL,
+    lat         DOUBLE PRECISION NOT NULL,
+    lon         DOUBLE PRECISION NOT NULL,
+    fetched_at  DOUBLE PRECISION NOT NULL,
     probs_json  TEXT NOT NULL,
     PRIMARY KEY (lat, lon)
 );
@@ -150,21 +163,35 @@ CREATE TABLE IF NOT EXISTS soilgrids_cache (
 _conn = None
 
 
-def get_db() -> sqlite3.Connection:
-    global _conn
-    if _conn is None:
-        _conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-        _conn.row_factory = sqlite3.Row
-        _conn.executescript(SCHEMA)
-        _conn.commit()
-    return _conn
+def init_db() -> None:
+    """Create tables once at startup, using a short-lived connection (not
+    the per-request pool) — this runs a single time before app.run(),
+    same as every other service's init_db()."""
+    conn = db_connect()
+    try:
+        conn.executescript(SCHEMA)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_db() -> PGConnection:
+    """Per-request connection from the shared pool (see shared/db.py) —
+    NOT a single connection cached for the lifetime of the process. The
+    previous version cached one global connection forever, which is
+    exactly what broke against Neon: Neon suspends its compute and drops
+    idle connections, so a long-lived cached connection eventually goes
+    stale and the next query on it throws 'server closed the connection
+    unexpectedly'. Borrowing per-request from the pool avoids that —
+    each request gets a connection that was validated live on checkout."""
+    return _pool_get_db()
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def row_to_dict(row: sqlite3.Row) -> dict:
+def row_to_dict(row) -> dict:
     return {
         "id": row["id"],
         "ownerId": row["owner_id"],
@@ -183,7 +210,7 @@ def row_to_dict(row: sqlite3.Row) -> dict:
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "service": "yield_platform_service", "db": str(DB_PATH)})
+    return jsonify({"status": "ok", "service": "yield_platform_service", "db": "postgres"})
 
 
 # ── ROUTES: PARCEL CRUD (formerly land_service.py) ─────────────────────────
@@ -199,11 +226,14 @@ def create_parcel():
 
     ts = now_iso()
     db = get_db()
+    # Postgres has no sqlite-style lastrowid — use RETURNING id instead
+    # (parcels.id is now SERIAL, not INTEGER AUTOINCREMENT).
     cur = db.execute(
         """
         INSERT INTO parcels (owner_id, label, latitude, longitude, area_hectare,
                               bounds_json, metadata_json, created_at, updated_at)
         VALUES (?,?,?,?,?,?,?,?,?)
+        RETURNING id
         """,
         (
             owner_id,
@@ -217,8 +247,9 @@ def create_parcel():
             ts,
         ),
     )
+    new_id = cur.fetchone()["id"]
     db.commit()
-    row = db.execute("SELECT * FROM parcels WHERE id = ?", (cur.lastrowid,)).fetchone()
+    row = db.execute("SELECT * FROM parcels WHERE id = ?", (new_id,)).fetchone()
     return jsonify(row_to_dict(row)), 201
 
 
@@ -343,6 +374,7 @@ def mappls_auth_header() -> dict | None:
 
 @app.route("/mappls_key", methods=["GET"])
 @require_api_key
+@cached_route(seconds=600, key_prefix="yp:mappls_key")
 def mappls_key():
     return jsonify({"key": MAPPLS_MAP_KEY, "configured": bool(MAPPLS_MAP_KEY)})
 
@@ -396,6 +428,7 @@ def _search_nominatim(query: str):
 
 @app.route("/geocode/search", methods=["GET"])
 @require_api_key
+@cached_route(seconds=3600, key_prefix="yp:geocode")
 def geocode_search():
     query = (request.args.get("q") or "").strip()
     if len(query) < 3:
@@ -408,6 +441,7 @@ def geocode_search():
 
 @app.route("/geofence/status", methods=["GET"])
 @require_api_key
+@cached_route(seconds=120, key_prefix="yp:geofence_status")
 def geofence_status():
     configured = bool(MAPPLS_CLIENT_ID and MAPPLS_CLIENT_SECRET)
     token_ok = bool(get_mappls_token()) if configured else False
@@ -697,6 +731,7 @@ def build_predict_payload(body: dict, soil_type: str | None) -> dict:
 
 @app.route("/valid_crops", methods=["GET"])
 @require_api_key
+@cached_route(seconds=600, key_prefix="yp:valid_crops")
 def valid_crops():
     state = request.args.get("state", DEFAULT_STATE)
     return jsonify({"state": state, "crops": call_valid_crops(state)})
@@ -704,6 +739,7 @@ def valid_crops():
 
 @app.route("/valid_districts", methods=["GET"])
 @require_api_key
+@cached_route(seconds=600, key_prefix="yp:valid_districts")
 def valid_districts():
     state = request.args.get("state", DEFAULT_STATE)
     return jsonify({"state": state, "districts": call_valid_districts(state)})
@@ -711,6 +747,7 @@ def valid_districts():
 
 @app.route("/soil_type", methods=["GET"])
 @require_api_key
+@cached_route(seconds=600, key_prefix="yp:soil_type")
 def soil_type_route():
     """Query params: state, lat, lon (or north/south/east/west bounds)."""
     state = request.args.get("state", DEFAULT_STATE)
@@ -779,5 +816,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args()
-    get_db()  # ensures DB/tables exist before serving
+    init_db()  # ensures tables exist before serving (one-off connection,
+               # not the per-request pool — this runs before any Flask
+               # app context exists, so flask.g isn't available yet)
     app.run(host="0.0.0.0", port=args.port, debug=False)

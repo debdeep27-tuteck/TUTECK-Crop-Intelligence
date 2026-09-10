@@ -38,24 +38,23 @@ try:
 except ImportError:
     pass
 
-import sqlite3
 import time
 import uuid
 from datetime import datetime, timezone, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from html import escape as _html_escape
-from pathlib import Path
 from typing import Optional
 
 import requests
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+from shared.db import PGConnection, connect as db_connect, get_db, close_db
 
 # ── CONFIG ───────────────────────────────────────────────────────────────
 
 DEFAULT_PORT = 6009
-DB_PATH = Path(__file__).resolve().parent / "auction.db"
 
 GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
 
@@ -176,25 +175,19 @@ def handle_auction_service_error(err):
 
 
 # ── DB SETUP (crop listings only — the auction service owns its own DB) ──
-
-def get_db() -> sqlite3.Connection:
-    if "db" not in g:
-        g.db = sqlite3.connect(str(DB_PATH))
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
-    return g.db
-
+#
+# get_db()/close_db() now come from shared/db.py — same g-cached-connection
+# pattern as before, just backed by Postgres instead of a local sqlite
+# file. Register the teardown hook here since that part is still
+# per-service (each Flask app owns its own app.teardown_appcontext).
 
 @app.teardown_appcontext
-def close_db(_exc) -> None:
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
+def _close_db(_exc) -> None:
+    close_db()
 
 
 def init_db() -> None:
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
+    conn = db_connect()
 
     # Crop listings — this app's own data. The mandi_auctions/mandi_bids/
     # invitations tables that used to live here now live entirely inside
@@ -208,9 +201,9 @@ def init_db() -> None:
             crop_type         TEXT NOT NULL,
             state             TEXT NOT NULL,
             district          TEXT NOT NULL,
-            total_production  REAL NOT NULL CHECK (total_production > 0),
-            sold_production   REAL NOT NULL DEFAULT 0 CHECK (sold_production >= 0),
-            created_at        INTEGER NOT NULL
+            total_production  DOUBLE PRECISION NOT NULL CHECK (total_production > 0),
+            sold_production   DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (sold_production >= 0),
+            created_at        BIGINT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS crop_sales (
@@ -218,19 +211,19 @@ def init_db() -> None:
             crop_id           TEXT NOT NULL REFERENCES unused_crops(id) ON DELETE CASCADE,
             bid_id            TEXT,
             buyer             TEXT NOT NULL,
-            quantity          REAL NOT NULL CHECK (quantity > 0),
-            price_per_tonne   REAL NOT NULL,
-            sold_at           INTEGER NOT NULL
+            quantity          DOUBLE PRECISION NOT NULL CHECK (quantity > 0),
+            price_per_tonne   DOUBLE PRECISION NOT NULL,
+            sold_at           BIGINT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS active_bids (
             id                TEXT PRIMARY KEY,
             crop_id           TEXT NOT NULL REFERENCES unused_crops(id) ON DELETE CASCADE,
             buyer             TEXT NOT NULL,
-            price_per_tonne   REAL NOT NULL,
-            quantity          REAL NOT NULL CHECK (quantity > 0),
+            price_per_tonne   DOUBLE PRECISION NOT NULL,
+            quantity          DOUBLE PRECISION NOT NULL CHECK (quantity > 0),
             status            TEXT NOT NULL DEFAULT 'leading',
-            ends_at           INTEGER NOT NULL
+            ends_at           BIGINT NOT NULL
         );
 
         -- Local cache of which auctions (by id, from the auction service)
@@ -244,7 +237,7 @@ def init_db() -> None:
             state       TEXT NOT NULL,
             district    TEXT NOT NULL,
             mandi_email TEXT NOT NULL,
-            created_at  INTEGER NOT NULL
+            created_at  BIGINT NOT NULL
         );
 
         CREATE INDEX IF NOT EXISTS idx_crops_farmer ON unused_crops(farmer_email);
@@ -260,7 +253,7 @@ def init_db() -> None:
         CREATE TABLE IF NOT EXISTS invitations_seen (
             auction_id  TEXT NOT NULL,
             invitee_id  TEXT NOT NULL,
-            created_at  INTEGER NOT NULL,
+            created_at  BIGINT NOT NULL,
             PRIMARY KEY (auction_id, invitee_id)
         );
 
@@ -272,7 +265,7 @@ def init_db() -> None:
             auction_id   TEXT NOT NULL,
             crop_id      TEXT NOT NULL REFERENCES unused_crops(id) ON DELETE CASCADE,
             farmer_email TEXT NOT NULL,
-            created_at   INTEGER NOT NULL
+            created_at   BIGINT NOT NULL
         );
 
         CREATE INDEX IF NOT EXISTS idx_auction_bid_crop_auction
@@ -282,8 +275,8 @@ def init_db() -> None:
             mandi_email      TEXT PRIMARY KEY,
             brevo_sender_id  TEXT,
             status           TEXT NOT NULL DEFAULT 'pending',
-            requested_at     INTEGER NOT NULL,
-            verified_at      INTEGER
+            requested_at     BIGINT NOT NULL,
+            verified_at      BIGINT
         );
         """
     )
@@ -395,7 +388,7 @@ def serialize_mandi_auction(auction: dict) -> dict:
 
 # ── SERIALIZATION FOR CROP LISTINGS / DIRECT BIDS (unchanged) ────────────
 
-def serialize_crop(db: sqlite3.Connection, row: sqlite3.Row) -> dict:
+def serialize_crop(db: PGConnection, row: dict) -> dict:
     sales = db.execute(
         "SELECT id, buyer, quantity, price_per_tonne, sold_at FROM crop_sales "
         "WHERE crop_id = ? ORDER BY sold_at DESC",
@@ -429,7 +422,7 @@ def serialize_crop(db: sqlite3.Connection, row: sqlite3.Row) -> dict:
     }
 
 
-def serialize_bid(row: sqlite3.Row) -> dict:
+def serialize_bid(row: dict) -> dict:
     return {
         "id": row["id"],
         "cropId": row["crop_id"],
@@ -539,7 +532,8 @@ def create_crop():
         except AuctionServiceError:
             continue
         db.execute(
-            "INSERT OR IGNORE INTO invitations_seen (auction_id, invitee_id, created_at) VALUES (?, ?, ?)",
+            "INSERT INTO invitations_seen (auction_id, invitee_id, created_at) VALUES (?, ?, ?) "
+            "ON CONFLICT (auction_id, invitee_id) DO NOTHING",
             (auction["id"], farmer_email, now_ms()),
         )
         newly_invited.append((auction, candidate["mandi_email"]))
@@ -787,9 +781,15 @@ def create_mandi_auction():
 
     db = get_db()
     db.execute(
-        """INSERT OR REPLACE INTO auction_crop_index
+        """INSERT INTO auction_crop_index
            (auction_id, crop_type, state, district, mandi_email, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT (auction_id) DO UPDATE SET
+               crop_type = EXCLUDED.crop_type,
+               state = EXCLUDED.state,
+               district = EXCLUDED.district,
+               mandi_email = EXCLUDED.mandi_email,
+               created_at = EXCLUDED.created_at""",
         (auction["id"], body["cropType"], body["state"], body["district"],
          user["email"], now_ms()),
     )
@@ -813,8 +813,9 @@ def create_mandi_auction():
         try:
             auction_invite(auction["id"], email)
             db.execute(
-                """INSERT OR IGNORE INTO invitations_seen
-                   (auction_id, invitee_id, created_at) VALUES (?, ?, ?)""",
+                """INSERT INTO invitations_seen
+                   (auction_id, invitee_id, created_at) VALUES (?, ?, ?)
+                   ON CONFLICT (auction_id, invitee_id) DO NOTHING""",
                 (auction["id"], email, now_ms()),
             )
         except AuctionServiceError as e:
@@ -1002,9 +1003,14 @@ def place_mandi_bid(auction_id):
 
     if crop_id:
         db.execute(
-            """INSERT OR REPLACE INTO auction_bid_crop_index
+            """INSERT INTO auction_bid_crop_index
                (bid_id, auction_id, crop_id, farmer_email, created_at)
-               VALUES (?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT (bid_id) DO UPDATE SET
+                   auction_id = EXCLUDED.auction_id,
+                   crop_id = EXCLUDED.crop_id,
+                   farmer_email = EXCLUDED.farmer_email,
+                   created_at = EXCLUDED.created_at""",
             (bid["id"], auction_id, crop_id, farmer_email, now_ms()),
         )
         db.commit()
@@ -1078,7 +1084,7 @@ def resolve_mandi_bid(auction_id, bid_id):
                 if deducted > 0:
                     db.execute(
                         """UPDATE unused_crops
-                           SET sold_production = MIN(total_production, sold_production + ?)
+                           SET sold_production = LEAST(total_production, sold_production + ?)
                            WHERE id=?""",
                         (deducted, mapping["crop_id"]),
                     )
@@ -1220,7 +1226,7 @@ def _brevo_headers() -> dict:
     return {"api-key": BREVO_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
 
 
-def ensure_mandi_sender_registered(db: sqlite3.Connection, mandi_email: str) -> None:
+def ensure_mandi_sender_registered(db: PGConnection, mandi_email: str) -> None:
     if not BREVO_API_KEY or not mandi_email:
         return
     existing = db.execute(
@@ -1249,7 +1255,7 @@ def ensure_mandi_sender_registered(db: sqlite3.Connection, mandi_email: str) -> 
         print(f"[auction_backend] Brevo sender registration errored for {mandi_email}: {e}")
 
 
-def refresh_mandi_sender_status(db: sqlite3.Connection, mandi_email: str) -> str:
+def refresh_mandi_sender_status(db: PGConnection, mandi_email: str) -> str:
     row = db.execute(
         "SELECT brevo_sender_id, status FROM mandi_senders WHERE mandi_email = ?", (mandi_email,)
     ).fetchone()
@@ -1694,4 +1700,4 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args()
     init_db()
-    app.run(host="0.0.0.0", port=args.port, debug=False)
+    app.run(host="0.0.0.0", port=args.port, debug=False,threaded=True)

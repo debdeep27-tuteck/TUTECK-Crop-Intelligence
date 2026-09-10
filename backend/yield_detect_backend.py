@@ -55,6 +55,19 @@ from flask_cors import CORS
 from functools import wraps
 import logging
 
+# Locate the shared/ package (lives under backend/ elsewhere in the repo)
+# without assuming a fixed number of directory levels, since this file's
+# own location relative to backend/ isn't pinned down anywhere else in
+# this codebase.
+for _p in Path(__file__).resolve().parents:
+    if (_p / "shared" / "cache.py").exists():
+        sys.path.insert(0, str(_p))
+        break
+    if (_p / "backend" / "shared" / "cache.py").exists():
+        sys.path.insert(0, str(_p / "backend"))
+        break
+from shared.cache import cached_route
+
 logger = logging.getLogger("yield_detect")
 logging.basicConfig(level=logging.INFO)
 
@@ -232,30 +245,56 @@ def verify_token(token: str) -> dict | None:
     """
     if not token:
         return None
-    try:
-        resp = requests.get(
-            f"{GATEWAY_INTERNAL_URL}/api/auth/me",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=5,
-        )
-        if resp.status_code != 200:
-            return None
-        data = resp.json()
-        if not data.get("email"):
-            return None
-        return {
-            "uid": data.get("uid"),
-            "email": data.get("email"),
-            "role": data.get("role"),
-            "state": data.get("state") or "",
-            "district": data.get("district") or "",
-            "address": data.get("address") or "",
-            "latitude": data.get("latitude"),
-            "longitude": data.get("longitude"),
-        }
-    except requests.exceptions.RequestException as exc:
-        logger.warning("Could not verify token against gateway (%s): %s", GATEWAY_INTERNAL_URL, exc)
-        return None
+    # A short timeout here made sense when /api/auth/me was assumed to
+    # always answer in microseconds. In practice it can queue behind other
+    # in-flight gateway requests when GATEWAY_THREADS is exhausted (long
+    # 180s-capable proxy calls hogging the pool) — a transient load spike,
+    # not a dead gateway. One retry with a slightly longer timeout absorbs
+    # that without falsely 401'ing a user who has a perfectly valid session.
+    last_exc = None
+    for attempt, timeout_s in enumerate((5, 8), start=1):
+        try:
+            resp = requests.get(
+                f"{GATEWAY_INTERNAL_URL}/api/auth/me",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=timeout_s,
+                # Explicitly bypass any system/env HTTP(S) proxy for this call.
+                # GATEWAY_INTERNAL_URL is always a loopback address (gateway
+                # runs on the same machine) — routing that through a proxy
+                # gains nothing and, if a proxy happens to be configured
+                # (VPN client, corporate proxy, AV web filter), some proxies
+                # stall on 127.0.0.1 destinations until the caller's own
+                # timeout fires. That produces exactly this symptom: gateway
+                # answers instantly to any client that skips the proxy (e.g.
+                # a browser or PowerShell with the usual localhost proxy
+                # exception), while this process's requests.get — which
+                # honors HTTP_PROXY/HTTPS_PROXY from the environment by
+                # default — hangs for the full 5s every single time.
+                proxies={"http": None, "https": None},
+            )
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            if not data.get("email"):
+                return None
+            return {
+                "uid": data.get("uid"),
+                "email": data.get("email"),
+                "role": data.get("role"),
+                "state": data.get("state") or "",
+                "district": data.get("district") or "",
+                "address": data.get("address") or "",
+                "latitude": data.get("latitude"),
+                "longitude": data.get("longitude"),
+            }
+        except requests.exceptions.RequestException as exc:
+            last_exc = exc
+            logger.warning(
+                "Could not verify token against gateway (%s), attempt %d/2: %s",
+                GATEWAY_INTERNAL_URL, attempt, exc,
+            )
+    logger.warning("Gateway token verification failed after retry: %s", last_exc)
+    return None
 
 
 def trusted_header_identity() -> dict | None:
@@ -346,7 +385,13 @@ def _land_headers() -> dict:
 def _land_request(method: str, path: str, **kwargs) -> dict:
     url = f"{LAND_SERVICE_URL}{path}"
     try:
-        resp = requests.request(method, url, headers=_land_headers(), timeout=10, **kwargs)
+        # Bypass any system proxy — same reasoning as verify_token():
+        # LAND_SERVICE_URL is a loopback address, and a configured proxy
+        # can stall on 127.0.0.1 destinations for the full timeout.
+        resp = requests.request(
+            method, url, headers=_land_headers(), timeout=10,
+            proxies={"http": None, "https": None}, **kwargs
+        )
     except requests.exceptions.RequestException as exc:
         raise LandServiceError(f"land_service unreachable at {url}: {exc}") from exc
     if resp.status_code == 404:
@@ -448,7 +493,10 @@ def _crop_yield_headers() -> dict:
 def _crop_yield_request(method: str, path: str, timeout: int = 20, **kwargs) -> dict:
     url = f"{CROP_YIELD_SERVICE_URL}{path}"
     try:
-        resp = requests.request(method, url, headers=_crop_yield_headers(), timeout=timeout, **kwargs)
+        resp = requests.request(
+            method, url, headers=_crop_yield_headers(), timeout=timeout,
+            proxies={"http": None, "https": None}, **kwargs
+        )
     except requests.exceptions.RequestException as exc:
         raise CropYieldServiceError(f"crop_yield_service unreachable at {url}: {exc}") from exc
     try:
@@ -540,6 +588,7 @@ def health():
 # ── API: VALID CROPS (proxy, for populating the editor's crop dropdown) ───────
 
 @app.route("/api/yield/valid_crops", methods=["GET"])
+@cached_route(seconds=600, key_prefix="yd:valid_crops")
 def valid_crops():
     state = request.args.get("state", DEFAULT_STATE)
     try:
@@ -556,6 +605,7 @@ def valid_crops():
 # real trained list so the frontend can offer a constrained dropdown.
 
 @app.route("/api/yield/valid_districts", methods=["GET"])
+@cached_route(seconds=600, key_prefix="yd:valid_districts")
 def valid_districts():
     state = request.args.get("state", DEFAULT_STATE)
     try:

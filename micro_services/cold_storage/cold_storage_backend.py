@@ -51,7 +51,6 @@ import logging
 import math
 import os
 import random
-import sqlite3
 import sys
 from datetime import datetime, timezone
 from functools import wraps
@@ -61,13 +60,19 @@ import requests
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
+# This file lives in micro_services/cold_storage/, several directories away
+# from backend/shared/ — resolve backend/ relative to this file's own
+# location, same fix as every other converted micro-service.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+from shared.db import connect as db_connect, PGConnection
+from shared.cache import ttl_cache, invalidate_prefix
+
 logger = logging.getLogger("cold_storage")
 logging.basicConfig(level=logging.INFO)
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "cold_storage.db"
 
 # Same pattern as yield_detect_backend.py — verify tokens via the gateway.
 GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
@@ -183,16 +188,16 @@ def calculate_storage_status(
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cold_storages (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    id                  SERIAL PRIMARY KEY,
     nhb_id              TEXT,                 -- NHB registry ID, once imported; NULL for seed/manual entries
     name                TEXT NOT NULL,
     state               TEXT NOT NULL,
     district            TEXT NOT NULL,
     block               TEXT,
     village             TEXT,
-    latitude            REAL,
-    longitude           REAL,
-    total_capacity_mt   REAL NOT NULL DEFAULT 0,
+    latitude            DOUBLE PRECISION,
+    longitude           DOUBLE PRECISION,
+    total_capacity_mt   DOUBLE PRECISION NOT NULL DEFAULT 0,
     storage_type        TEXT DEFAULT 'static',
     source              TEXT NOT NULL DEFAULT 'SEED',   -- 'NHB' | 'SEED' | 'MANUAL'
     source_year         INTEGER,
@@ -202,37 +207,37 @@ CREATE TABLE IF NOT EXISTS cold_storages (
 );
 
 CREATE TABLE IF NOT EXISTS cold_storage_crop_capacity (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    id                  SERIAL PRIMARY KEY,
     cold_storage_id     INTEGER NOT NULL REFERENCES cold_storages(id) ON DELETE CASCADE,
     crop                TEXT NOT NULL,
-    capacity_mt         REAL NOT NULL DEFAULT 0,
+    capacity_mt         DOUBLE PRECISION NOT NULL DEFAULT 0,
     UNIQUE(cold_storage_id, crop)
 );
 
 CREATE TABLE IF NOT EXISTS farmer_crop_storage_plans (
-    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    id                      SERIAL PRIMARY KEY,
     user_email              TEXT NOT NULL,        -- owning farmer, from the auth token
     state                   TEXT NOT NULL,
     district                TEXT NOT NULL,
     crop                    TEXT NOT NULL,
-    area                    REAL,
+    area                    DOUBLE PRECISION,
     area_unit               TEXT DEFAULT 'hectare',
     sowing_date             TEXT,
     expected_harvest_date   TEXT NOT NULL,
-    expected_production_mt  REAL NOT NULL,
-    storage_required_mt     REAL NOT NULL,
+    expected_production_mt  DOUBLE PRECISION NOT NULL,
+    storage_required_mt     DOUBLE PRECISION NOT NULL,
     status                  TEXT NOT NULL DEFAULT 'registered',  -- draft | registered | cancelled
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS storage_snapshots (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    id                  SERIAL PRIMARY KEY,
     cold_storage_id     INTEGER NOT NULL REFERENCES cold_storages(id) ON DELETE CASCADE,
-    occupied_mt         REAL NOT NULL DEFAULT 0,
-    reserved_mt         REAL NOT NULL DEFAULT 0,
-    committed_mt        REAL NOT NULL DEFAULT 0,
-    expected_release_mt REAL NOT NULL DEFAULT 0,
+    occupied_mt         DOUBLE PRECISION NOT NULL DEFAULT 0,
+    reserved_mt         DOUBLE PRECISION NOT NULL DEFAULT 0,
+    committed_mt        DOUBLE PRECISION NOT NULL DEFAULT 0,
+    expected_release_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
     data_quality        TEXT NOT NULL DEFAULT 'OPERATOR_REPORTED',  -- OPERATOR_REPORTED | API_REPORTED | IOT_REPORTED
     recorded_at         TEXT NOT NULL,
     recorded_by         TEXT
@@ -242,11 +247,31 @@ CREATE INDEX IF NOT EXISTS idx_cs_state_district ON cold_storages(state, distric
 CREATE INDEX IF NOT EXISTS idx_cscc_crop ON cold_storage_crop_capacity(crop);
 CREATE INDEX IF NOT EXISTS idx_plans_district_crop ON farmer_crop_storage_plans(state, district, crop);
 CREATE INDEX IF NOT EXISTS idx_snapshots_cs ON storage_snapshots(cold_storage_id, recorded_at);
+
+-- Owned by storage_provider_backend.py originally, but this file also
+-- mounts the storage-provider routes itself (see the __main__ block below),
+-- and main.py may only ever launch this file, never storage_provider_backend.py
+-- as its own process. If that table's creation lives only in the other
+-- file's init_db(), it never runs — so it's created here too. Both files'
+-- init_db() use CREATE TABLE IF NOT EXISTS, so having it in both places is
+-- harmless no matter which service(s) actually get started.
+CREATE TABLE IF NOT EXISTS storage_provider_configs (
+    id                  SERIAL PRIMARY KEY,
+    facility_id         INTEGER NOT NULL REFERENCES cold_storages(id) ON DELETE CASCADE,
+    provider_email      TEXT NOT NULL,
+    free_capacity_mt    DOUBLE PRECISION NOT NULL DEFAULT 0,
+    is_active           INTEGER NOT NULL DEFAULT 1,
+    notes               TEXT,
+    updated_at          TEXT NOT NULL,
+    UNIQUE(facility_id, provider_email)
+);
+CREATE INDEX IF NOT EXISTS idx_spc_provider ON storage_provider_configs(provider_email);
+CREATE INDEX IF NOT EXISTS idx_spc_facility ON storage_provider_configs(facility_id);
 """
 
 
 def init_db():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = db_connect()
     conn.executescript(SCHEMA)
     conn.commit()
     conn.close()
@@ -643,8 +668,7 @@ def import_govt_facilities(states=None, dummy_capacity_mt=None):
         raise RuntimeError("No cold-storage names are available for the requested states.")
 
     init_db()
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn = db_connect()
     now = now_iso()
     inserted = updated = 0
     facility_ids = []
@@ -662,7 +686,7 @@ def import_govt_facilities(states=None, dummy_capacity_mt=None):
                 (item["state"], item["district"], item["name"]),
             ).fetchone()
             if row:
-                facility_id = row[0]
+                facility_id = row["id"]
                 conn.execute(
                     """UPDATE cold_storages
                        SET total_capacity_mt=?, source=?, storage_type='static',
@@ -677,11 +701,12 @@ def import_govt_facilities(states=None, dummy_capacity_mt=None):
                        nhb_id, name, state, district, total_capacity_mt, storage_type,
                        source, source_year, data_quality, last_updated, created_at
                        ) VALUES (NULL, ?, ?, ?, ?, 'static', ?, NULL,
-                       'POC_DUMMY_CAPACITY', ?, ?)""",
+                       'POC_DUMMY_CAPACITY', ?, ?)
+                       RETURNING id""",
                     (item["name"], item["state"], item["district"],
                      facility_capacity_mt, source, now, now),
                 )
-                facility_id = cursor.lastrowid
+                facility_id = cursor.fetchone()["id"]
                 inserted += 1
             facility_ids.append(facility_id)
 
@@ -772,8 +797,7 @@ def import_missing_district_facilities(state: str, districts: list[str]) -> dict
     }
 
     init_db()
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn = db_connect()
     now = now_iso()
     inserted = skipped = 0
     try:
@@ -824,10 +848,11 @@ def sync_real_facility_data():
     those are real user data, not demo seed data, regardless of which
     email created them.
     """
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn = db_connect()
 
-    purged = conn.execute("SELECT COUNT(*) FROM cold_storages WHERE data_quality = 'SEED_EXAMPLE'").fetchone()[0]
+    purged = conn.execute(
+        "SELECT COUNT(*) AS cnt FROM cold_storages WHERE data_quality = 'SEED_EXAMPLE'"
+    ).fetchone()["cnt"]
     conn.execute("DELETE FROM cold_storages WHERE data_quality = 'SEED_EXAMPLE'")
 
     now = now_iso()
@@ -916,25 +941,30 @@ def sync_real_facility_data():
         logger.info("Inserted %d real NHB-registered Rajasthan facilities (capacity TBD).", inserted)
 
 
-def get_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+def get_db() -> PGConnection:
+    return db_connect()
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def row_to_dict(row: sqlite3.Row) -> dict:
-    return {k: row[k] for k in row.keys()}
+def row_to_dict(row) -> dict:
+    return dict(row)
 
 
 # ── AUTH: verify session token against the gateway's /api/auth/me ────────────
 # Identical pattern to yield_detect_backend.py's verify_token/require_auth.
 
+@ttl_cache(seconds=20, key_prefix="cold_storage:verify_token")
 def verify_token(token: str) -> dict | None:
+    """Cached for 20s. Without this, every single request to this service
+    pays a synchronous HTTP round-trip to the gateway's /api/auth/me
+    before doing any actual work — if the auth service is ever slow or
+    briefly unavailable, that round-trip is exactly what turns a slow
+    request here into a 504 at the gateway. A short TTL keeps a
+    restricted/revoked token from staying valid here for more than ~20s
+    after it's killed on the auth side."""
     if not token:
         return None
     try:
@@ -1011,7 +1041,7 @@ def harvest_period(date_str: str | None) -> str | None:
     return date_str[:7]
 
 
-def crop_capacity_for_district(db: sqlite3.Connection, state: str, district: str, crop: str) -> dict:
+def crop_capacity_for_district(db: PGConnection, state: str, district: str, crop: str) -> dict:
     """
     Returns {"capacity_mt": float, "basis": "PER_CROP_CONFIGURED" | "FACILITY_TOTAL_FALLBACK" | "NONE"}.
 
@@ -1051,7 +1081,7 @@ def crop_capacity_for_district(db: sqlite3.Connection, state: str, district: str
     return {"capacity_mt": 0.0, "basis": "NONE"}
 
 
-def latest_snapshot_totals(db: sqlite3.Connection, state: str, district: str, crop: str,
+def latest_snapshot_totals(db: PGConnection, state: str, district: str, crop: str,
                             capacity_basis: str = "PER_CROP_CONFIGURED") -> dict:
     """
     Sums each cold storage's MOST RECENT snapshot (not just the newest
@@ -1131,7 +1161,7 @@ def latest_snapshot_totals(db: sqlite3.Connection, state: str, district: str, cr
 
 
 def registered_demand_for_period(
-    db: sqlite3.Connection, state: str, district: str, crop: str, period: str | None, exclude_plan_id: int | None = None
+    db: PGConnection, state: str, district: str, crop: str, period: str | None, exclude_plan_id: int | None = None
 ) -> float:
     """Sums storage_required_mt for all active (non-cancelled) plans in the
     same district+crop+harvest-month bucket."""
@@ -1181,7 +1211,7 @@ def fetch_land_yield_production(state: str, district: str) -> dict | None:
         return None
 
 
-def district_crop_status(db: sqlite3.Connection, state: str, district: str, crop: str, period: str | None,
+def district_crop_status(db: PGConnection, state: str, district: str, crop: str, period: str | None,
                           yield_totals: dict | None = None, farmers: list | None = None) -> dict:
     """The full, transparent breakdown for one state+district+crop
     (+ optional harvest-month period), with source/timestamp attached."""
@@ -1239,10 +1269,59 @@ def district_crop_status(db: sqlite3.Connection, state: str, district: str, crop
 
 @app.route("/api/cold-storage/health")
 def health():
-    return jsonify({"status": "ok", "service": "cold-storage-intelligence", "db": str(DB_PATH)})
+    return jsonify({"status": "ok", "service": "cold-storage-intelligence", "db": "postgres"})
 
 
 # ── ROUTES: facilities (read-only in this pass; NHB import populates these) ──
+
+@ttl_cache(seconds=45, key_prefix="cold_storage:facilities_raw")
+def _fetch_facilities_raw(state: str | None, district: str | None, crop: str | None) -> list[dict]:
+    """The actual DB work behind list_facilities, cached for 45s and
+    deliberately NOT keyed by the caller's role/jurisdiction — only by
+    the state/district/crop filters, which is the same result for every
+    caller. Role-based scoping is applied afterward in Python on the
+    (cached) result, so two different admins hitting this with the same
+    filters share one cache entry instead of each paying their own query.
+
+    Also fixes the previous N+1: crop capacities for every matched
+    facility are fetched in a single query instead of one query per row.
+    """
+    db = get_db()
+    try:
+        sql = "SELECT * FROM cold_storages"
+        clauses, params = [], []
+        if state:
+            clauses.append("state = ?")
+            params.append(state)
+        if district:
+            clauses.append("district = ?")
+            params.append(district)
+        if crop:
+            clauses.append("id IN (SELECT cold_storage_id FROM cold_storage_crop_capacity WHERE crop = ?)")
+            params.append(crop)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        rows = db.execute(sql, params).fetchall()
+
+        facilities = [row_to_dict(r) for r in rows]
+        ids = [f["id"] for f in facilities]
+        crop_caps_by_id: dict[int, dict] = {fid: {} for fid in ids}
+        if ids:
+            placeholders = ",".join(["?"] * len(ids))
+            caps = db.execute(
+                f"SELECT cold_storage_id, crop, capacity_mt FROM cold_storage_crop_capacity "
+                f"WHERE cold_storage_id IN ({placeholders})",
+                ids,
+            ).fetchall()
+            for c in caps:
+                crop_caps_by_id[c["cold_storage_id"]][c["crop"]] = c["capacity_mt"]
+
+        for f in facilities:
+            f["crop_capacity"] = crop_caps_by_id.get(f["id"], {})
+        return facilities
+    finally:
+        db.close()
+
 
 @app.route("/api/cold-storage/facilities", methods=["GET"])
 @require_auth()
@@ -1250,40 +1329,23 @@ def list_facilities():
     state = request.args.get("state")
     district = request.args.get("district")
     crop = request.args.get("crop")
-    db = get_db()
 
-    sql = "SELECT * FROM cold_storages"
-    clauses, params = [], []
-    if state:
-        clauses.append("state = ?")
-        params.append(state)
-    if district:
-        clauses.append("district = ?")
-        params.append(district)
-    if crop:
-        clauses.append("id IN (SELECT cold_storage_id FROM cold_storage_crop_capacity WHERE crop = ?)")
-        params.append(crop)
+    facilities = _fetch_facilities_raw(state, district, crop)
 
-    # Same role-based scoping as everywhere else: district_admin/state_admin
-    # are read-restricted to their own jurisdiction.
-    role_clauses, role_params = scope_clause_for_role(g.user)
-    clauses += role_clauses
-    params += role_params
+    # Role-based scoping is applied here, in Python, on the cached
+    # result — district_admin/state_admin still only see their own
+    # jurisdiction, it's just filtered after the cache lookup instead of
+    # baked into the SQL (which would fragment the cache per-user).
+    role = (g.user.get("role") or "").lower()
+    if role == "district_admin":
+        if g.user.get("district"):
+            facilities = [f for f in facilities if f.get("district") == g.user["district"]]
+        if g.user.get("state"):
+            facilities = [f for f in facilities if f.get("state") == g.user["state"]]
+    elif role == "state_admin":
+        if g.user.get("state"):
+            facilities = [f for f in facilities if f.get("state") == g.user["state"]]
 
-    if clauses:
-        sql += " WHERE " + " AND ".join(clauses)
-    rows = db.execute(sql, params).fetchall()
-
-    facilities = []
-    for row in rows:
-        d = row_to_dict(row)
-        crop_caps = db.execute(
-            "SELECT crop, capacity_mt FROM cold_storage_crop_capacity WHERE cold_storage_id = ?", (row["id"],)
-        ).fetchall()
-        d["crop_capacity"] = {c["crop"]: c["capacity_mt"] for c in crop_caps}
-        facilities.append(d)
-
-    db.close()
     return jsonify(facilities)
 
 
@@ -1362,7 +1424,7 @@ def district_summary(district):
                   total_capacity_mt, storage_type, source, data_quality, last_updated
            FROM cold_storages
            WHERE lower(state)=lower(?) AND lower(district)=lower(?)
-           ORDER BY name COLLATE NOCASE""",
+           ORDER BY LOWER(name)""",
         (state, district),
     ).fetchall()
     facilities = [row_to_dict(row) for row in rows]
@@ -1510,6 +1572,7 @@ def create_farmer_plan():
             expected_harvest_date, expected_production_mt, storage_required_mt,
             status, created_at, updated_at
         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        RETURNING id
         """,
         (
             g.user["email"],
@@ -1519,8 +1582,8 @@ def create_farmer_plan():
             status, now, now,
         ),
     )
+    plan_id = cur.fetchone()["id"]
     db.commit()
-    plan_id = cur.lastrowid
     row = db.execute("SELECT * FROM farmer_crop_storage_plans WHERE id = ?", (plan_id,)).fetchone()
 
     # Transparent, deterministic answer computed immediately, same request —
@@ -1742,12 +1805,16 @@ if __name__ == "__main__":
     @app.route("/api/storage-provider/facilities", methods=["GET"])
     @require_auth()
     def sp_list_facilities():
+        return jsonify(_sp_fetch_facilities())
+
+    @ttl_cache(seconds=45, key_prefix="storage_provider:facilities_list")
+    def _sp_fetch_facilities() -> list[dict]:
         db = get_db()
         rows = db.execute(
-            "SELECT id, name, state, district, block, village, latitude, longitude, total_capacity_mt, storage_type FROM cold_storages ORDER BY name COLLATE NOCASE"
+            "SELECT id, name, state, district, block, village, latitude, longitude, total_capacity_mt, storage_type FROM cold_storages ORDER BY LOWER(name)"
         ).fetchall()
         db.close()
-        return jsonify([row_to_dict(r) for r in rows])
+        return [row_to_dict(r) for r in rows]
 
     @app.route("/api/storage-provider/facilities/<int:facility_id>", methods=["GET"])
     @require_auth()
@@ -1791,6 +1858,8 @@ if __name__ == "__main__":
         db.commit()
         updated = db.execute("SELECT * FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
         db.close()
+        invalidate_prefix("cold_storage:facilities_raw")
+        invalidate_prefix("storage_provider:facilities_list")
         return jsonify(row_to_dict(updated))
 
     @app.route("/api/storage-provider/facilities/<int:facility_id>/geocode-address", methods=["POST"])
@@ -1851,6 +1920,8 @@ if __name__ == "__main__":
         result = row_to_dict(updated)
         result["matched_address"] = best.get("display_name")
         result["geocode_source"] = best.get("source")
+        invalidate_prefix("cold_storage:facilities_raw")
+        invalidate_prefix("storage_provider:facilities_list")
         return jsonify(result)
 
 
@@ -1882,8 +1953,28 @@ if __name__ == "__main__":
     @app.route("/api/storage-provider/config", methods=["GET"])
     @require_auth(roles=["storage_provider", "admin", "state_admin", "district_admin"])
     def sp_list_configs():
+        role = (g.user.get("role") or "").lower()
+        return jsonify(_sp_fetch_configs(
+            role,
+            (g.user.get("email") or "").strip().lower(),
+            (g.user.get("state") or "").strip(),
+            (g.user.get("district") or "").strip(),
+        ))
+
+    # Cached per (role, email, state, district) — NOT a plain route cache,
+    # because this response is scoped by who's asking (a storage_provider
+    # only sees their own configs; a district_admin only sees their
+    # district's) and that scope comes from the verified token, not from
+    # anything in the URL. Caching by path alone (cached_route) would risk
+    # handing one provider's/admin's configs to another. Keying ttl_cache
+    # on the actual scope values keeps each cache entry correctly isolated
+    # while still skipping the Neon round-trip on repeat requests from the
+    # same user within the TTL window.
+    @ttl_cache(seconds=30, key_prefix="storage_provider:configs_list")
+    def _sp_fetch_configs(role: str, provider_email: str, state: str, district: str) -> list[dict]:
+        user = {"role": role, "email": provider_email, "state": state, "district": district}
         db = get_db()
-        where_clause, params = _sp_scope_clause(g.user)
+        where_clause, params = _sp_scope_clause(user)
         query = """
             SELECT spc.*, cs.name as facility_name, cs.state, cs.district, cs.block, cs.village
             FROM storage_provider_configs spc
@@ -1894,7 +1985,7 @@ if __name__ == "__main__":
         query += " ORDER BY spc.updated_at DESC"
         rows = db.execute(query, params).fetchall()
         db.close()
-        return jsonify([row_to_dict(r) for r in rows])
+        return [row_to_dict(r) for r in rows]
 
     @app.route("/api/storage-provider/config", methods=["POST"])
     @require_auth(roles=["storage_provider", "admin"])
@@ -1941,8 +2032,9 @@ if __name__ == "__main__":
             cursor = db.execute("""
                 INSERT INTO storage_provider_configs (facility_id, provider_email, free_capacity_mt, is_active, notes, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
+                RETURNING id
             """, (facility_id, provider_email, free_capacity_mt, is_active, notes, now))
-            config_id = cursor.lastrowid
+            config_id = cursor.fetchone()["id"]
 
         db.commit()
 
@@ -1954,6 +2046,8 @@ if __name__ == "__main__":
 
         row = db.execute("SELECT * FROM storage_provider_configs WHERE id = ?", (config_id,)).fetchone()
         db.close()
+        invalidate_prefix("storage_provider:configs_list")
+        invalidate_prefix("storage_provider:facilities_list")
         return jsonify(row_to_dict(row)), 200
 
     @app.route("/api/storage-provider/config/<int:config_id>", methods=["PATCH"])
@@ -1994,6 +2088,8 @@ if __name__ == "__main__":
 
         updated = db.execute("SELECT * FROM storage_provider_configs WHERE id = ?", (config_id,)).fetchone()
         db.close()
+        invalidate_prefix("storage_provider:configs_list")
+        invalidate_prefix("storage_provider:facilities_list")
         return jsonify(row_to_dict(updated))
 
     @app.route("/api/storage-provider/config/<int:config_id>", methods=["DELETE"])
@@ -2031,6 +2127,7 @@ if __name__ == "__main__":
         db.execute("DELETE FROM storage_provider_configs WHERE id = ?", (config_id,))
         db.commit()
         db.close()
+        invalidate_prefix("storage_provider:configs_list")
         return jsonify({"status": "deleted", "id": config_id})
 
     def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -2104,7 +2201,18 @@ if __name__ == "__main__":
 
     print("=" * 60)
     print(f"  COLD STORAGE INTELLIGENCE — http://{args.host}:{args.port}")
-    print(f"  DB: {DB_PATH}")
+    print(f"  DB: postgres")
     print(f"  Verifying tokens against gateway: {GATEWAY_INTERNAL_URL}")
     print("=" * 60)
+
+    # Warm the facilities cache once at launch instead of making the
+    # first real request pay for it. This fires the same query
+    # list_facilities() would run with no filters, so it's already hot
+    # by the time the site's first user loads the page.
+    try:
+        warmed = _fetch_facilities_raw(None, None, None)
+        print(f"  Warmed facilities cache: {len(warmed)} facilities")
+    except Exception as exc:
+        print(f"  Cache warm-up failed (non-fatal, will fetch on first request): {exc}")
+
     app.run(host=args.host, port=args.port, debug=False)

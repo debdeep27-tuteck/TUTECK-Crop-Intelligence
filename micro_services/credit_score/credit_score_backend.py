@@ -1,30 +1,47 @@
 import os
 import json
 import sqlite3
+import sys
 from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+# This file lives in micro_services/credit_score/ — several directories
+# away from backend/shared/db.py. Unlike auction_backend.py and
+# advisory_backend.py (which live directly inside backend/ and so find
+# `shared` as an ordinary sibling package), this needs backend/ added to
+# sys.path explicitly before the import below, regardless of how main.py
+# launches this process or what its cwd/PYTHONPATH happens to be.
+_BACKEND_DIR = Path(__file__).resolve().parents[2] / "backend"
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
+from shared.db import connect as db_connect
+from shared.cache import ttl_cache, cached_route
 
 app = Flask(__name__)
 CORS(app)
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_FILE = BASE_DIR / "credit_score.db"
 
 # The Yield Detect page (port 6008, yield_platform_service.py) is the live
 # service the frontend actually talks to — it lives in a sibling folder
 # under micro_services/, not in the old top-level backend/ directory.
 # (backend/yield_lands.db turned out to be a stale, unused earlier version
 # of this feature — see chat history for how that was diagnosed.)
+#
+# NOTE: this still points at yield_platform_service.py's *sqlite* file.
+# That service hasn't been migrated to Postgres yet — when it is, this
+# needs to change to a plain `SELECT * FROM parcels` against
+# shared.db.connect() instead of a second sqlite3.connect() below, and
+# YIELD_LANDS_DB/the file-existence check can be deleted entirely.
 YIELD_LANDS_DB = (BASE_DIR / "../yield-detect/yield_platform_service.db").resolve()
 
 
 # ── DATABASE SETUP ─────────────────────────────────────────────────────────────
 
 def get_db():
-    conn = sqlite3.connect(str(DB_FILE))
-    conn.row_factory = sqlite3.Row
-    return conn
+    return db_connect()
 
 
 def init_db():
@@ -32,16 +49,16 @@ def init_db():
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS farmer_credit_records (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 farmer_id TEXT UNIQUE NOT NULL,
                 user_email TEXT,
                 farmer_name TEXT NOT NULL,
                 state TEXT DEFAULT 'tripura',
                 district TEXT DEFAULT '',
-                land_acres REAL NOT NULL DEFAULT 1.0,
+                land_acres DOUBLE PRECISION NOT NULL DEFAULT 1.0,
                 crop TEXT DEFAULT 'Paddy',
-                past_loan_amount REAL NOT NULL DEFAULT 0.0,
-                past_yield_quintals REAL NOT NULL DEFAULT 0.0,
+                past_loan_amount DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+                past_yield_quintals DOUBLE PRECISION NOT NULL DEFAULT 0.0,
                 repayment_status TEXT DEFAULT 'Repaid on time',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -173,6 +190,21 @@ def sync_new_farmers_from_yield_lands(conn):
         print("Notice: Error syncing yield_platform_service.db:", e)
 
 
+# sync_new_farmers_from_yield_lands() alone costs several sequential Neon
+# round-trips (a SELECT, a per-stale-row DELETE loop, two more SELECTs, a
+# per-new-farmer INSERT loop, then commit). Running that on every single
+# request — even ones that will otherwise be served from cached_route's
+# cache on a miss — is most of what makes this page feel slow. Gate it so
+# the actual sync only executes at most once per 30s no matter how many
+# routes call it; every route below calls this instead of the sync
+# function directly.
+@ttl_cache(seconds=30, key_prefix="credit:sync_gate")
+def _sync_recently():
+    with get_db() as conn:
+        sync_new_farmers_from_yield_lands(conn)
+    return True
+
+
 # ── SIMPLE CREDIT SCORE CALCULATION ────────────────────────────────────────────
 
 def calculate_credit_score(land_acres, past_loan_amount, past_yield_quintals):
@@ -284,6 +316,7 @@ def _in_scope(rec, scope_state, scope_district):
 
 @app.route('/credit_score/<query>')
 @app.route('/credit_score')
+@cached_route(seconds=60, key_prefix="credit:score")
 def get_credit_score(query=None):
     """
     Get credit score for a farmer by farmer_id (e.g. F001) or user_email (e.g. farmer1@gmail.com).
@@ -292,9 +325,8 @@ def get_credit_score(query=None):
     q = str(query).strip() if query else ""
     if not q:
         q = (request.args.get("email") or "").strip()
+    _sync_recently()
     with get_db() as conn:
-        sync_new_farmers_from_yield_lands(conn)
-
         # 1. Exact match on farmer_id or user_email
         row = conn.execute("""
             SELECT * FROM farmer_credit_records
@@ -348,10 +380,11 @@ def get_credit_score(query=None):
 
 
 @app.route('/farmers')
+@cached_route(seconds=60, key_prefix="credit:farmers")
 def list_farmers():
     """Returns list of all registered farmers from credit_score.db with their scores."""
+    _sync_recently()
     with get_db() as conn:
-        sync_new_farmers_from_yield_lands(conn)
         scope_state, scope_district = _scope_filter()
 
         rows = conn.execute("SELECT * FROM farmer_credit_records ORDER BY id ASC").fetchall()
@@ -384,13 +417,14 @@ def list_farmers():
 
 
 @app.route('/by_email')
+@cached_route(seconds=60, key_prefix="credit:by_email")
 def lookup_farmer_id_by_email():
     """Resolve a user_email to its farmer_id (F001-style)."""
     email = (request.args.get("email") or "").strip()
     if not email:
         return jsonify({"error": "email query parameter is required"}), 400
+    _sync_recently()
     with get_db() as conn:
-        sync_new_farmers_from_yield_lands(conn)
         row = conn.execute("""
             SELECT farmer_id, user_email FROM farmer_credit_records
             WHERE LOWER(user_email) = LOWER(?)
@@ -413,10 +447,11 @@ def calculate_custom_score():
 
 
 @app.route('/stats')
+@cached_route(seconds=60, key_prefix="credit:stats")
 def get_stats():
     """Summary statistics for the evaluated portfolio."""
+    _sync_recently()
     with get_db() as conn:
-        sync_new_farmers_from_yield_lands(conn)
         scope_state, scope_district = _scope_filter()
 
         rows = [r for r in conn.execute("SELECT * FROM farmer_credit_records").fetchall()
@@ -450,7 +485,7 @@ def get_stats():
 
 @app.route('/health')
 def health():
-    return jsonify({"status": "ok", "service": "credit-score", "port": 6014, "database": "credit_score.db"})
+    return jsonify({"status": "ok", "service": "credit-score", "port": 6014, "database": "postgres:farmer_credit_records"})
 
 
 # ── INITIALIZE ON MODULE LOAD ──────────────────────────────────────────────────

@@ -63,8 +63,6 @@ automatically — no new proxy logic needed.
 import base64
 import json
 import os
-import sqlite3
-import threading
 import time
 from contextlib import contextmanager
 from functools import wraps
@@ -74,10 +72,11 @@ import requests
 from flask import Flask, request, jsonify, g, Response
 from groq import Groq
 
+from shared.db import connect as db_connect
+
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_FILE = BASE_DIR / "chatbot.db"
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 if not GROQ_API_KEY:
@@ -153,8 +152,6 @@ SUPPORTED_LANGS = {"en", "hi", "bn", "mr", "kok", "ks", "ta", "te", "gu", "pa"}
 GATEWAY_INTERNAL_URL = os.environ.get("GATEWAY_INTERNAL_URL", "http://127.0.0.1:8085")
 REQUIRED_PAGE_PERMISSION = "/advisory"
 
-_db_lock = threading.RLock()
-
 app = Flask(__name__)
 
 
@@ -162,8 +159,7 @@ app = Flask(__name__)
 
 @contextmanager
 def _conn():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
+    conn = db_connect()
     try:
         yield conn
         conn.commit()
@@ -172,49 +168,26 @@ def _conn():
 
 
 def init_db():
-    with _db_lock, _conn() as conn:
-        # One row per user_id. `content` holds the full message array as JSON:
-        # [{"role": "user"|"assistant", "content": "...", "created_at": 173...}, ...]
+    # One row per user_id. `content` holds the full message array as JSON:
+    # [{"role": "user"|"assistant", "content": "...", "created_at": 173...}, ...]
+    #
+    # The old per-message farmer_id-based schema (messages_legacy) was a
+    # one-time migration step for an even earlier version of this table —
+    # dead weight now that every live chatbot.db has already gone through
+    # it. Postgres starts fresh here, so there's nothing to migrate.
+    with _conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS messages (
                 user_id TEXT PRIMARY KEY,
                 content TEXT NOT NULL,
-                updated_at REAL NOT NULL
+                updated_at DOUBLE PRECISION NOT NULL
             )
         """)
-        # Migrate old schema (farmer_id, one row per message) if it's still present.
-        try:
-            old_cols = {row["name"] for row in conn.execute("PRAGMA table_info(messages)").fetchall()}
-        except sqlite3.OperationalError:
-            old_cols = set()
-        if "farmer_id" in old_cols and "user_id" not in old_cols:
-            conn.execute("ALTER TABLE messages RENAME TO messages_legacy")
-            conn.execute("""
-                CREATE TABLE messages (
-                    user_id TEXT PRIMARY KEY,
-                    content TEXT NOT NULL,
-                    updated_at REAL NOT NULL
-                )
-            """)
-            legacy_rows = conn.execute(
-                "SELECT farmer_id, role, content, created_at FROM messages_legacy ORDER BY farmer_id, id"
-            ).fetchall()
-            grouped = {}
-            for r in legacy_rows:
-                grouped.setdefault(r["farmer_id"], []).append({
-                    "role": r["role"], "content": r["content"], "created_at": r["created_at"],
-                })
-            for uid, msgs in grouped.items():
-                conn.execute(
-                    "INSERT INTO messages (user_id, content, updated_at) VALUES (?, ?, ?)",
-                    (uid, json.dumps(msgs), time.time()),
-                )
-            conn.execute("DROP TABLE messages_legacy")
 
 
 def load_history(user_id):
     """Return the last MAX_HISTORY_MESSAGES turns as Groq-format messages."""
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         row = conn.execute(
             "SELECT content FROM messages WHERE user_id = ?", (user_id,)
         ).fetchone()
@@ -228,7 +201,7 @@ def load_history(user_id):
 def append_messages(user_id, new_messages):
     """Append one or more {'role', 'content'} messages to this user's array."""
     now = time.time()
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         row = conn.execute("SELECT content FROM messages WHERE user_id = ?", (user_id,)).fetchone()
         existing = json.loads(row["content"]) if row else []
         for m in new_messages:
@@ -236,7 +209,7 @@ def append_messages(user_id, new_messages):
         conn.execute(
             """
             INSERT INTO messages (user_id, content, updated_at) VALUES (?, ?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET content = excluded.content, updated_at = excluded.updated_at
+            ON CONFLICT (user_id) DO UPDATE SET content = EXCLUDED.content, updated_at = EXCLUDED.updated_at
             """,
             (user_id, json.dumps(existing), now),
         )
@@ -247,7 +220,7 @@ def save_message(user_id, role, content):
 
 
 def clear_history(user_id):
-    with _db_lock, _conn() as conn:
+    with _conn() as conn:
         conn.execute("DELETE FROM messages WHERE user_id = ?", (user_id,))
 
 
