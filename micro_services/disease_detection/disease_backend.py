@@ -38,7 +38,7 @@ app = Flask(__name__)
 CORS(app)
 
 PORT = int(os.environ.get("DISEASE_PORT", 6004))
-MODEL_NAME = os.environ.get("MODEL", "qwen/qwen3.6-27b")
+MODEL_NAME = os.environ.get("MODEL", "qwen/qwen3.8-27b")
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
 

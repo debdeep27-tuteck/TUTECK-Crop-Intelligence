@@ -1353,7 +1353,7 @@ def list_facilities():
 @require_auth()
 def get_facility(facility_id):
     db = get_db()
-    row = db.execute("SELECT * FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
+    row = db.execute("SELECT id FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
     if not row:
         db.close()
         return jsonify({"error": "facility not found"}), 404
@@ -1361,10 +1361,22 @@ def get_facility(facility_id):
     role_clauses, role_params = scope_clause_for_role(g.user)
     if role_clauses:
         ok = db.execute(f"SELECT 1 FROM cold_storages WHERE id = ? AND {' AND '.join(role_clauses)}", [facility_id] + role_params).fetchone()
+        db.close()
         if not ok:
-            db.close()
             return jsonify({"error": "Forbidden — outside your assigned jurisdiction"}), 403
+    else:
+        db.close()
 
+    # Authorization above must stay live (it depends on the caller's own
+    # jurisdiction), but the facility data itself is identical for every
+    # caller who passes it — cache that part by facility_id.
+    return jsonify(_fetch_facility_detail(facility_id))
+
+
+@ttl_cache(seconds=60, key_prefix="cold_storage:facility_detail")
+def _fetch_facility_detail(facility_id: int) -> dict:
+    db = get_db()
+    row = db.execute("SELECT * FROM cold_storages WHERE id = ?", (facility_id,)).fetchone()
     d = row_to_dict(row)
     crop_caps = db.execute(
         "SELECT crop, capacity_mt FROM cold_storage_crop_capacity WHERE cold_storage_id = ?", (facility_id,)
@@ -1377,7 +1389,7 @@ def get_facility(facility_id):
     d["recent_snapshots"] = [row_to_dict(s) for s in snapshots]
 
     db.close()
-    return jsonify(d)
+    return d
 
 
 # ── ROUTES: district summary / crops (the core "will there be enough        ──
@@ -1389,6 +1401,11 @@ def district_crops(district):
     state = request.args.get("state", "").strip()
     if not state:
         return jsonify({"error": "state is required"}), 400
+    return jsonify(_fetch_district_crops(state, district))
+
+
+@ttl_cache(seconds=120, key_prefix="cold_storage:district_crops")
+def _fetch_district_crops(state: str, district: str) -> dict:
     db = get_db()
     rows = db.execute(
         """
@@ -1401,7 +1418,7 @@ def district_crops(district):
         (state, district),
     ).fetchall()
     db.close()
-    return jsonify({"state": state, "district": district, "crops": [r["crop"] for r in rows]})
+    return {"state": state, "district": district, "crops": [r["crop"] for r in rows]}
 
 
 @app.route("/api/cold-storage/districts/<district>/summary", methods=["GET"])
@@ -1418,6 +1435,16 @@ def district_summary(district):
     if role in ("district_admin", "state_admin") and g.user.get("state") and g.user["state"] != state:
         return jsonify({"error": "Forbidden — outside your assigned state"}), 403
 
+    # The authorization check above must run on every request (it's what
+    # keeps a district_admin from reading another district), but the data
+    # itself is identical for every caller allowed to see it — so only the
+    # expensive computation below is cached, keyed on the actual inputs
+    # that determine its output.
+    return jsonify(_compute_district_summary(state, district, period))
+
+
+@ttl_cache(seconds=90, key_prefix="cold_storage:district_summary")
+def _compute_district_summary(state: str, district: str, period):
     db = get_db()
     rows = db.execute(
         """SELECT id, name, state, district, block, village,
@@ -1514,7 +1541,7 @@ def district_summary(district):
         production_utilization_percent = None
     production_status = classify_status(production_utilization_percent)
 
-    return jsonify({
+    return {
         "state": state,
         "district": district,
         "period": period,
@@ -1528,7 +1555,7 @@ def district_summary(district):
         "production_utilization_percent": production_utilization_percent,
         "production_status": production_status,
         "production_data_available": production_data_available,
-    })
+    }
 
 
 @app.route("/api/cold-storage/dashboard/district/<district>", methods=["GET"])
@@ -1591,6 +1618,7 @@ def create_farmer_plan():
     period = harvest_period(body["expected_harvest_date"])
     advisory = district_crop_status(db, body["state"], body["district"], body["crop"], period)
     db.close()
+    invalidate_prefix("cold_storage:district_summary")
 
     return jsonify({"plan": row_to_dict(row), "advisory": advisory}), 201
 
@@ -1701,6 +1729,7 @@ def update_farmer_plan(plan_id):
 
     row = db.execute("SELECT * FROM farmer_crop_storage_plans WHERE id = ?", (plan_id,)).fetchone()
     db.close()
+    invalidate_prefix("cold_storage:district_summary")
     return jsonify(row_to_dict(row))
 
 
@@ -1718,6 +1747,7 @@ def delete_farmer_plan(plan_id):
     db.execute("DELETE FROM farmer_crop_storage_plans WHERE id = ?", (plan_id,))
     db.commit()
     db.close()
+    invalidate_prefix("cold_storage:district_summary")
     return jsonify({"deleted": True})
 
 
@@ -1807,7 +1837,7 @@ if __name__ == "__main__":
     def sp_list_facilities():
         return jsonify(_sp_fetch_facilities())
 
-    @ttl_cache(seconds=45, key_prefix="storage_provider:facilities_list")
+    @ttl_cache(seconds=90, key_prefix="storage_provider:facilities_list")
     def _sp_fetch_facilities() -> list[dict]:
         db = get_db()
         rows = db.execute(
@@ -1860,6 +1890,8 @@ if __name__ == "__main__":
         db.close()
         invalidate_prefix("cold_storage:facilities_raw")
         invalidate_prefix("storage_provider:facilities_list")
+        invalidate_prefix("cold_storage:facility_detail")
+        invalidate_prefix("cold_storage:district_summary")
         return jsonify(row_to_dict(updated))
 
     @app.route("/api/storage-provider/facilities/<int:facility_id>/geocode-address", methods=["POST"])
@@ -1922,6 +1954,8 @@ if __name__ == "__main__":
         result["geocode_source"] = best.get("source")
         invalidate_prefix("cold_storage:facilities_raw")
         invalidate_prefix("storage_provider:facilities_list")
+        invalidate_prefix("cold_storage:facility_detail")
+        invalidate_prefix("cold_storage:district_summary")
         return jsonify(result)
 
 
@@ -1970,7 +2004,7 @@ if __name__ == "__main__":
     # on the actual scope values keeps each cache entry correctly isolated
     # while still skipping the Neon round-trip on repeat requests from the
     # same user within the TTL window.
-    @ttl_cache(seconds=30, key_prefix="storage_provider:configs_list")
+    @ttl_cache(seconds=60, key_prefix="storage_provider:configs_list")
     def _sp_fetch_configs(role: str, provider_email: str, state: str, district: str) -> list[dict]:
         user = {"role": role, "email": provider_email, "state": state, "district": district}
         db = get_db()
@@ -2048,6 +2082,8 @@ if __name__ == "__main__":
         db.close()
         invalidate_prefix("storage_provider:configs_list")
         invalidate_prefix("storage_provider:facilities_list")
+        invalidate_prefix("cold_storage:facility_detail")
+        invalidate_prefix("cold_storage:district_summary")
         return jsonify(row_to_dict(row)), 200
 
     @app.route("/api/storage-provider/config/<int:config_id>", methods=["PATCH"])
@@ -2090,6 +2126,8 @@ if __name__ == "__main__":
         db.close()
         invalidate_prefix("storage_provider:configs_list")
         invalidate_prefix("storage_provider:facilities_list")
+        invalidate_prefix("cold_storage:facility_detail")
+        invalidate_prefix("cold_storage:district_summary")
         return jsonify(row_to_dict(updated))
 
     @app.route("/api/storage-provider/config/<int:config_id>", methods=["DELETE"])

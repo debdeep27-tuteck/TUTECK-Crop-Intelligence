@@ -134,11 +134,18 @@ def sync_new_farmers_from_yield_lands(conn):
             current_emails = {e.lower() for e in farmer_lands.keys()}
 
             # ── Remove stale records: farmers with no parcel registered anymore ──
+            # Batched into one DELETE instead of one round-trip per stale
+            # row — this loop used to be N sequential Neon calls for N
+            # stale farmers, which is most of what made a cache-miss on
+            # this endpoint feel slow.
             existing_rows = conn.execute("SELECT farmer_id, user_email FROM farmer_credit_records").fetchall()
-            for r in existing_rows:
-                email_lower = (r["user_email"] or "").lower()
-                if not email_lower or email_lower not in current_emails:
-                    conn.execute("DELETE FROM farmer_credit_records WHERE farmer_id = ?", (r["farmer_id"],))
+            stale_ids = [
+                r["farmer_id"] for r in existing_rows
+                if not (r["user_email"] or "").lower() or (r["user_email"] or "").lower() not in current_emails
+            ]
+            if stale_ids:
+                placeholders = ",".join(["?"] * len(stale_ids))
+                conn.execute(f"DELETE FROM farmer_credit_records WHERE farmer_id IN ({placeholders})", stale_ids)
 
             # Which emails do we already have a credit record for (after pruning above)?
             existing_emails = {
@@ -159,6 +166,7 @@ def sync_new_farmers_from_yield_lands(conn):
             loan_samples = [50000, 30000, 70000, 20000, 100000]
             repayment_samples = ["Repaid on time", "Repaid on time", "Repaid on time", "1 late payment"]
 
+            new_records = []
             for email, info in farmer_lands.items():
                 if email.lower() in existing_emails:
                     continue  # already tracked, don't touch their real record
@@ -173,17 +181,23 @@ def sync_new_farmers_from_yield_lands(conn):
                 yield_qtl = max(5.0, round(info["yield_quintals"], 1)) if info["yield_quintals"] > 0 else 15.0
                 repayment = repayment_samples[(next_idx - 1) % len(repayment_samples)]
 
-                conn.execute("""
-                    INSERT INTO farmer_credit_records
-                    (farmer_id, user_email, farmer_name, state, district, land_acres, crop, past_loan_amount, past_yield_quintals, repayment_status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
+                new_records.append((
                     fid, email, info["name"], info["state"].title(), info["district"].title(),
                     acres, info["crop"], loan_amt, yield_qtl, repayment
                 ))
 
                 existing_emails.add(email.lower())
                 next_idx += 1
+
+            # Batched into one round-trip instead of one INSERT per new
+            # farmer — with executemany() psycopg2 still pipelines these
+            # as a single network exchange rather than N separate ones.
+            if new_records:
+                conn.executemany("""
+                    INSERT INTO farmer_credit_records
+                    (farmer_id, user_email, farmer_name, state, district, land_acres, crop, past_loan_amount, past_yield_quintals, repayment_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, new_records)
 
             conn.commit()
     except Exception as e:
@@ -198,7 +212,7 @@ def sync_new_farmers_from_yield_lands(conn):
 # the actual sync only executes at most once per 30s no matter how many
 # routes call it; every route below calls this instead of the sync
 # function directly.
-@ttl_cache(seconds=30, key_prefix="credit:sync_gate")
+@ttl_cache(seconds=45, key_prefix="credit:sync_gate")
 def _sync_recently():
     with get_db() as conn:
         sync_new_farmers_from_yield_lands(conn)
@@ -316,7 +330,7 @@ def _in_scope(rec, scope_state, scope_district):
 
 @app.route('/credit_score/<query>')
 @app.route('/credit_score')
-@cached_route(seconds=60, key_prefix="credit:score")
+@cached_route(seconds=120, key_prefix="credit:score")
 def get_credit_score(query=None):
     """
     Get credit score for a farmer by farmer_id (e.g. F001) or user_email (e.g. farmer1@gmail.com).
@@ -380,7 +394,7 @@ def get_credit_score(query=None):
 
 
 @app.route('/farmers')
-@cached_route(seconds=60, key_prefix="credit:farmers")
+@cached_route(seconds=120, key_prefix="credit:farmers")
 def list_farmers():
     """Returns list of all registered farmers from credit_score.db with their scores."""
     _sync_recently()
@@ -417,7 +431,7 @@ def list_farmers():
 
 
 @app.route('/by_email')
-@cached_route(seconds=60, key_prefix="credit:by_email")
+@cached_route(seconds=120, key_prefix="credit:by_email")
 def lookup_farmer_id_by_email():
     """Resolve a user_email to its farmer_id (F001-style)."""
     email = (request.args.get("email") or "").strip()
@@ -447,7 +461,7 @@ def calculate_custom_score():
 
 
 @app.route('/stats')
-@cached_route(seconds=60, key_prefix="credit:stats")
+@cached_route(seconds=120, key_prefix="credit:stats")
 def get_stats():
     """Summary statistics for the evaluated portfolio."""
     _sync_recently()

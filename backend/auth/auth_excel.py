@@ -766,6 +766,7 @@ def update_user_permissions(uid, pages):
             conn.execute("UPDATE user_permissions SET pages = %s WHERE uid = %s", (",".join(pages), uid))
 
     invalidate_prefix("auth:get_user_permissions")
+    invalidate_prefix("auth:list_users")
     return {"pages": pages}
 
 
@@ -773,6 +774,7 @@ def delete_user_permissions(uid):
     with _conn() as conn:
         conn.execute("DELETE FROM user_permissions WHERE uid = %s", (uid,))
     invalidate_prefix("auth:get_user_permissions")
+    invalidate_prefix("auth:list_users")
 
 
 # ── USER OPERATIONS ───────────────────────────────────────────────────────
@@ -862,6 +864,7 @@ def create_user(email, password, role, state="", district="", address="", storag
         )
 
     get_user_permissions(uid, role=role)
+    invalidate_prefix("auth:list_users")
 
     if role == "storage_provider":
         _sync_facility_coordinates(storage_id, latitude, longitude)
@@ -890,17 +893,46 @@ def verify_login(email, password):
     }
 
 
+@ttl_cache(seconds=20, key_prefix="auth:list_users")
 def list_users():
     """Return all users WITHOUT password hashes — for the admin panel.
     Includes each user's current status, state/district scope, address/
-    coordinates (mandi), and their individual page permissions."""
+    coordinates (mandi), and their individual page permissions.
+
+    Previously called get_user_permissions(uid) — a separate cached
+    function, but still a real DB round-trip on a cache miss — once per
+    user in a loop, so listing N users cost 1 + N sequential Neon calls
+    whenever the per-user cache was cold. Batched into two queries total
+    (users, then all of user_permissions in one shot) regardless of N."""
     with _conn() as conn:
         rows = conn.execute(
             "SELECT uid, email, role, status, state, district, address, latitude, longitude, storage_id FROM users"
         ).fetchall()
-    users = [dict(row) for row in rows]
+        users = [dict(row) for row in rows]
+
+        perm_rows = conn.execute("SELECT uid, pages FROM user_permissions").fetchall()
+        perms_by_uid = {
+            r["uid"]: [p.strip() for p in (r["pages"] or "").split(",") if p.strip()]
+            for r in perm_rows
+        }
+
+        # Same "seed defaults for a user with no permissions row yet" logic
+        # get_user_permissions() used to do one at a time — now batched
+        # into a single executemany() for every user missing a row.
+        missing = [u for u in users if u["uid"] not in perms_by_uid]
+        if missing:
+            role_defaults = get_role_permissions()
+            seed_rows = []
+            for u in missing:
+                default_pages = role_defaults.get(u["role"], {}).get("pages", [])
+                perms_by_uid[u["uid"]] = default_pages
+                seed_rows.append((u["uid"], ",".join(default_pages)))
+            conn.executemany(
+                "INSERT INTO user_permissions (uid, pages) VALUES (%s, %s)", seed_rows
+            )
+
     for user in users:
-        user["pages"] = get_user_permissions(user["uid"], role=user["role"])["pages"]
+        user["pages"] = perms_by_uid.get(user["uid"], [])
     return users
 
 
@@ -979,6 +1011,7 @@ def update_user(uid, email=None, password=None, role=None, state=None, district=
         _sync_facility_coordinates(effective_storage_id, effective_lat, effective_lon)
 
     invalidate_prefix(f"auth:get_user:('{uid}',)")
+    invalidate_prefix("auth:list_users")
     return dict(updated)
 
 
@@ -995,6 +1028,7 @@ def delete_user(uid):
 
     invalidate_prefix(f"auth:get_user:('{uid}',)")
     invalidate_prefix(f"auth:get_user_permissions:('{uid}',)")
+    invalidate_prefix("auth:list_users")
 
 
 def set_user_status(uid, status):
@@ -1016,6 +1050,7 @@ def set_user_status(uid, status):
         _drop_tokens_for_uid(uid)
 
     invalidate_prefix(f"auth:get_user:('{uid}',)")
+    invalidate_prefix("auth:list_users")
     return dict(updated)
 
 

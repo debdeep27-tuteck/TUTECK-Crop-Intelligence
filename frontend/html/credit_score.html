@@ -1168,6 +1168,47 @@
     .btn-outline:hover {
       background: #F8FAFC;
     }
+    /* ── Loading skeleton (replaces hardcoded demo values until a real
+       fetch resolves, or shows an explicit error instead of leaving
+       stale/fake content on screen) ── */
+    .skel {
+      color: transparent !important;
+      background: linear-gradient(90deg, rgba(148,163,184,.25) 25%, rgba(148,163,184,.45) 37%, rgba(148,163,184,.25) 63%);
+      background-size: 400% 100%;
+      border-radius: 6px;
+      animation: skel-pulse 1.4s ease infinite;
+      display: inline-block;
+      min-width: 2.5em;
+    }
+    @keyframes skel-pulse {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
+    #scorecard-error-banner {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #B91C1C;
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    #scorecard-error-banner.show { display: flex; }
+    #scorecard-error-banner button {
+      margin-left: auto;
+      background: #B91C1C;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -1201,8 +1242,8 @@
     <div class="metric-card">
       <div class="metric-info">
         <h3>Average Credit Score</h3>
-        <div class="metric-value" id="kpi-avg-score">76.0 <span style="font-size:14px;font-weight:500;color:var(--text-muted)">/ 100</span></div>
-        <div class="metric-sub" style="color:#059669;font-weight:600;">Tier AA (Low Risk)</div>
+        <div class="metric-value skel" id="kpi-avg-score">-- / 100</div>
+        <div class="metric-sub" style="color:var(--text-muted);font-weight:600;">Portfolio average</div>
       </div>
       <div class="metric-icon icon-green">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -1212,7 +1253,7 @@
     <div class="metric-card">
       <div class="metric-info">
         <h3>Registered Farmers</h3>
-        <div class="metric-value" id="kpi-total-farmers">5 Active</div>
+        <div class="metric-value skel" id="kpi-total-farmers">&mdash;</div>
         <div class="metric-sub">From yield_lands.db</div>
       </div>
       <div class="metric-icon icon-blue">
@@ -1223,7 +1264,7 @@
     <div class="metric-card">
       <div class="metric-info">
         <h3>Total Approved Credit Pool</h3>
-        <div class="metric-value" id="kpi-total-credit">&#8377; 42.5 L</div>
+        <div class="metric-value skel" id="kpi-total-credit">&mdash;</div>
         <div class="metric-sub">Eligible Lending Pool</div>
       </div>
       <div class="metric-icon icon-purple">
@@ -1234,7 +1275,7 @@
     <div class="metric-card">
       <div class="metric-info">
         <h3>KCC Subsidized Ratio</h3>
-        <div class="metric-value" id="kpi-kcc-ratio">80.0%</div>
+        <div class="metric-value skel" id="kpi-kcc-ratio">&mdash;</div>
         <div class="metric-sub" style="color:#059669;font-weight:600;">Qualified at 4.0% p.a.</div>
       </div>
       <div class="metric-icon icon-amber">
@@ -1242,6 +1283,10 @@
       </div>
     </div>
   </section>
+
+  <div id="stats-error-note" style="display:none;font-size:13px;color:#B91C1C;margin:-10px 0 14px;">
+    ⚠ Couldn't load portfolio statistics.
+  </div>
 
   <!-- ── Navigation Tabs ── -->
   <nav class="tab-bar">
@@ -1279,6 +1324,11 @@
       </div>
     </div>
 
+    <div id="scorecard-error-banner">
+      <span>⚠ Couldn't load this farmer's credit score. The data below may be incomplete.</span>
+      <button onclick="loadFarmerScorecard(currentFarmerQuery)">Retry</button>
+    </div>
+
     <!-- ═══ HERO CREDIT SCORE BANNER ═══ -->
     <div class="hero-score-banner">
       <!-- Left: Gauge -->
@@ -1289,7 +1339,7 @@
             <circle class="gauge-meter" id="gauge-meter" cx="100" cy="100" r="90"></circle>
           </svg>
           <div class="hero-gauge-center">
-            <div class="hero-score-number" id="gauge-score-val">79.2</div>
+            <div class="hero-score-number skel" id="gauge-score-val">--</div>
             <div class="hero-score-max">OUT OF 100</div>
           </div>
         </div>
@@ -1297,25 +1347,25 @@
 
       <!-- Middle: Farmer Info -->
       <div class="hero-info-section">
-        <div class="hero-farmer-name" id="hero-farmer-name">Farmer1</div>
-        <div class="hero-farmer-id" id="hero-farmer-id">ID: F001</div>
+        <div class="hero-farmer-name skel" id="hero-farmer-name">Loading&hellip;</div>
+        <div class="hero-farmer-id skel" id="hero-farmer-id">ID: &mdash;</div>
         <br>
         <div class="hero-grade-badge hero-grade-green" id="rating-grade-badge">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
-          <span id="rating-grade-text">Grade AA • Low Risk</span>
+          <span class="skel" id="rating-grade-text">Grade &mdash;</span>
         </div>
         <div class="hero-stats-row">
           <div class="hero-stat-item">
             <span class="hero-stat-label">Default Risk</span>
-            <span class="hero-stat-value" id="stat-pd">5.2%</span>
+            <span class="hero-stat-value skel" id="stat-pd">--%</span>
           </div>
           <div class="hero-stat-item">
             <span class="hero-stat-label">KCC 4.0% Scheme</span>
-            <span class="hero-stat-value" id="stat-kcc" style="color:#A7F3D0;">Eligible</span>
+            <span class="hero-stat-value skel" id="stat-kcc" style="color:#A7F3D0;">&mdash;</span>
           </div>
           <div class="hero-stat-item">
             <span class="hero-stat-label">Max Loan Limit</span>
-            <span class="hero-stat-value" id="hero-loan-limit">₹ 20,00,000</span>
+            <span class="hero-stat-value skel" id="hero-loan-limit">&mdash;</span>
           </div>
         </div>
       </div>
@@ -1329,10 +1379,10 @@
           <div class="hero-pillar-info">
             <div class="hero-pillar-name">Land Collateral</div>
             <div class="hero-pillar-track">
-              <div class="hero-pillar-fill green" id="hero-land-fill" style="width: 100%;"></div>
+              <div class="hero-pillar-fill green" id="hero-land-fill" style="width: 0%;"></div>
             </div>
           </div>
-          <span class="hero-pillar-score" id="hero-land-score">30 / 30</span>
+          <span class="hero-pillar-score skel" id="hero-land-score">-- / 30</span>
         </div>
 
         <div class="hero-pillar-row">
@@ -1342,10 +1392,10 @@
           <div class="hero-pillar-info">
             <div class="hero-pillar-name">Loan History</div>
             <div class="hero-pillar-track">
-              <div class="hero-pillar-fill blue" id="hero-loan-fill" style="width: 100%;"></div>
+              <div class="hero-pillar-fill blue" id="hero-loan-fill" style="width: 0%;"></div>
             </div>
           </div>
-          <span class="hero-pillar-score" id="hero-loan-score">20 / 20</span>
+          <span class="hero-pillar-score skel" id="hero-loan-score">-- / 20</span>
         </div>
 
         <div class="hero-pillar-row">
@@ -1355,10 +1405,10 @@
           <div class="hero-pillar-info">
             <div class="hero-pillar-name">Crop Yield</div>
             <div class="hero-pillar-track">
-              <div class="hero-pillar-fill purple" id="hero-yield-fill" style="width: 58.4%;"></div>
+              <div class="hero-pillar-fill purple" id="hero-yield-fill" style="width: 0%;"></div>
             </div>
           </div>
-          <span class="hero-pillar-score" id="hero-yield-score">29.2 / 50</span>
+          <span class="hero-pillar-score skel" id="hero-yield-score">-- / 50</span>
         </div>
       </div>
     </div>
@@ -1375,10 +1425,10 @@
           Farmer Profile
         </div>
         <div class="profile-card-header">
-          <div class="farmer-avatar" id="card-avatar">F1</div>
+          <div class="farmer-avatar skel" id="card-avatar">--</div>
           <div class="farmer-meta">
-            <h2 id="card-farmer-name">Farmer 1</h2>
-            <span class="fid-tag" id="card-farmer-id">ID: F001</span>
+            <h2 class="skel" id="card-farmer-name">Loading&hellip;</h2>
+            <span class="fid-tag skel" id="card-farmer-id">ID: &mdash;</span>
           </div>
         </div>
 
@@ -1388,35 +1438,35 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
               Email
             </span>
-            <span class="detail-value" id="card-email">farmer1@gmail.com</span>
+            <span class="detail-value skel" id="card-email">&mdash;</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
               Location
             </span>
-            <span class="detail-value" id="card-location">Ajmer, Rajasthan</span>
+            <span class="detail-value skel" id="card-location">&mdash;</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
               Registered Land
             </span>
-            <span class="detail-value" id="card-land-acres">100.5 Acres</span>
+            <span class="detail-value skel" id="card-land-acres">&mdash;</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h10"></path><path d="M10 20c5.5-2.5.8-6.4 3-10"></path><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path></svg>
               Primary Crop
             </span>
-            <span class="detail-value" id="card-crops">Arhar/Tur</span>
+            <span class="detail-value skel" id="card-crops">&mdash;</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
               Repayment Status
             </span>
-            <span class="detail-value" id="card-repay-status" style="color:#059669;">Repaid on time</span>
+            <span class="detail-value skel" id="card-repay-status">&mdash;</span>
           </div>
         </div>
       </div>
@@ -1433,14 +1483,14 @@
           <span class="pillar-title">
             Score Breakdown
           </span>
-          <span class="pillar-score-badge green" id="pillar-land-badge">30.0 / 30</span>
+          <span class="pillar-score-badge green skel" id="pillar-land-badge">-- / 30</span>
         </div>
         <div class="progress-track">
-          <div class="progress-fill" id="pillar-land-fill" style="width: 100%; background: #10B981;"></div>
+          <div class="progress-fill" id="pillar-land-fill" style="width: 0%; background: #10B981;"></div>
         </div>
         <div class="pillar-metrics">
-          <div><span>Land Holding:</span> <strong id="p1-land">100.5 Acres</strong></div>
-          <div><span>Asset Valuation:</span> <strong id="p1-val">&#8377; 3,51,71,500</strong></div>
+          <div><span>Land Holding:</span> <strong class="skel" id="p1-land">&mdash;</strong></div>
+          <div><span>Asset Valuation:</span> <strong class="skel" id="p1-val">&mdash;</strong></div>
         </div>
       </div>
 
@@ -1456,14 +1506,14 @@
           <span class="pillar-title">
             Score Breakdown
           </span>
-          <span class="pillar-score-badge blue" id="pillar-loan-badge">20.0 / 20</span>
+          <span class="pillar-score-badge blue skel" id="pillar-loan-badge">-- / 20</span>
         </div>
         <div class="progress-track">
-          <div class="progress-fill" id="pillar-loan-fill" style="width: 100%; background: #3B82F6;"></div>
+          <div class="progress-fill" id="pillar-loan-fill" style="width: 0%; background: #3B82F6;"></div>
         </div>
         <div class="pillar-metrics">
-          <div><span>Past Loan:</span> <strong id="p2-past-loan">&#8377; 50,000</strong></div>
-          <div><span>Repayment Track:</span> <strong id="p2-status" style="color:#059669;">Repaid on time</strong></div>
+          <div><span>Past Loan:</span> <strong class="skel" id="p2-past-loan">&mdash;</strong></div>
+          <div><span>Repayment Track:</span> <strong class="skel" id="p2-status">&mdash;</strong></div>
         </div>
       </div>
 
@@ -1479,14 +1529,14 @@
           <span class="pillar-title">
             Score Breakdown
           </span>
-          <span class="pillar-score-badge purple" id="pillar-yield-badge">29.2 / 50</span>
+          <span class="pillar-score-badge purple skel" id="pillar-yield-badge">-- / 50</span>
         </div>
         <div class="progress-track">
-          <div class="progress-fill" id="pillar-yield-fill" style="width: 58.4%; background: #8B5CF6;"></div>
+          <div class="progress-fill" id="pillar-yield-fill" style="width: 0%; background: #8B5CF6;"></div>
         </div>
         <div class="pillar-metrics">
-          <div><span>Past Harvest:</span> <strong id="p3-yield">29.2 Quintals</strong></div>
-          <div><span>Crop Type:</span> <strong id="p3-crop">Arhar/Tur</strong></div>
+          <div><span>Past Harvest:</span> <strong class="skel" id="p3-yield">&mdash;</strong></div>
+          <div><span>Crop Type:</span> <strong class="skel" id="p3-crop">&mdash;</strong></div>
         </div>
       </div>
 
@@ -1497,25 +1547,25 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
             Loan Eligibility &amp; Subsidized Interest Rate
           </h3>
-          <span class="sanction-badge" id="sanction-badge-status">Approved</span>
+          <span class="sanction-badge skel" id="sanction-badge-status">&mdash;</span>
         </div>
 
         <div class="sanction-grid">
           <div class="sanction-item">
             <h4>Max Recommended Credit Limit</h4>
-            <div class="val" id="sanction-loan-amount">&#8377; 20,00,000</div>
+            <div class="val skel" id="sanction-loan-amount">&mdash;</div>
             <div class="sub">Collateral-backed agricultural limit</div>
           </div>
 
           <div class="sanction-item">
             <h4>Kisan Credit Card (KCC)</h4>
-            <div class="val" id="sanction-kcc-scheme" style="color:#A7F3D0;">Qualified (4.0%)</div>
+            <div class="val skel" id="sanction-kcc-scheme">&mdash;</div>
             <div class="sub">With 3% prompt repayment subvention</div>
           </div>
 
           <div class="sanction-item">
             <h4>Commercial Agri Loan Rate</h4>
-            <div class="val" id="sanction-interest-rate">4.0% (KCC Subsidized)</div>
+            <div class="val skel" id="sanction-interest-rate">&mdash;</div>
             <div class="sub">Standard rate if non-subsidized: 7.5%</div>
           </div>
         </div>
@@ -1719,10 +1769,19 @@
           const statsRes = await fetch(`${API_BASE}/stats`, { headers: authHeaders() }).catch(() => null);
           if (statsRes && statsRes.ok) {
             const stats = await statsRes.json();
+            ["kpi-avg-score", "kpi-total-farmers", "kpi-total-credit", "kpi-kcc-ratio"].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.classList.remove("skel");
+            });
             document.getElementById("kpi-avg-score").innerHTML = `${stats.average_credit_score} <span style="font-size:14px;font-weight:500;color:var(--text-muted)">/ 100</span>`;
             document.getElementById("kpi-total-farmers").textContent = `${stats.total_farmers} Active`;
             document.getElementById("kpi-total-credit").innerHTML = `&#8377; ${(stats.total_approved_credit_pool / 100000).toFixed(1)} L`;
             document.getElementById("kpi-kcc-ratio").textContent = `${stats.kcc_eligible_ratio}%`;
+          } else {
+            // Leave the skeleton pulsing rather than silently doing nothing
+            // — a hidden fetch failure here used to mean the hardcoded
+            // 76.0/5 Active/₹42.5L/80.0% stayed on screen looking real.
+            document.getElementById("stats-error-note").style.display = "block";
           }
 
           // Farmers only ever see their own record (server-enforced too), so
@@ -1742,11 +1801,20 @@
           }
         } else {
           const fid = await resolveMyFarmerId();
-          currentFarmerQuery = fid || currentSession.email || "F001";
+          // Fall back to the session email (a valid, farmer-specific lookup
+          // key the backend can resolve) — never to a hardcoded farmer id
+          // like "F001", which would silently show a *different real
+          // farmer's* data mislabeled as "yours" if resolution failed.
+          currentFarmerQuery = fid || currentSession.email || null;
+        }
+        if (!currentFarmerQuery) {
+          showScorecardError();
+          return;
         }
         loadFarmerScorecard(currentFarmerQuery);
       } catch (err) {
         console.error("Initialization error", err);
+        showScorecardError();
       }
     }
 
@@ -1787,38 +1855,72 @@
       selectFarmer(q);
     }
 
+    // Every id renderScorecard() populates — used to strip the loading
+    // skeleton once real data lands, and to re-apply it (with the error
+    // banner) if a fetch fails, instead of silently leaving stale content
+    // on screen the way the old `.catch(() => null)` + no-op did.
+    const SCORECARD_FIELD_IDS = [
+      "gauge-score-val", "hero-farmer-name", "hero-farmer-id", "rating-grade-text",
+      "stat-pd", "stat-kcc", "hero-loan-limit", "hero-land-score", "hero-loan-score",
+      "hero-yield-score", "card-avatar", "card-farmer-name", "card-farmer-id",
+      "card-email", "card-location", "card-land-acres", "card-crops", "card-repay-status",
+      "pillar-land-badge", "p1-land", "p1-val", "pillar-loan-badge", "p2-past-loan",
+      "p2-status", "pillar-yield-badge", "p3-yield", "p3-crop", "sanction-badge-status",
+      "sanction-loan-amount", "sanction-kcc-scheme", "sanction-interest-rate",
+    ];
+
+    function showScorecardLoading() {
+      document.getElementById("scorecard-error-banner").classList.remove("show");
+      SCORECARD_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("skel");
+      });
+    }
+
+    function showScorecardError() {
+      document.getElementById("scorecard-error-banner").classList.add("show");
+    }
+
     async function loadFarmerScorecard(q) {
+      showScorecardLoading();
       try {
         const res = await fetch(`${API_BASE}/credit_score/${encodeURIComponent(q)}`, { headers: authHeaders() }).catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
           renderScorecard(data);
+        } else {
+          showScorecardError();
         }
       } catch (err) {
         console.error("Failed to load scorecard for " + q, err);
+        showScorecardError();
       }
     }
 
     function renderScorecard(data) {
-      if (!data) return;
+      if (!data) { showScorecardError(); return; }
+      SCORECARD_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("skel");
+      });
 
-      const name = data.farmer_name || data.name || "Farmer";
-      const fid = data.farmer_id || "F001";
+      const name = data.farmer_name || data.name || "Unknown";
+      const fid = data.farmer_id || currentFarmerQuery || "Unknown";
       
       // Farmer profile card
       if (document.getElementById("card-farmer-name")) document.getElementById("card-farmer-name").textContent = name;
       if (document.getElementById("card-farmer-id")) document.getElementById("card-farmer-id").textContent = `ID: ${fid}`;
       if (document.getElementById("card-avatar")) document.getElementById("card-avatar").textContent = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-      if (document.getElementById("card-email")) document.getElementById("card-email").textContent = data.email || "N/A";
+      if (document.getElementById("card-email")) document.getElementById("card-email").textContent = data.email || "—";
       if (document.getElementById("card-location")) document.getElementById("card-location").textContent = `${data.district || ''}, ${data.state || ''}`;
-      if (document.getElementById("card-land-acres")) document.getElementById("card-land-acres").textContent = `${data.land_acres} Acres`;
-      if (document.getElementById("card-crops")) document.getElementById("card-crops").textContent = data.primary_crop || "Paddy";
-      if (document.getElementById("card-repay-status")) document.getElementById("card-repay-status").textContent = data.repayment_status || "Repaid on time";
+      if (document.getElementById("card-land-acres")) document.getElementById("card-land-acres").textContent = (data.land_acres != null) ? `${data.land_acres} Acres` : "—";
+      if (document.getElementById("card-crops")) document.getElementById("card-crops").textContent = data.primary_crop || "—";
+      if (document.getElementById("card-repay-status")) document.getElementById("card-repay-status").textContent = data.repayment_status || "—";
 
       // Hero banner meta
       if (document.getElementById("hero-farmer-name")) document.getElementById("hero-farmer-name").textContent = name;
       if (document.getElementById("hero-farmer-id")) document.getElementById("hero-farmer-id").textContent = `ID: ${fid}`;
-      if (document.getElementById("hero-loan-limit")) document.getElementById("hero-loan-limit").innerHTML = formatINR(data.max_loan_limit || 350000);
+      if (document.getElementById("hero-loan-limit")) document.getElementById("hero-loan-limit").innerHTML = (data.max_loan_limit != null) ? formatINR(data.max_loan_limit) : "—";
 
       // Score & Gauge
       const score = Number(data.credit_score || 0);
@@ -1836,7 +1938,7 @@
         meter.style.stroke = color;
       }
 
-      const grade = data.rating_grade || "AA";
+      const grade = data.rating_grade || "—";
       const badge = document.getElementById("rating-grade-badge");
       if (badge) {
         let badgeColorClass = "hero-grade-green";
@@ -1844,10 +1946,10 @@
         else if (score < 65) badgeColorClass = "hero-grade-amber";
         else if (score < 80) badgeColorClass = "hero-grade-blue";
         badge.className = `hero-grade-badge ${badgeColorClass}`;
-        document.getElementById("rating-grade-text").textContent = `Grade ${grade} • ${data.risk_level || 'Low Risk'}`;
+        document.getElementById("rating-grade-text").textContent = `Grade ${grade} • ${data.risk_level || '—'}`;
       }
 
-      if (document.getElementById("stat-pd")) document.getElementById("stat-pd").textContent = `${data.default_probability || 5.0}%`;
+      if (document.getElementById("stat-pd")) document.getElementById("stat-pd").textContent = (data.default_probability != null) ? `${data.default_probability}%` : "—";
       if (document.getElementById("stat-kcc")) document.getElementById("stat-kcc").textContent = data.kcc_eligible ? "Eligible" : "Ineligible";
 
       // 3 Pillars
@@ -1861,7 +1963,7 @@
       if (document.getElementById("pillar-land-fill")) document.getElementById("pillar-land-fill").style.width = `${(landSc / 30) * 100}%`;
       if (document.getElementById("hero-land-fill")) document.getElementById("hero-land-fill").style.width = `${(landSc / 30) * 100}%`;
       if (document.getElementById("hero-land-score")) document.getElementById("hero-land-score").textContent = `${landSc} / 30`;
-      if (document.getElementById("p1-land")) document.getElementById("p1-land").textContent = `${data.land_acres} Acres`;
+      if (document.getElementById("p1-land")) document.getElementById("p1-land").textContent = (data.land_acres != null) ? `${data.land_acres} Acres` : "—";
       if (document.getElementById("p1-val")) document.getElementById("p1-val").innerHTML = formatINR(data.land_asset_value || (data.land_acres * 350000));
 
       // Loan History
@@ -1870,20 +1972,20 @@
       if (document.getElementById("hero-loan-fill")) document.getElementById("hero-loan-fill").style.width = `${(loanSc / 20) * 100}%`;
       if (document.getElementById("hero-loan-score")) document.getElementById("hero-loan-score").textContent = `${loanSc} / 20`;
       if (document.getElementById("p2-past-loan")) document.getElementById("p2-past-loan").innerHTML = formatINR(data.past_loan_amount);
-      if (document.getElementById("p2-status")) document.getElementById("p2-status").textContent = data.repayment_status || "Repaid on time";
+      if (document.getElementById("p2-status")) document.getElementById("p2-status").textContent = data.repayment_status || "—";
 
       // Crop Yield
       if (document.getElementById("pillar-yield-badge")) document.getElementById("pillar-yield-badge").textContent = `${yieldSc} / 50`;
       if (document.getElementById("pillar-yield-fill")) document.getElementById("pillar-yield-fill").style.width = `${(yieldSc / 50) * 100}%`;
       if (document.getElementById("hero-yield-fill")) document.getElementById("hero-yield-fill").style.width = `${(yieldSc / 50) * 100}%`;
       if (document.getElementById("hero-yield-score")) document.getElementById("hero-yield-score").textContent = `${yieldSc} / 50`;
-      if (document.getElementById("p3-yield")) document.getElementById("p3-yield").textContent = `${data.past_yield_quintals} Quintals`;
-      if (document.getElementById("p3-crop")) document.getElementById("p3-crop").textContent = data.primary_crop || "Paddy";
+      if (document.getElementById("p3-yield")) document.getElementById("p3-yield").textContent = (data.past_yield_quintals != null) ? `${data.past_yield_quintals} Quintals` : "—";
+      if (document.getElementById("p3-crop")) document.getElementById("p3-crop").textContent = data.primary_crop || "—";
 
       // Sanction Card
-      if (document.getElementById("sanction-loan-amount")) document.getElementById("sanction-loan-amount").innerHTML = formatINR(data.max_loan_limit || 350000);
+      if (document.getElementById("sanction-loan-amount")) document.getElementById("sanction-loan-amount").innerHTML = (data.max_loan_limit != null) ? formatINR(data.max_loan_limit) : "—";
       if (document.getElementById("sanction-kcc-scheme")) document.getElementById("sanction-kcc-scheme").textContent = data.kcc_eligible ? "Qualified (4.0%)" : "Ineligible";
-      if (document.getElementById("sanction-interest-rate")) document.getElementById("sanction-interest-rate").textContent = data.interest_rate || "4.0% (KCC Subsidized)";
+      if (document.getElementById("sanction-interest-rate")) document.getElementById("sanction-interest-rate").textContent = data.interest_rate || "—";
     }
 
     function switchTab(tabId) {
@@ -1969,7 +2071,7 @@
             <td><code style="font-size:11px;color:var(--text-secondary);">${f.email || 'N/A'}</code></td>
             <td>${f.district ? f.district + ', ' : ''}${f.state || ''}</td>
             <td><strong>${f.land_acres}</strong> Acres</td>
-            <td><span class="status-pill" style="font-size:11px;padding:2px 8px;">${f.primary_crop || 'Paddy'}</span></td>
+            <td><span class="status-pill" style="font-size:11px;padding:2px 8px;">${f.primary_crop || '&mdash;'}</span></td>
             <td>${formatINR(f.past_loan_amount)}</td>
             <td>${f.past_yield_quintals} Qtl</td>
             <td><strong>${f.credit_score}</strong></td>
