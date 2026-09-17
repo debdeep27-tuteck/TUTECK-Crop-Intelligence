@@ -62,7 +62,7 @@ LEGACY_USERS_XLSX = BASE_DIR / "users.xlsx"
 LEGACY_PERMISSIONS_XLSX = BASE_DIR / "permissions.xlsx"
 LEGACY_USER_PERMISSIONS_XLSX = BASE_DIR / "user_permissions.xlsx"
 
-ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers"]
+ALL_PAGES = ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers", "/master-data-config"]
 
 VALID_ROLES = {"admin", "analyst", "farmer", "state_admin", "district_admin", "mandi", "storage_provider"}
 VALID_STATUSES = {"active", "restricted"}
@@ -87,7 +87,7 @@ ADDRESS_SCOPED_ROLES = {"mandi", "storage_provider"}
 # and is editable live from the admin panel (see /api/permissions routes).
 DEFAULT_ROLE_PERMISSIONS = {
     "admin": {
-        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers"],
+        "pages": ["/dashboard", "/irrigation", "/recommend-page", "/alerts", "/disease", "/yield-detect", "/cold-storage", "/auction", "/auction-mandi", "/mandi-prices", "/nearest-mandi", "/advisory", "/credit-score", "/storage-config", "/find-farmers", "/master-data-config"],
         "crud": True,
     },
     "analyst": {
@@ -560,25 +560,48 @@ def init_excel():
         # that already had "/storage-config" should get "/find-farmers" too,
         # for installs whose role_permissions table predates this split.
         already_migrated_find_farmers = conn.execute(
-            "SELECT 1 FROM schema_migrations WHERE key = ?", ("find_farmers_page_backfill_v1",)
+            "SELECT 1 FROM schema_migrations WHERE key = %s", ("find_farmers_page_backfill_v1",)
         ).fetchone()
         if not already_migrated_find_farmers:
             for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
                 if "/find-farmers" not in cfg["pages"]:
                     continue
-                row = conn.execute("SELECT pages FROM role_permissions WHERE role = ?", (role,)).fetchone()
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = %s", (role,)).fetchone()
                 if row is None:
                     continue
                 current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
                 if "/find-farmers" not in current_pages:
                     current_pages.append("/find-farmers")
                     conn.execute(
-                        "UPDATE role_permissions SET pages = ? WHERE role = ?",
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
                         (",".join(current_pages), role),
                     )
             conn.execute(
                 "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
                 ("find_farmers_page_backfill_v1", time.time()),
+            )
+
+        # One-time backfill: "/master-data-config" was added to DEFAULT_ROLE_PERMISSIONS for admin role
+        already_migrated_master_data = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE key = %s", ("master_data_config_page_backfill_v1",)
+        ).fetchone()
+        if not already_migrated_master_data:
+            for role, cfg in DEFAULT_ROLE_PERMISSIONS.items():
+                if "/master-data-config" not in cfg["pages"]:
+                    continue
+                row = conn.execute("SELECT pages FROM role_permissions WHERE role = %s", (role,)).fetchone()
+                if row is None:
+                    continue
+                current_pages = [p.strip() for p in row["pages"].split(",") if p.strip()]
+                if "/master-data-config" not in current_pages:
+                    current_pages.append("/master-data-config")
+                    conn.execute(
+                        "UPDATE role_permissions SET pages = %s WHERE role = %s",
+                        (",".join(current_pages), role),
+                    )
+            conn.execute(
+                "INSERT INTO schema_migrations (key, applied_at) VALUES (%s, %s)",
+                ("master_data_config_page_backfill_v1", time.time()),
             )
 
         # One-time migration: existing installs' `users` table predates the

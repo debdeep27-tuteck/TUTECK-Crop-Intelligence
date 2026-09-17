@@ -132,6 +132,9 @@ NEAREST_MANDI_PORT = 6012
 # services above); gateway.py forwards /api/advisory/* to this port.
 ADVISORY_PORT = 6013
 
+# Master Data Config backend
+MASTER_DATA_PORT = 6015
+
 # ── COLOUR HELPERS ─────────────────────────────────────────────────────────────
 
 GREEN = "\033[92m"
@@ -262,6 +265,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-mandi-prices", action="store_true", help="Skip mandi prices backend")
     parser.add_argument("--no-nearest-mandi", action="store_true", help="Skip nearest mandi backend")
     parser.add_argument("--no-advisory", action="store_true", help="Skip advisory chatbot backend")
+    parser.add_argument("--no-master-data", action="store_true", help="Skip master data backend")
 
     return parser.parse_args()
 
@@ -384,6 +388,7 @@ def main() -> None:
     mandi_prices_script = find_script(base_dir, "mandi_prices_backend.py")
     nearest_mandi_script = find_script(base_dir, "nearest_mandi_backend.py")
     advisory_script = find_script(base_dir, "advisory_backend.py")
+    master_data_script = find_script(base_dir, "master_data_backend.py")
     gateway_script = find_script(base_dir, "gateway.py")
 
     if not backend_script:
@@ -630,6 +635,21 @@ def main() -> None:
         )
     else:
         log(YELLOW, "credit-score", "credit_score_backend.py not found; credit-score service skipped.")
+
+    # 3i) Start master_data microservice (port 6015)
+    master_data_script = find_script(base_dir, "master_data_backend.py")
+    if args.no_master_data:
+        log(YELLOW, "master-data", "Skipped by --no-master-data")
+    elif master_data_script:
+        start_if_needed(
+            label="master-data",
+            script=master_data_script,
+            cmd_args=["--port", str(MASTER_DATA_PORT)],
+            port=MASTER_DATA_PORT,
+            timeout=args.ready_timeout,
+        )
+    else:
+        log(RED, "master-data", "master_data_backend.py not found; Master Data Config API will be unavailable.")
 
     # 4) Start gateway last, after internal services are up.
     start_if_needed(

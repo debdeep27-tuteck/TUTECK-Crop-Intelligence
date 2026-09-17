@@ -65,6 +65,9 @@ ADVISORY_API = "http://127.0.0.1:6013"
 # Credit Score — Farmer Agri-Credit Score & Loan Risk Assessment
 CREDIT_SCORE_API = "http://127.0.0.1:6014"
 
+# Master Data Config — Admin Master Data microservice
+MASTER_DATA_API = "http://127.0.0.1:6015"
+
 # Cache for session email → farmer_id lookups (avoids repeated backend calls).
 _EMAIL_TO_FARMER_ID = {}
 
@@ -194,6 +197,7 @@ def admin_page():
 @app.route("/nearest-mandi")
 @app.route("/advisory")
 @app.route("/credit-score")
+@app.route("/master-data-config")
 def home():
     response = send_from_directory(str(HTML_DIR), "index.html")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -283,6 +287,11 @@ def content_storage_config():
 @app.route("/content/find-farmers")
 def content_find_farmers():
     return send_from_directory(str(HTML_DIR), "find_farmers.html")
+
+
+@app.route("/content/master-data-config")
+def content_master_data_config():
+    return send_from_directory(str(HTML_DIR), "master_data_config.html")
 
 
 # ── STATIC ASSET ROUTES ─────────────────────────────────────────────────
@@ -795,6 +804,26 @@ def credit_score_health_direct():
     return forward_request(CREDIT_SCORE_API, "health")
 
 
+@app.route("/api/master-data-health")
+def master_data_health_direct():
+    return forward_request(MASTER_DATA_API, "health")
+
+
+@app.route("/api/master-data/<path:path>", methods=["GET", "POST", "PATCH", "PUT", "DELETE"])
+def master_data_api(path):
+    """
+    Proxy to master_data_backend on port 6015.
+    Requires an active admin token (enforced at gateway level as well).
+    """
+    session = get_current_session()
+    if not session:
+        return jsonify({"error": "Authentication required"}), 401
+    if str(session.get("role", "")).strip().lower() != "admin":
+        return jsonify({"error": "Forbidden: Admin access required"}), 403
+
+    return forward_request(MASTER_DATA_API, f"api/master-data/{path}")
+
+
 # ── HEALTH CHECK ────────────────────────────────────────────────────────
 
 @app.route("/health")
@@ -826,7 +855,8 @@ def health():
                 "mandi_prices": MANDI_PRICES_API,
                 "nearest_mandi": NEAREST_MANDI_API,
                 "advisory": ADVISORY_API,
-                "credit_score": CREDIT_SCORE_API
+                "credit_score": CREDIT_SCORE_API,
+                "master_data": MASTER_DATA_API
             }
         }
     })

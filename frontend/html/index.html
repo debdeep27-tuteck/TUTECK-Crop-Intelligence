@@ -1251,6 +1251,13 @@
         <!-- ── GROUP: SYSTEM ── -->
         <div class="nav-section-title" id="system-section-title">System</div>
 
+        <a class="gn-link" id="nav-master-data-link" data-target="/master-data-config" data-content="/content/master-data-config" href="#" title="Master Data Config" style="display:none;">
+          <span class="nav-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+          </span>
+          <span class="nav-label">Master Data</span>
+        </a>
+
         <a class="gn-link" href="#" onclick="openReportModal(event)" title="Executive Reports">
           <span class="nav-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
@@ -1493,7 +1500,8 @@
         '/find-farmers',
         '/mandi-prices',
         '/nearest-mandi',
-        '/credit-score'
+        '/credit-score',
+        '/master-data-config'
       ],
       district_admin: [
         '/irrigation',
@@ -1634,6 +1642,12 @@
       if (findFarmersLink) {
         const canAccess = ALLOWED_PAGES.length === 0 || ALLOWED_PAGES.includes('/find-farmers');
         findFarmersLink.style.display = canAccess ? 'flex' : 'none';
+      }
+
+      const masterDataLink = document.getElementById('nav-master-data-link');
+      if (masterDataLink) {
+        const canAccess = ALLOWED_PAGES.length > 0 ? ALLOWED_PAGES.includes('/master-data-config') : isAdmin;
+        masterDataLink.style.display = canAccess ? 'flex' : 'none';
       }
       
       const adminNav = document.getElementById('nav-admin-link');
@@ -2187,6 +2201,7 @@
       '/mandi-prices': 'MARKET PRICES',
       '/nearest-mandi': 'NEAREST MANDI',
       '/credit-score': 'AGRI CREDIT SCORE',
+      '/master-data-config': 'MASTER DATA CONFIG',
     };
 
     links.forEach(link => {
