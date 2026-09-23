@@ -125,7 +125,7 @@ RECOMMENDER_APIS = {
 # Everything else under /api/crop/<path> still goes to the dashboard/stats
 # backend as before. Match on the first path segment so e.g. both
 # "predict" and "api/crop/predict"-style nested paths route correctly.
-RECOMMENDER_PATHS = {"predict", "recommend", "valid_crops", "valid_districts", "model_info", "profiles"}
+RECOMMENDER_PATHS = {"predict", "predict-5-year", "recommend", "valid_crops", "valid_districts", "model_info", "profiles"}
 
 
 def get_crop_api():
@@ -701,6 +701,19 @@ def credit_score_api(path=""):
                 return jsonify({"error": "Farmer not found in your district"}), 404
 
     return resp
+
+
+@app.route("/api/credit-score/admin/farmers", methods=["GET"])
+@app.route("/api/credit-score/admin/farmers/<path:farmer_id>", methods=["PATCH"])
+def credit_score_admin_api(farmer_id=None):
+    """
+    Admin-only proxy to credit_score_backend's /admin/* endpoints.
+    Used by the Master Data Config page to list and edit farmer credit accounts.
+    The credit_score_backend validates the admin Bearer token itself.
+    """
+    if farmer_id:
+        return forward_request(CREDIT_SCORE_API, f"admin/farmers/{farmer_id}")
+    return forward_request(CREDIT_SCORE_API, "admin/farmers")
 
 
 @app.route("/api/unused-crops", methods=["GET", "POST"])

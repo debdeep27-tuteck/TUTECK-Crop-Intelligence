@@ -502,6 +502,234 @@ def health():
     return jsonify({"status": "ok", "service": "credit-score", "port": 6014, "database": "postgres:farmer_credit_records"})
 
 
+# ── ADMIN ENDPOINTS (Master Data Config page) ──────────────────────────────────
+
+_BACKEND_TOKENS_FILE = _BACKEND_DIR / "auth" / "active_tokens.json"
+
+def _require_admin_token():
+    """
+    Validate the Bearer token from the Authorization header against
+    backend/auth/active_tokens.json. Returns the session dict on success,
+    or a (response, status_code) tuple on failure.
+    """
+    auth = request.headers.get("Authorization", "")
+    token = auth[7:].strip() if auth.startswith("Bearer ") else ""
+    if not token:
+        return None, (jsonify({"error": "Authentication token missing"}), 401)
+    if not _BACKEND_TOKENS_FILE.exists():
+        return None, (jsonify({"error": "Auth store not found on server"}), 500)
+    try:
+        with open(_BACKEND_TOKENS_FILE, "r", encoding="utf-8") as f:
+            tokens = json.load(f) or {}
+        session = tokens.get(token)
+    except Exception as e:
+        return None, (jsonify({"error": f"Failed to read auth store: {e}"}), 500)
+    if not session or not isinstance(session, dict):
+        return None, (jsonify({"error": "Invalid or expired session token"}), 401)
+    role = str(session.get("role", "")).strip().lower()
+    if role != "admin":
+        return None, (jsonify({"error": "Forbidden: Admin privilege required"}), 403)
+    return session, None
+
+
+@app.route('/admin/farmers', methods=['GET'])
+def admin_list_farmers():
+    """
+    Admin-only: return ALL farmer credit records (no state/district scoping)
+    with their computed credit score, for the Master Data Config page.
+    """
+    session, err = _require_admin_token()
+    if err:
+        return err
+
+    _sync_recently()
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM farmer_credit_records ORDER BY id ASC"
+        ).fetchall()
+
+        result = []
+        for r in rows:
+            rec = dict(r)
+            assessment = calculate_credit_score(
+                rec["land_acres"],
+                rec["past_loan_amount"],
+                rec["past_yield_quintals"]
+            )
+            result.append({
+                "farmer_id":           rec["farmer_id"],
+                "farmer_name":         rec["farmer_name"],
+                "email":               rec["user_email"],
+                "state":               rec["state"],
+                "district":            rec["district"],
+                "land_acres":          rec["land_acres"],
+                "crop":                rec["crop"],
+                "past_loan_amount":    rec["past_loan_amount"],
+                "past_yield_quintals": rec["past_yield_quintals"],
+                "repayment_status":    rec["repayment_status"],
+                "credit_score":        assessment["credit_score"],
+                "rating_grade":        assessment["rating_grade"],
+                "risk_level":          assessment["risk_level"],
+                "max_loan_limit":      assessment["max_loan_limit"],
+                "kcc_eligible":        assessment["kcc_eligible"],
+            })
+
+    return jsonify({"farmers": result, "count": len(result)})
+
+
+_ALLOWED_REPAYMENT_STATUSES = {
+    "Repaid on time",
+    "1 late payment",
+    "2+ late payments",
+    "Defaulted",
+}
+
+@app.route('/admin/farmers/<farmer_id>', methods=['PATCH'])
+def admin_update_farmer(farmer_id):
+    """
+    Admin-only: manually edit a farmer's credit account fields.
+    Accepts JSON body with any subset of:
+      farmer_name, state, district, crop,
+      land_acres, past_loan_amount, past_yield_quintals, repayment_status
+    Returns the updated record with a freshly computed credit score.
+    """
+    session, err = _require_admin_token()
+    if err:
+        return err
+
+    farmer_id = str(farmer_id).strip()
+    if not farmer_id:
+        return jsonify({"error": "farmer_id is required"}), 400
+
+    body = request.get_json(silent=True) or {}
+
+    # ── Validate editable fields ──
+    errors = []
+
+    land_acres = body.get("land_acres")
+    if land_acres is not None:
+        try:
+            land_acres = float(land_acres)
+            if land_acres <= 0:
+                errors.append("land_acres must be greater than 0")
+        except (ValueError, TypeError):
+            errors.append("land_acres must be a number")
+
+    past_loan_amount = body.get("past_loan_amount")
+    if past_loan_amount is not None:
+        try:
+            past_loan_amount = float(past_loan_amount)
+            if past_loan_amount < 0:
+                errors.append("past_loan_amount must be >= 0")
+        except (ValueError, TypeError):
+            errors.append("past_loan_amount must be a number")
+
+    past_yield_quintals = body.get("past_yield_quintals")
+    if past_yield_quintals is not None:
+        try:
+            past_yield_quintals = float(past_yield_quintals)
+            if past_yield_quintals < 0:
+                errors.append("past_yield_quintals must be >= 0")
+        except (ValueError, TypeError):
+            errors.append("past_yield_quintals must be a number")
+
+    repayment_status = body.get("repayment_status")
+    if repayment_status is not None:
+        repayment_status = str(repayment_status).strip()
+        if repayment_status not in _ALLOWED_REPAYMENT_STATUSES:
+            errors.append(
+                f"repayment_status must be one of: {sorted(_ALLOWED_REPAYMENT_STATUSES)}"
+            )
+
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    # ── Build UPDATE ──
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM farmer_credit_records WHERE LOWER(farmer_id) = LOWER(?)",
+            (farmer_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({"error": f"Farmer '{farmer_id}' not found"}), 404
+
+        fields = []
+        params = []
+
+        if "farmer_name" in body and str(body["farmer_name"]).strip():
+            fields.append("farmer_name = ?")
+            params.append(str(body["farmer_name"]).strip())
+
+        if "state" in body and str(body["state"]).strip():
+            fields.append("state = ?")
+            params.append(str(body["state"]).strip().title())
+
+        if "district" in body and str(body["district"]).strip():
+            fields.append("district = ?")
+            params.append(str(body["district"]).strip().title())
+
+        if "crop" in body and str(body["crop"]).strip():
+            fields.append("crop = ?")
+            params.append(str(body["crop"]).strip())
+
+        if land_acres is not None:
+            fields.append("land_acres = ?")
+            params.append(land_acres)
+
+        if past_loan_amount is not None:
+            fields.append("past_loan_amount = ?")
+            params.append(past_loan_amount)
+
+        if past_yield_quintals is not None:
+            fields.append("past_yield_quintals = ?")
+            params.append(past_yield_quintals)
+
+        if repayment_status is not None:
+            fields.append("repayment_status = ?")
+            params.append(repayment_status)
+
+        if not fields:
+            # Nothing to update — return current record
+            rec = dict(row)
+        else:
+            params.append(farmer_id)
+            conn.execute(
+                f"UPDATE farmer_credit_records SET {', '.join(fields)} WHERE LOWER(farmer_id) = LOWER(?)",
+                tuple(params)
+            )
+            conn.commit()
+            updated = conn.execute(
+                "SELECT * FROM farmer_credit_records WHERE LOWER(farmer_id) = LOWER(?)",
+                (farmer_id,)
+            ).fetchone()
+            rec = dict(updated)
+
+    assessment = calculate_credit_score(
+        rec["land_acres"],
+        rec["past_loan_amount"],
+        rec["past_yield_quintals"]
+    )
+
+    return jsonify({
+        "farmer_id":           rec["farmer_id"],
+        "farmer_name":         rec["farmer_name"],
+        "email":               rec["user_email"],
+        "state":               rec["state"],
+        "district":            rec["district"],
+        "land_acres":          rec["land_acres"],
+        "crop":                rec["crop"],
+        "past_loan_amount":    rec["past_loan_amount"],
+        "past_yield_quintals": rec["past_yield_quintals"],
+        "repayment_status":    rec["repayment_status"],
+        "credit_score":        assessment["credit_score"],
+        "rating_grade":        assessment["rating_grade"],
+        "risk_level":          assessment["risk_level"],
+        "max_loan_limit":      assessment["max_loan_limit"],
+        "kcc_eligible":        assessment["kcc_eligible"],
+        "breakdown":           assessment["breakdown"],
+    })
+
+
 # ── INITIALIZE ON MODULE LOAD ──────────────────────────────────────────────────
 init_db()
 

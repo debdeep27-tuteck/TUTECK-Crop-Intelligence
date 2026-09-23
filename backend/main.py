@@ -177,6 +177,13 @@ def start_process(label: str, cmd: list[str], cwd: Path, env_extra: Optional[dic
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
 
+    project_root = Path(__file__).resolve().parent
+    existing_pythonpath = env.get("PYTHONPATH", "")
+    if existing_pythonpath:
+        env["PYTHONPATH"] = str(project_root) + os.pathsep + existing_pythonpath
+    else:
+        env["PYTHONPATH"] = str(project_root)
+
     if env_extra:
         env.update(env_extra)
 

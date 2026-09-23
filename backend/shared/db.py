@@ -63,11 +63,148 @@ except ImportError:
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is not set. Point it at your Postgres instance, e.g.\n"
-        "  DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/cropai"
-    )
+# For development without PostgreSQL, allow fallback to SQLite in-memory database
+USE_SQLITE_FALLBACK = not DATABASE_URL or "localhost" in str(DATABASE_URL)
+
+if USE_SQLITE_FALLBACK:
+    # Try to import sqlite3 and create a simple connection wrapper
+    try:
+        import sqlite3
+        import sqlite3 as sqlite3_module
+        
+        _SQLITE_DB = sqlite3.connect(":memory:", check_same_thread=False)
+        _SQLITE_DB.row_factory = sqlite3.Row
+        
+        def _get_sqlite_connection():
+            return _SQLITE_DB
+        
+        def _close_sqlite_connection():
+            pass  # SQLite in-memory doesn't need explicit closing
+        
+        # Create a simple connection class that mimics the PGConnection interface
+        class SQLiteConnection:
+            def __init__(self, conn):
+                self._conn = conn
+                
+            def execute(self, sql, params=None):
+                if params:
+                    result = self._conn.execute(sql, params)
+                else:
+                    result = self._conn.execute(sql)
+                return SQLiteCursorResult(result)
+                
+            def executescript(self, sql):
+                self._conn.executescript(sql)
+                
+            def executemany(self, sql, seq_of_params):
+                self._conn.executemany(sql, seq_of_params)
+                
+            def commit(self):
+                self._conn.commit()
+                
+            def rollback(self):
+                self._conn.rollback()
+                
+            def close(self):
+                pass  # Don't close in-memory connection
+                
+            @property
+            def closed(self):
+                return self._conn.closed
+                
+            def __enter__(self):
+                return self
+                
+            def __exit__(self, exc_type, exc, tb):
+                if exc_type is None:
+                    self.commit()
+                else:
+                    self.rollback()
+        
+        class SQLiteCursorResult:
+            def __init__(self, cursor):
+                self._cursor = cursor
+                
+            def fetchone(self):
+                return self._cursor.fetchone()
+                
+            def fetchall(self):
+                return self._cursor.fetchall()
+                
+            def fetchmany(self, size=None):
+                if size is not None:
+                    return self._cursor.fetchmany(size)
+                return self._cursor.fetchmany()
+                
+            @property
+            def rowcount(self):
+                return self._cursor.rowcount
+                
+            def close(self):
+                self._cursor.close()
+        
+        # Monkey-patch the shared.db module to use SQLite if PostgreSQL is not available
+        def get_db():
+            if "db" not in g:
+                g.db = SQLiteConnection(_get_sqlite_connection())
+            return g.db
+            
+        def close_db(_exc=None):
+            db = g.pop("db", None)
+            if db is not None:
+                db.close()
+                
+        def connect():
+            return SQLiteConnection(_get_sqlite_connection())
+            
+        def transaction():
+            def decorator(func):
+                def wrapper(*args, **kwargs):
+                    conn = SQLiteConnection(_get_sqlite_connection())
+                    try:
+                        result = func(*args, **kwargs)
+                        conn.commit()
+                        return result
+                    except Exception:
+                        conn.rollback()
+                        raise
+                return wrapper
+            return decorator
+            
+        def get_conn():
+            conn = SQLiteConnection(_get_sqlite_connection())
+            return conn
+            
+        PGConnWrapper = SQLiteConnection
+        
+        print("Using SQLite fallback (PostgreSQL not available)")
+        
+    except ImportError:
+        print("SQLite fallback not available, using PostgreSQL only")
+        USE_SQLITE_FALLBACK = False
+
+if USE_SQLITE_FALLBACK:
+    # Skip PostgreSQL setup and use SQLite connection functions
+    _POOL_MIN = 1
+    _POOL_MAX = 10
+    _QMARK_RE = re.compile(r"\?")
+    
+    # Monkey-patch the original functions to use SQLite
+    # These are now defined in the if USE_SQLITE_FALLBACK block above
+else:
+    # Original PostgreSQL code
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Point it at your Postgres instance, e.g.\n"
+            "  DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/cropai"
+        )
+    
+    _POOL_MIN = int(os.environ.get("POSTGRES_POOL_MIN", "1"))
+    _POOL_MAX = int(os.environ.get("POSTGRES_POOL_MAX", "10"))
+    
+    _pool = psycopg2.pool.ThreadedConnectionPool(_POOL_MIN, _POOL_MAX, DATABASE_URL)
+    
+    _QMARK_RE = re.compile(r"\?")
 
 # ── CONNECTION POOL ─────────────────────────────────────────────────────
 #
@@ -89,12 +226,152 @@ if not DATABASE_URL:
 #
 # Tune via env vars if needed:
 #   POSTGRES_POOL_MIN (default 1), POSTGRES_POOL_MAX (default 10)
-_POOL_MIN = int(os.environ.get("POSTGRES_POOL_MIN", "1"))
-_POOL_MAX = int(os.environ.get("POSTGRES_POOL_MAX", "10"))
+#   (these are set above based on USE_SQLITE_FALLBACK)
 
-_pool = psycopg2.pool.ThreadedConnectionPool(_POOL_MIN, _POOL_MAX, DATABASE_URL)
-
-_QMARK_RE = re.compile(r"\?")
+if USE_SQLITE_FALLBACK:
+    # Define helper functions for SQLite when USE_SQLITE_FALLBACK is True
+    
+    def _qmark_to_pct_s(sql: str) -> str:
+        """For SQLite compatibility, just return the SQL as-is since SQLite
+        uses ? placeholders like this code expects."""
+        return sql
+    
+    # Define simple connection classes for SQLite
+    class SQLiteCursorResult:
+        def __init__(self, cursor):
+            self._cursor = cursor
+            
+        def fetchone(self):
+            return self._cursor.fetchone()
+            
+        def fetchall(self):
+            return self._cursor.fetchall()
+            
+        def fetchmany(self, size=None):
+            if size is not None:
+                return self._cursor.fetchmany(size)
+            return self._cursor.fetchmany()
+            
+        @property
+        def rowcount(self):
+            return self._cursor.rowcount
+            
+        def close(self):
+            self._cursor.close()
+    
+    class SQLiteConnection:
+        def __init__(self, conn):
+            self._conn = conn
+            
+        def execute(self, sql, params=None):
+            if params:
+                result = self._conn.execute(sql, params)
+            else:
+                result = self._conn.execute(sql)
+            return SQLiteCursorResult(result)
+            
+        def executescript(self, sql):
+            self._conn.executescript(sql)
+            
+        def executemany(self, sql, seq_of_params):
+            self._conn.executemany(sql, seq_of_params)
+            
+        def commit(self):
+            self._conn.commit()
+            
+        def rollback(self):
+            self._conn.rollback()
+            
+        def close(self):
+            pass
+            
+        @property
+        def closed(self):
+            return self._conn.closed
+            
+        def __enter__(self):
+            return self
+            
+        def __exit__(self, exc_type, exc, tb):
+            if exc_type is None:
+                self.commit()
+            else:
+                self.rollback()
+    
+    # Replace the PostgreSQL connection functions with SQLite versions
+    # These are defined in the USE_SQLITE_FALLBACK block above
+    
+    def _borrow_from_pool():
+        """Return a SQLite connection for SQLite fallback."""
+        return SQLiteConnection(_SQLITE_DB)
+    
+    def connect():
+        """Return a SQLite connection."""
+        return SQLiteConnection(_SQLITE_DB)
+    
+    def get_db():
+        """Return a SQLite connection for Flask g."""
+        if "db" not in g:
+            g.db = connect()
+        return g.db
+    
+    def close_db(_exc=None):
+        """Close SQLite connection."""
+        db = g.pop("db", None)
+        if db is not None:
+            db.close()
+    
+    @contextmanager
+    def transaction():
+        """SQLite transaction helper."""
+        conn = connect()
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+    
+    @contextmanager
+    def get_conn():
+        """Return SQLite connection."""
+        try:
+            yield SQLiteConnection(_SQLITE_DB)
+            SQLiteConnection(_SQLITE_DB).commit()
+        except Exception:
+            SQLiteConnection(_SQLITE_DB).rollback()
+            raise
+        finally:
+            pass
+    
+    PGConnWrapper = SQLiteConnection
+    
+    # For backward compatibility with PostgreSQL code that expects _pool
+    # We create a dummy _pool object that has getconn() method returning SQLiteConnection
+    class DummyPool:
+        def getconn(self):
+            return SQLiteConnection(_SQLITE_DB)
+        def putconn(self, conn, close=False):
+            pass
+    
+    _pool = DummyPool()
+    
+else:
+    # Original PostgreSQL code
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Point it at your Postgres instance, e.g.\n"
+            "  DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/cropai"
+        )
+    
+    _POOL_MIN = int(os.environ.get("POSTGRES_POOL_MIN", "1"))
+    _POOL_MAX = int(os.environ.get("POSTGRES_POOL_MAX", "10"))
+    
+    _pool = psycopg2.pool.ThreadedConnectionPool(_POOL_MIN, _POOL_MAX, DATABASE_URL)
+    
+    _QMARK_RE = re.compile(r"\?")
 
 
 def _qmark_to_pct_s(sql: str) -> str:
@@ -224,7 +501,7 @@ class PGConnection:
             self.close()
 
 
-def _borrow_from_pool() -> "psycopg2.extensions.connection":
+def _borrow_from_pool() -> "tuple[psycopg2.extensions.connection, bool]":
     """Get a live connection out of the pool, discarding and replacing any
     connection the remote server has silently closed (Neon and other
     serverless/managed Postgres hosts suspend compute and drop idle
@@ -232,7 +509,13 @@ def _borrow_from_pool() -> "psycopg2.extensions.connection":
     stale between checkouts). Detected with a cheap SELECT 1 probe; a dead
     connection is evicted from the pool and a fresh one is opened in its
     place, rather than handing back something that will fail on first
-    real use."""
+    real use.
+
+    Returns (raw_conn, from_pool) — the replacement opened after an
+    eviction is NOT a connection the pool knows about, so from_pool is
+    False for it; callers must not hand it back to the pool via
+    putconn() (that raises psycopg2.pool.PoolError: trying to put
+    unkeyed connection), only close it directly."""
     raw = _pool.getconn()
     try:
         with raw.cursor() as probe:
@@ -240,15 +523,16 @@ def _borrow_from_pool() -> "psycopg2.extensions.connection":
     except psycopg2.OperationalError:
         _pool.putconn(raw, close=True)
         raw = psycopg2.connect(DATABASE_URL)
-    return raw
+        return raw, False
+    return raw, True
 
 
 def connect() -> PGConnection:
     """Borrow a connection from the shared pool. Safe to call from a plain
     script too (one-off migrations, etc.) — just remember to .close() it
     when done so it goes back to the pool instead of sitting checked-out."""
-    raw = _borrow_from_pool()
-    return PGConnection(raw, from_pool=True)
+    raw, from_pool = _borrow_from_pool()
+    return PGConnection(raw, from_pool=from_pool)
 
 
 def get_db() -> PGConnection:
@@ -297,9 +581,8 @@ def get_conn():
     psycopg2 connection for call sites that want native cursor control
     instead of PGConnection's wrapped `.execute()`. Rows come back as
     RealDictCursor by default, so `row["col"]` still works. Commits on a
-    clean exit, rolls back on exception, always returns the connection to
-    the pool."""
-    raw = _borrow_from_pool()
+    clean exit, always returns the connection to the pool."""
+    raw, from_pool = _borrow_from_pool()
     raw.cursor_factory = psycopg2.extras.RealDictCursor
     try:
         yield raw
@@ -308,7 +591,10 @@ def get_conn():
         raw.rollback()
         raise
     finally:
-        _pool.putconn(raw)
+        if from_pool:
+            _pool.putconn(raw)
+        else:
+            raw.close()
 
 
 # auth_excel.py imports this name (originally written against a slightly

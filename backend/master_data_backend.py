@@ -13,13 +13,14 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import time
-import uuid
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 
+import openpyxl
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
@@ -66,13 +67,276 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _parse_auction_metadata(meta_json):
-    if not meta_json:
-        return {}
+# ── STATE-SCOPED XLSX HELPERS ─────────────────────────────────────────────
+
+_PROJECT_ROOT = _BACKEND_DIR.parent
+
+_STATE_DIRS = {
+    "tripura":   _PROJECT_ROOT / "data_and_model",
+    "rajasthan": _PROJECT_ROOT / "data_and_model_rajasthan",
+    "meghalaya": _PROJECT_ROOT / "data_and_model_meghalaya",
+}
+
+XLSX_FILENAME = "merged_crop_enriched_features_del.xlsx"
+
+_CROP_FEATURE_COLS = ["Crop_Category", "Crop_Water_Need", "Crop_Duration_Days"]
+
+_VALID_CROP_CATEGORIES = {
+    "Cereals", "Cereal",
+    "Pulses", "Pulse",
+    "Oilseeds", "Oilseed",
+    "Vegetables", "Vegetable",
+    "Fruits", "Fruit",
+    "Spices", "Spice",
+    "Fibres", "Fiber",
+    "Cash Crops", "Cash",
+    "Plantation Crops",
+    "Medicinal",
+    "Forage",
+    "Unknown",
+}
+
+_NUMERIC_COLS = [
+    "Area (Hectare)",
+    "Production (Tonnes/Bales)",
+    "Fertilizer_kg_per_ha",
+    "Yield (Tonne or Bales/Hectare)",
+    "Crop_Duration_Days",
+]
+
+
+def _get_state_xlsx_path(state: str) -> Path:
+    state_lower = state.strip().lower()
+    if state_lower not in _STATE_DIRS:
+        raise ValueError(f"Unsupported state '{state}'. Supported: {sorted(_STATE_DIRS)}")
+    return _STATE_DIRS[state_lower] / XLSX_FILENAME
+
+
+def _read_crop_features(state: str) -> list:
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        return []
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+    if not rows:
+        return []
+    headers = [str(c).strip() if c else "" for c in rows[0]]
+    data_rows = rows[1:]
+    feature_col_indices = {}
+    for col in _CROP_FEATURE_COLS:
+        if col in headers:
+            feature_col_indices[col] = headers.index(col)
+    seen = set()
+    results = []
+    for row in data_rows:
+        crop_idx = headers.index("Crop") if "Crop" in headers else -1
+        if crop_idx < 0 or crop_idx >= len(row):
+            continue
+        crop_name = str(row[crop_idx] or "").strip()
+        if not crop_name or crop_name in seen:
+            continue
+        seen.add(crop_name)
+        entry = {"crop": crop_name}
+        for col, idx in feature_col_indices.items():
+            val = row[idx] if idx < len(row) else None
+            entry[col] = val
+        results.append(entry)
+    return results
+
+
+def _get_districts(state: str) -> list:
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        return []
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+    if not rows:
+        return []
+    headers = [str(c).strip() if c else "" for c in rows[0]]
+    data_rows = rows[1:]
+    if "District_Name" not in headers:
+        return []
+    dist_idx = headers.index("District_Name")
+    seen = set()
+    results = []
+    for row in data_rows:
+        if dist_idx < len(row):
+            d = str(row[dist_idx] or "").strip()
+            if d and d not in seen:
+                seen.add(d)
+                results.append(d)
+    return sorted(results)
+
+
+def _get_all_rows_from_xlsx(path: Path) -> tuple:
+    wb = openpyxl.load_workbook(path)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+    return rows, [str(c).strip() if c else "" for c in rows[0]]
+
+
+def _write_rows_to_xlsx(path: Path, headers: list, data_rows: list):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(headers)
+    for row in data_rows:
+        ws.append(list(row))
+    wb.save(path)
+    wb.close()
+
+
+def _update_crop_feature_in_xlsx(state: str, crop_name: str, updates: dict):
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        raise FileNotFoundError(f"xlsx not found: {path}")
+    rows, headers = _get_all_rows_from_xlsx(path)
+    feature_indices = {col: headers.index(col) for col in _CROP_FEATURE_COLS if col in headers}
+    crop_idx = headers.index("Crop") if "Crop" in headers else -1
+    for i, row in enumerate(rows[1:], start=2):
+        if crop_idx < len(row) and str(row[crop_idx] or "").strip() == crop_name:
+            new_row = list(row)
+            for col, val in updates.items():
+                if col in feature_indices:
+                    new_row[feature_indices[col]] = val
+            rows[i - 1] = tuple(new_row)
+    _write_rows_to_xlsx(path, headers, rows[1:])
+
+
+def _add_crop_to_xlsx(state: str, crop_name: str, features: dict):
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        raise FileNotFoundError(f"xlsx not found: {path}")
+    rows, headers = _get_all_rows_from_xlsx(path)
+    existing_crop_indices = [i for i, r in enumerate(rows[1:], start=2)
+                             if len(r) > headers.index("Crop") and str(r[headers.index("Crop")] or "").strip() == crop_name]
+    if existing_crop_indices:
+        raise ValueError(f"Crop '{crop_name}' already exists in xlsx.")
+    feature_indices = {col: headers.index(col) for col in _CROP_FEATURE_COLS if col in headers}
+    dist_idx = headers.index("District_Name") if "District_Name" in headers else -1
+    year_idx = headers.index("Crop_Year") if "Crop_Year" in headers else -1
+    season_idx = headers.index("Season") if "Season" in headers else -1
+    existing_dists = sorted({str(r[dist_idx] or "").strip() for r in rows[1:]
+                             if dist_idx < len(r) and str(r[dist_idx] or "").strip()})
+    existing_years = sorted({str(r[year_idx] or "").strip() for r in rows[1:]
+                             if year_idx < len(r) and str(r[year_idx] or "").strip()})
+    existing_seasons = sorted({str(r[season_idx] or "").strip() for r in rows[1:]
+                               if season_idx < len(r) and str(r[season_idx] or "").strip()})
+    new_rows = []
+    for dist in existing_dists:
+        for yr in existing_years:
+            for season in existing_seasons:
+                new_row = [""] * len(headers)
+                new_row[headers.index("District_Name") if "District_Name" in headers else -1] = dist
+                new_row[headers.index("Crop_Year") if "Crop_Year" in headers else -1] = yr
+                new_row[headers.index("Season") if "Season" in headers else -1] = season
+                new_row[headers.index("Crop") if "Crop" in headers else -1] = crop_name
+                for col, val in features.items():
+                    if col in feature_indices:
+                        new_row[feature_indices[col]] = val
+                new_rows.append(tuple(new_row))
+    rows.extend(new_rows)
+    _write_rows_to_xlsx(path, headers, rows[1:])
+
+
+def _delete_crop_from_xlsx(state: str, crop_name: str):
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        raise FileNotFoundError(f"xlsx not found: {path}")
+    rows, headers = _get_all_rows_from_xlsx(path)
+    crop_idx = headers.index("Crop") if "Crop" in headers else -1
+    filtered = [r for r in rows[1:] if crop_idx >= len(r) or str(r[crop_idx] or "").strip() != crop_name]
+    _write_rows_to_xlsx(path, headers, filtered)
+
+
+def _add_district_to_xlsx(state: str, district_name: str):
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        raise FileNotFoundError(f"xlsx not found: {path}")
+    rows, headers = _get_all_rows_from_xlsx(path)
+    dist_idx = headers.index("District_Name") if "District_Name" in headers else -1
+    existing_dists = {str(r[dist_idx] or "").strip() for r in rows[1:]
+                      if dist_idx < len(r) and str(r[dist_idx] or "").strip()}
+    if district_name in existing_dists:
+        raise ValueError(f"District '{district_name}' already exists in xlsx.")
+    year_idx = headers.index("Crop_Year") if "Crop_Year" in headers else -1
+    season_idx = headers.index("Season") if "Season" in headers else -1
+    crop_idx = headers.index("Crop") if "Crop" in headers else -1
+    feature_indices = {col: headers.index(col) for col in _CROP_FEATURE_COLS if col in headers}
+    existing_years = sorted({str(r[year_idx] or "").strip() for r in rows[1:]
+                             if year_idx < len(r) and str(r[year_idx] or "").strip()})
+    existing_seasons = sorted({str(r[season_idx] or "").strip() for r in rows[1:]
+                               if season_idx < len(r) and str(r[season_idx] or "").strip()})
+    existing_crops = sorted({str(r[crop_idx] or "").strip() for r in rows[1:]
+                             if crop_idx < len(r) and str(r[crop_idx] or "").strip()})
+    new_rows = []
+    for crop in existing_crops:
+        for yr in existing_years:
+            for season in existing_seasons:
+                new_row = [""] * len(headers)
+                new_row[dist_idx] = district_name
+                new_row[year_idx] = yr
+                new_row[season_idx] = season
+                new_row[crop_idx] = crop
+                crop_rows = [r for r in rows[1:]
+                             if crop_idx < len(r) and str(r[crop_idx] or "").strip() == crop]
+                if crop_rows:
+                    ref = crop_rows[0]
+                    for col, idx in feature_indices.items():
+                        new_row[idx] = ref[idx] if idx < len(ref) else None
+                new_rows.append(tuple(new_row))
+    rows.extend(new_rows)
+    _write_rows_to_xlsx(path, headers, rows[1:])
+
+
+def _delete_district_from_xlsx(state: str, district_name: str):
+    path = _get_state_xlsx_path(state)
+    if not path.exists():
+        raise FileNotFoundError(f"xlsx not found: {path}")
+    rows, headers = _get_all_rows_from_xlsx(path)
+    dist_idx = headers.index("District_Name") if "District_Name" in headers else -1
+    filtered = [r for r in rows[1:] if dist_idx >= len(r) or str(r[dist_idx] or "").strip() != district_name]
+    _write_rows_to_xlsx(path, headers, filtered)
+
+
+def _validate_crop_features(data: dict) -> tuple:
+    errors = []
+    category = str(data.get("Crop_Category", "")).strip()
+    if category and category not in _VALID_CROP_CATEGORIES:
+        errors.append(f"Invalid Crop_Category '{category}'. Must be one of: {sorted(_VALID_CROP_CATEGORIES)}")
+    water_need = data.get("Crop_Water_Need")
+    if water_need is not None:
+        try:
+            wn = int(water_need)
+            if wn not in (1, 2, 3):
+                errors.append("Crop_Water_Need must be 1 (Low), 2 (Medium), or 3 (High)")
+        except (ValueError, TypeError):
+            errors.append("Crop_Water_Need must be a number (1, 2, or 3)")
+    duration = data.get("Crop_Duration_Days")
+    if duration is not None:
+        try:
+            d = int(duration)
+            if d <= 0:
+                errors.append("Crop_Duration_Days must be a positive integer")
+        except (ValueError, TypeError):
+            errors.append("Crop_Duration_Days must be a positive integer")
+    return errors
+
+
+def _normalize_feature_val(val):
+    if val is None:
+        return None
+    if isinstance(val, bool):
+        return int(val)
     try:
-        return json.loads(meta_json)
-    except (TypeError, ValueError):
-        return {}
+        return int(float(val))
+    except (ValueError, TypeError):
+        return str(val).strip() if str(val).strip() != "" else None
+
 
 
 def _get_token_from_request() -> str:
@@ -183,12 +447,243 @@ def init_db():
         conn.commit()
 
 
+# ── STATE SCOPING HELPER ─────────────────────────────────────────────────────
+
+def _user_visible_states() -> list:
+    user_state = str(g.user.get("state", "") or "").strip().lower()
+    allowed = set(_STATE_DIRS.keys())
+    if user_state and user_state in allowed:
+        return [user_state]
+    return sorted(allowed)
+
+
+def _check_state_access(state: str):
+    state_lower = state.strip().lower()
+    if state_lower not in _STATE_DIRS:
+        return jsonify({"error": f"Unsupported state '{state}'. Supported: {sorted(_STATE_DIRS)}"}), 400
+    user_state = str(g.user.get("state", "") or "").strip().lower()
+    if user_state and user_state != state_lower:
+        return jsonify({"error": f"Forbidden: you are scoped to state '{user_state}', not '{state}'"}), 403
+
+
 # ── HEALTH ───────────────────────────────────────────────────────────────────
 
 @app.route("/health", methods=["GET"])
 @app.route("/api/master-data/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "service": "master-data-backend", "port": 6015}), 200
+
+
+# ── CROP FEATURES CRUD ──────────────────────────────────────────────────────
+
+@app.route("/api/master-data/crop-features", methods=["GET"])
+@require_admin
+def list_crop_features():
+    state = (request.args.get("state") or "").strip().lower()
+    if not state:
+        return jsonify({"error": "state query parameter is required"}), 400
+    err = _check_state_access(state)
+    if err:
+        return err
+    try:
+        data = _read_crop_features(state)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"state": state, "crops": data}), 200
+
+
+@app.route("/api/master-data/crop-features", methods=["POST"])
+@require_admin
+def create_crop_feature():
+    body = request.get_json(silent=True) or {}
+    state = str(body.get("state", "")).strip().lower()
+    crop_name = str(body.get("crop", "")).strip()
+
+    if not state or not crop_name:
+        return jsonify({"error": "state and crop are required"}), 400
+
+    err = _check_state_access(state)
+    if err:
+        return err
+
+    features = {}
+    for col in _CROP_FEATURE_COLS:
+        if col in body and body[col] is not None and str(body[col]).strip() != "":
+            features[col] = _normalize_feature_val(body[col])
+
+    validation_errors = _validate_crop_features(features)
+    if validation_errors:
+        return jsonify({"error": "; ".join(validation_errors)}), 400
+
+    try:
+        _add_crop_to_xlsx(state, crop_name, features)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 409
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to add crop: {e}"}), 500
+
+    invalidate_prefix("yp:valid_crops")
+    updated = _read_crop_features(state)
+    entry = next((c for c in updated if c["crop"] == crop_name), {"crop": crop_name, **features})
+    return jsonify({"state": state, **entry}), 201
+
+
+@app.route("/api/master-data/crop-features/<path:crop_name>", methods=["PATCH"])
+@require_admin
+def update_crop_feature(crop_name):
+    crop_name = str(crop_name).strip()
+    if not crop_name:
+        return jsonify({"error": "crop name is required"}), 400
+
+    body = request.get_json(silent=True) or {}
+    state = str(body.get("state", "")).strip().lower()
+    if not state:
+        return jsonify({"error": "state is required in request body"}), 400
+
+    err = _check_state_access(state)
+    if err:
+        return err
+
+    features = {}
+    for col in _CROP_FEATURE_COLS:
+        if col in body and body[col] is not None and str(body[col]).strip() != "":
+            features[col] = _normalize_feature_val(body[col])
+
+    if not features:
+        return jsonify({"error": "No feature fields provided to update"}), 400
+
+    validation_errors = _validate_crop_features(features)
+    if validation_errors:
+        return jsonify({"error": "; ".join(validation_errors)}), 400
+
+    try:
+        existing = _read_crop_features(state)
+        if not any(c["crop"] == crop_name for c in existing):
+            return jsonify({"error": f"Crop '{crop_name}' not found in xlsx for state '{state}'"}), 404
+        _update_crop_feature_in_xlsx(state, crop_name, features)
+    except FileNotFoundError:
+        return jsonify({"error": f"xlsx not found for state '{state}'"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to update crop: {e}"}), 500
+
+    invalidate_prefix("yp:valid_crops")
+    invalidate_prefix("yp:valid_districts")
+    updated = _read_crop_features(state)
+    entry = next((c for c in updated if c["crop"] == crop_name), {"crop": crop_name, **features})
+    return jsonify({"state": state, **entry}), 200
+
+
+@app.route("/api/master-data/crop-features/<path:crop_name>", methods=["DELETE"])
+@require_admin
+def delete_crop_feature(crop_name):
+    crop_name = str(crop_name).strip()
+    if not crop_name:
+        return jsonify({"error": "crop name is required"}), 400
+
+    body = request.get_json(silent=True) or {}
+    state = str(body.get("state", "")).strip().lower()
+    if not state:
+        return jsonify({"error": "state is required in request body"}), 400
+
+    err = _check_state_access(state)
+    if err:
+        return err
+
+    try:
+        existing = _read_crop_features(state)
+        if not any(c["crop"] == crop_name for c in existing):
+            return jsonify({"error": f"Crop '{crop_name}' not found in xlsx for state '{state}'"}), 404
+        _delete_crop_from_xlsx(state, crop_name)
+    except FileNotFoundError:
+        return jsonify({"error": f"xlsx not found for state '{state}'"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to delete crop: {e}"}), 500
+
+    invalidate_prefix("yp:valid_crops")
+    invalidate_prefix("yp:valid_districts")
+    return jsonify({"success": True, "state": state, "deleted_crop": crop_name}), 200
+
+
+# ── DISTRICTS CRUD ──────────────────────────────────────────────────────────
+
+@app.route("/api/master-data/districts", methods=["GET"])
+@require_admin
+def list_districts():
+    state = (request.args.get("state") or "").strip().lower()
+    if not state:
+        return jsonify({"error": "state query parameter is required"}), 400
+    err = _check_state_access(state)
+    if err:
+        return err
+    try:
+        data = _get_districts(state)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"state": state, "districts": data}), 200
+
+
+@app.route("/api/master-data/districts", methods=["POST"])
+@require_admin
+def create_district():
+    body = request.get_json(silent=True) or {}
+    state = str(body.get("state", "")).strip().lower()
+    district_name = str(body.get("district", "")).strip()
+
+    if not state or not district_name:
+        return jsonify({"error": "state and district are required"}), 400
+
+    err = _check_state_access(state)
+    if err:
+        return err
+
+    try:
+        existing = _get_districts(state)
+        if district_name in existing:
+            return jsonify({"error": f"District '{district_name}' already exists in xlsx for state '{state}'"}), 409
+        _add_district_to_xlsx(state, district_name)
+    except FileNotFoundError:
+        return jsonify({"error": f"xlsx not found for state '{state}'"}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 409
+    except Exception as e:
+        return jsonify({"error": f"Failed to add district: {e}"}), 500
+
+    invalidate_prefix("yp:valid_districts")
+    invalidate_prefix("yp:valid_crops")
+    return jsonify({"state": state, "district": district_name}), 201
+
+
+@app.route("/api/master-data/districts/<path:district_name>", methods=["DELETE"])
+@require_admin
+def delete_district(district_name):
+    district_name = str(district_name).strip()
+    if not district_name:
+        return jsonify({"error": "district name is required"}), 400
+
+    body = request.get_json(silent=True) or {}
+    state = str(body.get("state", "")).strip().lower()
+    if not state:
+        return jsonify({"error": "state is required in request body"}), 400
+
+    err = _check_state_access(state)
+    if err:
+        return err
+
+    try:
+        existing = _get_districts(state)
+        if district_name not in existing:
+            return jsonify({"error": f"District '{district_name}' not found in xlsx for state '{state}'"}), 404
+        _delete_district_from_xlsx(state, district_name)
+    except FileNotFoundError:
+        return jsonify({"error": f"xlsx not found for state '{state}'"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to delete district: {e}"}), 500
+
+    invalidate_prefix("yp:valid_districts")
+    invalidate_prefix("yp:valid_crops")
+    return jsonify({"success": True, "state": state, "deleted_district": district_name}), 200
 
 
 # ── COLD STORAGES CRUD ────────────────────────────────────────────────────────
@@ -485,279 +980,6 @@ def update_yield_config(key):
 
 
 # ── MAIN RUNNER ─────────────────────────────────────────────────────────────
-
-@app.route("/api/master-data/auctions", methods=["GET"])
-@require_admin
-def admin_list_auctions():
-    db = get_db()
-    status = (request.args.get("status") or "").strip().lower()
-    crop_type = (request.args.get("cropType") or "").strip().lower()
-    owner_id = (request.args.get("ownerId") or "").strip().lower()
-
-    sql = "SELECT * FROM auctions"
-    params = []
-    clauses = []
-    if status:
-        clauses.append("LOWER(status) = ?")
-        params.append(status)
-    if crop_type:
-        clauses.append("LOWER(category) = ?")
-        params.append(crop_type)
-    if owner_id:
-        clauses.append("LOWER(owner_id) = ?")
-        params.append(owner_id)
-    if clauses:
-        sql += " WHERE " + " AND ".join(clauses)
-    sql += " ORDER BY created_at DESC"
-
-    rows = db.execute(sql, tuple(params)).fetchall()
-    results = []
-    for r in rows:
-        d = dict(r)
-        d["metadata"] = _parse_auction_metadata(d.get("metadata"))
-        results.append(d)
-    return jsonify(results), 200
-
-
-@app.route("/api/master-data/auctions", methods=["POST"])
-@require_admin
-def admin_create_auction():
-    body = request.get_json(silent=True) or {}
-    item_label = str(body.get("itemLabel", "")).strip()
-    category = str(body.get("category", "")).strip() or None
-    metadata = body.get("metadata")
-    if isinstance(metadata, dict):
-        metadata = json.dumps(metadata)
-    metadata = str(metadata).strip() if metadata else None
-    target_quantity = body.get("targetQuantity")
-    base_price = body.get("basePrice")
-    auction_type = str(body.get("auctionType", "forward")).strip().lower()
-    duration_minutes = body.get("durationMinutes")
-
-    if not item_label or target_quantity is None or base_price is None or duration_minutes is None:
-        return jsonify({"error": "itemLabel, targetQuantity, basePrice, and durationMinutes are required"}), 400
-
-    try:
-        target_quantity = float(target_quantity)
-        base_price = float(base_price)
-        duration_minutes = int(duration_minutes)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid numeric field"}), 400
-
-    if auction_type not in ("forward", "reverse"):
-        auction_type = "forward"
-
-    counter_gap = body.get("counterGap")
-    try:
-        counter_gap = float(counter_gap) if counter_gap is not None else 0
-    except (TypeError, ValueError):
-        counter_gap = 0
-
-    extension_minutes = body.get("extensionMinutes")
-    try:
-        extension_minutes = int(extension_minutes) if extension_minutes is not None else 0
-    except (TypeError, ValueError):
-        extension_minutes = 0
-
-    starts_at = body.get("startsAt")
-    try:
-        starts_at = int(starts_at) if starts_at is not None else int(time.time() * 1000)
-    except (TypeError, ValueError):
-        starts_at = int(time.time() * 1000)
-
-    ends_at = starts_at + duration_minutes * 60_000
-    remaining_quantity = body.get("remainingQuantity")
-    try:
-        remaining_quantity = float(remaining_quantity) if remaining_quantity is not None else target_quantity
-    except (TypeError, ValueError):
-        remaining_quantity = target_quantity
-
-    owner_price = body.get("ownerPrice")
-    try:
-        owner_price = float(owner_price) if owner_price is not None and str(owner_price).strip() != "" else None
-    except (TypeError, ValueError):
-        owner_price = None
-
-    now = int(time.time() * 1000)
-    auction_id = f"auc_{uuid.uuid4().hex[:12]}"
-
-    db.execute(
-        """
-        INSERT INTO auctions (
-            id, owner_id, item_label, category, metadata,
-            target_quantity, remaining_quantity, base_price, owner_price,
-            counter_gap, auction_type, duration_minutes, extension_minutes,
-            starts_at, ends_at, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?)
-        """,
-        (
-            auction_id,
-            body.get("ownerId", "admin"),
-            item_label,
-            category,
-            metadata,
-            target_quantity,
-            remaining_quantity,
-            base_price,
-            owner_price,
-            counter_gap,
-            auction_type,
-            duration_minutes,
-            extension_minutes,
-            starts_at,
-            ends_at,
-            now,
-        ),
-    )
-    db.commit()
-
-    row = db.execute("SELECT * FROM auctions WHERE id=?", (auction_id,)).fetchone()
-    d = dict(row)
-    d["metadata"] = _parse_auction_metadata(d.get("metadata"))
-    return jsonify(d), 201
-
-
-@app.route("/api/master-data/auctions/<auction_id>", methods=["GET"])
-@require_admin
-def admin_get_auction(auction_id):
-    db = get_db()
-    row = db.execute("SELECT * FROM auctions WHERE id=?", (auction_id,)).fetchone()
-    if not row:
-        return jsonify({"error": "Auction not found"}), 404
-    d = dict(row)
-    d["metadata"] = _parse_auction_metadata(d.get("metadata"))
-    return jsonify(d), 200
-
-
-@app.route("/api/master-data/auctions/<auction_id>", methods=["PATCH"])
-@require_admin
-def admin_update_auction(auction_id):
-    db = get_db()
-    row = db.execute("SELECT * FROM auctions WHERE id=?", (auction_id,)).fetchone()
-    if not row:
-        return jsonify({"error": "Auction not found"}), 404
-
-    body = request.get_json(silent=True) or {}
-    fields = []
-    params = []
-
-    if "itemLabel" in body:
-        fields.append("item_label = ?")
-        params.append(str(body["itemLabel"]).strip())
-    if "category" in body:
-        fields.append("category = ?")
-        params.append(str(body["category"]).strip() or None)
-    if "metadata" in body:
-        raw = body["metadata"]
-        if isinstance(raw, dict):
-            raw = json.dumps(raw)
-        fields.append("metadata = ?")
-        params.append(str(raw).strip() or None)
-    if "targetQuantity" in body:
-        try:
-            tq = float(body["targetQuantity"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "targetQuantity must be a number"}), 400
-        fields.append("target_quantity = ?")
-        params.append(tq)
-    if "remainingQuantity" in body:
-        try:
-            rq = float(body["remainingQuantity"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "remainingQuantity must be a number"}), 400
-        fields.append("remaining_quantity = ?")
-        params.append(rq)
-    if "basePrice" in body:
-        try:
-            bp = float(body["basePrice"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "basePrice must be a number"}), 400
-        fields.append("base_price = ?")
-        params.append(bp)
-    if "ownerPrice" in body:
-        val = body["ownerPrice"]
-        try:
-            op = float(val) if val is not None and str(val).strip() != "" else None
-        except (TypeError, ValueError):
-            return jsonify({"error": "ownerPrice must be a number"}), 400
-        fields.append("owner_price = ?")
-        params.append(op)
-    if "counterGap" in body:
-        try:
-            cg = float(body["counterGap"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "counterGap must be a number"}), 400
-        fields.append("counter_gap = ?")
-        params.append(cg)
-    if "auctionType" in body:
-        at = str(body["auctionType"]).strip().lower()
-        if at not in ("forward", "reverse"):
-            return jsonify({"error": "auctionType must be forward or reverse"}), 400
-        fields.append("auction_type = ?")
-        params.append(at)
-    if "durationMinutes" in body:
-        try:
-            dm = int(body["durationMinutes"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "durationMinutes must be an integer"}), 400
-        fields.append("duration_minutes = ?")
-        params.append(dm)
-    if "extensionMinutes" in body:
-        try:
-            em = int(body["extensionMinutes"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "extensionMinutes must be an integer"}), 400
-        fields.append("extension_minutes = ?")
-        params.append(em)
-    if "startsAt" in body:
-        try:
-            sa = int(body["startsAt"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "startsAt must be an integer epoch-ms"}), 400
-        fields.append("starts_at = ?")
-        params.append(sa)
-    if "endsAt" in body:
-        try:
-            ea = int(body["endsAt"])
-        except (TypeError, ValueError):
-            return jsonify({"error": "endsAt must be an integer epoch-ms"}), 400
-        fields.append("ends_at = ?")
-        params.append(ea)
-    if "status" in body:
-        st = str(body["status"]).strip().lower()
-        if st not in ("scheduled", "active", "closed"):
-            return jsonify({"error": "status must be scheduled, active, or closed"}), 400
-        fields.append("status = ?")
-        params.append(st)
-
-    if not fields:
-        d = dict(row)
-        d["metadata"] = _parse_auction_metadata(d.get("metadata"))
-        return jsonify(d), 200
-
-    params.append(auction_id)
-    db.execute(f"UPDATE auctions SET {', '.join(fields)} WHERE id=?", tuple(params))
-    db.commit()
-
-    updated = db.execute("SELECT * FROM auctions WHERE id=?", (auction_id,)).fetchone()
-    d = dict(updated)
-    d["metadata"] = _parse_auction_metadata(d.get("metadata"))
-    return jsonify(d), 200
-
-
-@app.route("/api/master-data/auctions/<auction_id>", methods=["DELETE"])
-@require_admin
-def admin_delete_auction(auction_id):
-    db = get_db()
-    row = db.execute("SELECT id FROM auctions WHERE id=?", (auction_id,)).fetchone()
-    if not row:
-        return jsonify({"error": "Auction not found"}), 404
-
-    db.execute("DELETE FROM bids WHERE auction_id=?", (auction_id,))
-    db.execute("DELETE FROM invitations WHERE auction_id=?", (auction_id,))
-    db.execute("DELETE FROM auctions WHERE id=?", (auction_id,))
-    db.commit()
-    return jsonify({"success": True, "deletedId": auction_id}), 200
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Master Data Backend Microservice")

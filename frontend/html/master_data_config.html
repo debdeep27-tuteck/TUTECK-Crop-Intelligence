@@ -1,40 +1,58 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CropAI — Master Data Configuration</title>
+  <title>CropAI â€” Master Data Configuration</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/design_system.css">
   <style>
     :root {
-      --bg: #F6F8F7;
+      --bg: #F5F7FA;
       --surface: #FFFFFF;
-      --border: #E2E8E4;
-      --border-subtle: #EEF2EF;
+      --surface-hover: #F8FAFC;
+      --border: #E2E8F0;
+      --border-subtle: #EDF2F7;
       --primary: #1B4332;
+      --primary-hover: #2D6A4F;
       --primary-dark: #0F291E;
-      --primary-light: #E8F5E9;
+      --primary-light: #ECFDF5;
       --accent: #10B981;
-      --frost: #2B7A9E;
-      --frost-light: #E7F3F8;
-      --text-main: #12211B;
-      --text-muted: #6B7B74;
-      --text-sub: #435049;
-      --danger: #DC4C3F;
-      --warning: #C97A2B;
-      --font-sans: 'Inter', system-ui, -apple-ui, sans-serif;
+      --accent-hover: #059669;
+      --accent-light: #D1FAE5;
+      --frost: #0284C7;
+      --frost-light: #E0F2FE;
+      --frost-border: #BAE6FD;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+      --purple: #7C3AED;
+      --purple-light: #EDE9FE;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-sub: #334155;
+      --danger: #EF4444;
+      --danger-light: #FEE2E2;
+      --danger-dark: #991B1B;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'DM Mono', ui-monospace, monospace;
-      --shadow-sm: 0 1px 2px 0 rgba(15, 41, 30, 0.05);
-      --shadow-md: 0 4px 10px -2px rgba(15, 41, 30, 0.08);
-      --shadow-lg: 0 16px 32px -8px rgba(15, 41, 30, 0.16);
-      --radius: 12px;
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 12px 28px -6px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       min-height: 100vh;
@@ -42,178 +60,1142 @@
       font-family: var(--font-sans);
       color: var(--text-main);
       padding: 24px 28px 48px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .md-container { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-
-    /* Access Denied Card */
-    .denied-card {
-      background: #FFFFFF;
-      border: 1px solid #FECACA;
-      border-radius: var(--radius);
-      padding: 48px 24px;
-      text-align: center;
+    .md-container {
+      max-width: 1360px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 12px;
+      gap: 20px;
     }
 
-    /* KPI Row */
-    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    @media (max-width: 900px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+    /* â”€â”€ PAGE HEADER â”€â”€ */
+    .page-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-bottom: 4px;
+    }
+
+    .page-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--primary-light);
+      color: var(--primary);
+      width: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .page-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    .page-heading {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .page-subheading {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* â”€â”€ KPI STATS ROW â”€â”€ */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .kpi-row { grid-template-columns: 1fr; }
+    }
 
     .kpi-card {
-      position: relative; overflow: hidden;
-      display: flex; align-items: center; gap: 14px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow-sm);
-    }
-    .kpi-icon {
-      flex: none; width: 42px; height: 42px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .kpi-icon svg { width: 21px; height: 21px; }
-    .kpi-card--storages .kpi-icon { background: var(--frost-light); color: var(--frost); }
-    .kpi-card--capacity .kpi-icon { background: var(--primary-light); color: var(--primary); }
-    .kpi-card--roles .kpi-icon { background: #FDF1E4; color: var(--warning); }
-    .kpi-card--pages .kpi-icon { background: #EDE9FE; color: #7C3AED; }
-    .kpi-lbl { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
-    .kpi-num { font-size: 24px; font-weight: 700; color: var(--text-main); letter-spacing: -0.01em; line-height: 1.15; }
-    .kpi-num span.kpi-unit { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
-
-    /* Tab switcher */
-    .tabs-bar {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
       display: flex;
       align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
+      gap: 16px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
-    .tab-btn {
-      padding: 9px 18px;
-      border: 1px solid transparent;
-      border-radius: 8px;
-      background: transparent;
-      font-size: 13.5px;
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: #CBD5E1;
+    }
+
+    .kpi-icon-wrap {
+      flex: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-icon-wrap svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .kpi-card--storages .kpi-icon-wrap { background: var(--frost-light); color: var(--frost); }
+    .kpi-card--capacity .kpi-icon-wrap { background: var(--primary-light); color: var(--primary); }
+    .kpi-card--roles .kpi-icon-wrap { background: var(--amber-light); color: var(--amber); }
+    .kpi-card--modules .kpi-icon-wrap { background: var(--purple-light); color: var(--purple); }
+
+    .kpi-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .kpi-label {
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      font-family: var(--font-sans);
+    }
+
+    .kpi-value span.kpi-unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-left: 4px;
+      font-family: var(--font-sans);
+    }
+
+    .kpi-subtext {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* â”€â”€ TABS NAVIGATION BAR â”€â”€ */
+    .tabs-nav-container {
+      background: #E8ECE9;
+      padding: 5px;
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+    }
+
+    .tab-item {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
       transition: all 0.15s ease;
+      white-space: nowrap;
+      user-select: none;
     }
-    .tab-btn:hover {
-      background: var(--surface);
+
+    .tab-item svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.75;
+      transition: opacity 0.15s ease;
+    }
+
+    .tab-item:hover {
+      background: rgba(255, 255, 255, 0.6);
       color: var(--text-main);
     }
-    .tab-btn.active {
+
+    .tab-item:hover svg {
+      opacity: 1;
+    }
+
+    .tab-item.active {
       background: var(--surface);
       color: var(--primary);
-      border-color: var(--border);
       box-shadow: var(--shadow-sm);
     }
 
-    /* Section cards */
+    .tab-item.active svg {
+      opacity: 1;
+      color: var(--primary);
+    }
+
+    .tab-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #E2E8F0;
+      color: var(--text-sub);
+    }
+
+    .tab-item.active .tab-count-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    /* â”€â”€ SECTION MAIN CARD â”€â”€ */
     .main-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-    .card-header {
+
+    .card-header-block {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 18px 22px;
+      padding: 18px 24px;
       border-bottom: 1px solid var(--border);
       gap: 16px;
       flex-wrap: wrap;
+      background: #FFFFFF;
     }
-    .card-title { font-size: 15px; font-weight: 700; color: var(--text-main); }
-    .card-subtitle { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
 
-    .table-container { width: 100%; overflow-x: auto; }
-    table.md-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    table.md-table thead tr { background: var(--bg); }
+    .card-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-heading {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subheading {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* â”€â”€ FILTER & SEARCH TOOLBAR â”€â”€ */
+    .filter-toolbar {
+      padding: 14px 24px;
+      background: #FAFCFB;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-left-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      min-width: 240px;
+      max-width: 320px;
+      flex: 1;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px 0 34px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      background: var(--surface);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .filter-select {
+      height: 36px;
+      padding: 0 28px 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-sub);
+      background: var(--surface);
+      outline: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .filter-count-badge {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .filter-count-badge strong {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    /* â”€â”€ TABLES â”€â”€ */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table.md-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    table.md-table thead tr {
+      background: #F8FAFC;
+    }
+
     table.md-table th {
-      padding: 12px 16px;
+      padding: 12px 18px;
       font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
       color: var(--text-muted);
       text-transform: uppercase;
       white-space: nowrap;
       border-bottom: 1px solid var(--border);
     }
-    table.md-table th:first-child, table.md-table td:first-child { padding-left: 20px; }
-    table.md-table th:last-child, table.md-table td:last-child { padding-right: 20px; }
-    table.md-table tbody tr { border-bottom: 1px solid var(--border-subtle); transition: background-color 0.1s ease; }
-    table.md-table tbody tr:last-child { border-bottom: none; }
-    table.md-table tbody tr:hover { background-color: var(--bg); }
-    table.md-table td { padding: 12px 16px; vertical-align: middle; color: var(--text-sub); }
-    table.md-table td strong { color: var(--text-main); font-weight: 600; }
-    table.md-table td.col-center { text-align: center; }
-    table.md-table td.col-num { text-align: right; font-family: var(--font-mono); font-weight: 500; }
 
-    /* Badges */
-    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .badge-active { background: #ECFDF5; color: #0E7C5C; }
-    .badge-inactive { background: #FDF1F0; color: #B0392E; }
-    .badge-role { background: #F1F5F9; color: #334155; font-size: 11.5px; text-transform: uppercase; font-weight: 700; }
+    table.md-table th:first-child, table.md-table td:first-child { padding-left: 24px; }
+    table.md-table th:last-child, table.md-table td:last-child { padding-right: 24px; }
 
-    /* Buttons */
-    .btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-primary { background: var(--primary); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-secondary { background: #FFFFFF; color: var(--text-sub); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--bg); border-color: #CBD5CF; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
-    .btn-icon { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid var(--border); background: #FFFFFF; color: var(--text-sub); cursor: pointer; transition: all 0.15s ease; }
-    .btn-icon:hover { background: var(--bg); color: var(--text-main); }
-    .btn-icon.danger:hover { background: #FDF1F0; border-color: #FECACA; color: var(--danger); }
-
-    /* Forms & Modal */
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .form-input, .form-select {
-      height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px;
-      font-size: 13px; font-family: var(--font-sans); color: var(--text-main); outline: none;
-      background: #FFFFFF; transition: border-color 0.15s ease, box-shadow 0.15s ease; width: 100%;
+    table.md-table tbody tr {
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.12s ease;
     }
-    .form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
-    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(18, 33, 27, 0.55); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
-    .modal-overlay.show { display: flex; }
-    .modal-card { background: #FFFFFF; border-radius: 16px; width: 540px; max-width: 100%; box-shadow: var(--shadow-lg); overflow: hidden; animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes modalSlide { from { transform: translateY(12px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border); }
-    .modal-head-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
-    .modal-close-btn { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--bg); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .modal-close-btn:hover { background: #E5EAE6; color: var(--text-main); }
-    .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto; }
-    .modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid var(--border); background: var(--bg); }
+    table.md-table tbody tr:last-child {
+      border-bottom: none;
+    }
 
-    /* Checkbox matrix */
-    .matrix-checkbox {
-      width: 16px;
-      height: 16px;
+    table.md-table tbody tr:hover {
+      background-color: #F8FAF9;
+    }
+
+    table.md-table td {
+      padding: 13px 18px;
+      vertical-align: middle;
+      color: var(--text-sub);
+    }
+
+    .facility-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .facility-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #E8F5E9;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .facility-avatar svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .facility-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .facility-name {
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 13.5px;
+    }
+
+    .facility-location-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .col-num {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .col-center {
+      text-align: center;
+    }
+
+    /* â”€â”€ BADGES & PILLS â”€â”€ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-dot::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .badge-active {
+      background: #ECFDF5;
+      color: #047857;
+      border: 1px solid #A7F3D0;
+    }
+
+    .badge-inactive {
+      background: #FEF2F2;
+      color: #B91C1C;
+      border: 1px solid #FECACA;
+    }
+
+    .badge-state {
+      background: #F1F5F9;
+      color: #334155;
+      border: 1px solid #E2E8F0;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .badge-role {
+      background: #EEF2FF;
+      color: #4338CA;
+      border: 1px solid #C7D2FE;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-category {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .cat-cereal { background: #FEF3C7; color: #92400E; }
+    .cat-pulse { background: #ECFDF5; color: #065F46; }
+    .cat-oilseed { background: #FEF9C3; color: #854D0E; }
+    .cat-vegetable { background: #DCFCE7; color: #166534; }
+    .cat-fruit { background: #F3E8FF; color: #6B21A8; }
+    .cat-spice { background: #FFE4E6; color: #9F1239; }
+    .cat-fiber { background: #E0F2FE; color: #075985; }
+    .cat-cash { background: #E0E7FF; color: #3730A3; }
+    .cat-default { background: #F1F5F9; color: #475569; }
+
+    .water-meter {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .water-drop {
+      color: #0284C7;
+    }
+    .water-drop-dim {
+      color: #CBD5E1;
+    }
+
+    .gps-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #F1F5F9;
+      color: #334155;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .gps-link:hover {
+      background: #E2E8F0;
+      color: var(--primary);
+    }
+
+    /* â”€â”€ BUTTONS â”€â”€ */
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      user-select: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:active {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: #FFFFFF;
+      color: var(--text-sub);
+      border-color: var(--border);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-secondary:hover {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
+      color: var(--text-main);
+    }
+
+    .btn-sm {
+      padding: 5px 11px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-icon:hover {
+      background: #F8FAFC;
+      color: var(--text-main);
+      border-color: #CBD5E1;
+    }
+
+    .btn-icon.danger:hover {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: var(--danger);
+    }
+
+    /* â”€â”€ PAGINATION BAR â”€â”€ */
+    .table-pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-top: 1px solid var(--border);
+      background: #FFFFFF;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .pagination-info {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #FFFFFF;
+      color: var(--text-sub);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
+      color: var(--text-main);
+    }
+
+    .page-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* â”€â”€ PERMISSION MATRIX TAB â”€â”€ */
+    .matrix-page-head {
+      writing-mode: horizontal-tb;
+      padding: 10px 8px !important;
+      font-size: 11px !important;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+      text-align: center;
+      max-width: 100px;
+      white-space: normal !important;
+      line-height: 1.25;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #CBD5E1;
+      transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: var(--accent);
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(16px);
+    }
+
+    .matrix-custom-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
       accent-color: #10B981;
       cursor: pointer;
+      transition: transform 0.1s ease;
     }
 
-    /* Toast */
-    .toast-box { position: fixed; top: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-    .toast { padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn 0.2s ease forwards; }
-    @keyframes toastIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .toast-success { background: var(--primary-dark); color: #FFFFFF; }
-    .toast-error { background: #7A2A22; color: #FFFFFF; }
+    .matrix-custom-check:hover {
+      transform: scale(1.1);
+    }
 
-    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; }
+    .role-quick-btn {
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #FFFFFF;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .role-quick-btn:hover {
+      background: var(--bg);
+      color: var(--text-main);
+      border-color: #CBD5E1;
+    }
+
+    /* â”€â”€ CROP FEATURES 2-PANEL LAYOUT â”€â”€ */
+    .crop-districts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .crop-districts-grid { grid-template-columns: 1fr; }
+    }
+
+    .state-pill-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #F1F5F9;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .state-pill-btn {
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .state-pill-btn:hover {
+      color: var(--text-main);
+    }
+
+    .state-pill-btn.active {
+      background: #FFFFFF;
+      color: var(--primary);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .district-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px 20px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .district-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+    }
+
+    .district-item:hover {
+      background: #FFFFFF;
+      border-color: #CBD5E1;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .district-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* â”€â”€ PARAMETER CONSOLE (YIELD CONFIG) â”€â”€ */
+    .param-key {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: #0F766E;
+      background: #F0FDFA;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #CCFBF1;
+      display: inline-block;
+    }
+
+    .param-input {
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      background: #FFFFFF;
+      width: 100%;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .param-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    /* â”€â”€ MODALS â”€â”€ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-xl);
+      width: 580px;
+      max-width: 100%;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlide {
+      from { transform: translateY(16px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: #FFFFFF;
+    }
+
+    .modal-head-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-head-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-head-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-close-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.15s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: #F1F5F9;
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      background: #F8FAFC;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .form-label span.req {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    .form-input, .form-select {
+      height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      outline: none;
+      background: #FFFFFF;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      width: 100%;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* â”€â”€ TOAST NOTIFICATIONS â”€â”€ */
+    .toast-box {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      pointer-events: auto;
+    }
+
+    @keyframes toastIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast-success {
+      background: #064E3B;
+      color: #FFFFFF;
+      border: 1px solid #059669;
+    }
+
+    .toast-error {
+      background: #7F1D1D;
+      color: #FFFFFF;
+      border: 1px solid #DC2626;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .empty-state svg {
+      width: 42px;
+      height: 42px;
+      color: #CBD5E1;
+    }
+
+    .empty-state-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    /* â”€â”€ ACCESS DENIED CARD â”€â”€ */
+    .denied-card {
+      background: #FFFFFF;
+      border: 1px solid #FECACA;
+      border-radius: var(--radius-xl);
+      padding: 56px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow-md);
+    }
   </style>
 </head>
 
@@ -223,70 +1205,113 @@
   <!-- Main Container -->
   <div class="md-container" id="mainContainer" style="display:none;">
 
-    <!-- KPI Strip -->
-    <div class="kpi-row">
-      <div class="kpi-card kpi-card--storages">
-        <div class="kpi-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
-        </div>
-        <div>
-          <div class="kpi-lbl">Cold Storages</div>
-          <div class="kpi-num" id="kpi-total-storages">—</div>
-        </div>
+    <!-- Top Page Heading & Global Actions -->
+    <div class="page-title-row">
+      <div class="page-title-group">
+        <div class="page-badge">Core Master Registry</div>
+        <h1 class="page-heading">Master Data & Access Configuration</h1>
+        <p class="page-subheading">Manage facility directories, role permission matrices, yield engine parameters, and crop profiles.</p>
       </div>
-
-      <div class="kpi-card kpi-card--capacity">
-        <div class="kpi-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-        </div>
-        <div>
-          <div class="kpi-lbl">Total Capacity</div>
-          <div class="kpi-num"><span id="kpi-total-capacity">—</span><span class="kpi-unit">MT</span></div>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-card--roles">
-        <div class="kpi-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div>
-          <div class="kpi-lbl">Configured Roles</div>
-          <div class="kpi-num" id="kpi-total-roles">—</div>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-card--pages">
-        <div class="kpi-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-        </div>
-        <div>
-          <div class="kpi-lbl">Managed Modules</div>
-          <div class="kpi-num" id="kpi-total-pages">—</div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="refreshCurrentTab()" title="Reload data">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-secondary" onclick="exportColdStoragesCsv()" id="btnExportCsv">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
       </div>
     </div>
 
-    <!-- Tab Bar -->
-    <div class="tabs-bar">
-      <button class="tab-btn active" id="tabBtnStorages" onclick="switchTab('storages')">
-        <span>🏭</span> Cold Storages
+    <!-- KPI Strip -->
+    <div class="kpi-row">
+      <!-- Cold Storages -->
+      <div class="kpi-card kpi-card--storages">
+        <div class="kpi-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">Cold Storages</div>
+          <div class="kpi-value" id="kpi-total-storages">â€”</div>
+          <div class="kpi-subtext" id="kpi-storages-sub">Loading facilitiesâ€¦</div>
+        </div>
+      </div>
+
+      <!-- Capacity -->
+      <div class="kpi-card kpi-card--capacity">
+        <div class="kpi-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">Total Capacity</div>
+          <div class="kpi-value"><span id="kpi-total-capacity">â€”</span><span class="kpi-unit">MT</span></div>
+          <div class="kpi-subtext">Aggregate metric tonnage</div>
+        </div>
+      </div>
+
+      <!-- Roles -->
+      <div class="kpi-card kpi-card--roles">
+        <div class="kpi-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">Configured Roles</div>
+          <div class="kpi-value" id="kpi-total-roles">â€”</div>
+          <div class="kpi-subtext">RBAC matrix active</div>
+        </div>
+      </div>
+
+      <!-- Pages / Modules -->
+      <div class="kpi-card kpi-card--modules">
+        <div class="kpi-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">Managed Modules</div>
+          <div class="kpi-value" id="kpi-total-pages">â€”</div>
+          <div class="kpi-subtext">Protected system routes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Segmented Tab Navigation -->
+    <div class="tabs-nav-container">
+      <button class="tab-item active" id="tabBtnStorages" onclick="switchTab('storages')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
+        <span>Cold Storage Facilities</span>
+        <span class="tab-count-badge" id="tabBadgeStorages">0</span>
       </button>
-      <button class="tab-btn" id="tabBtnRoles" onclick="switchTab('roles')">
-        <span>🔑</span> Role Permissions
+      <button class="tab-item" id="tabBtnRoles" onclick="switchTab('roles')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Role Permissions</span>
+        <span class="tab-count-badge" id="tabBadgeRoles">0</span>
       </button>
-      <button class="tab-btn" id="tabBtnYield" onclick="switchTab('yield')">
-        <span>🌾</span> Yield Detect Config
+      <button class="tab-item" id="tabBtnYield" onclick="switchTab('yield')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Yield Engine Config</span>
+        <span class="tab-count-badge" id="tabBadgeYield">0</span>
       </button>
-      <button class="tab-btn" id="tabBtnAuctions" onclick="switchTab('auctions')">
-        <span>🔨</span> Auctions
+      <button class="tab-item" id="tabBtnCropFeatures" onclick="switchTab('crop-features')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>
+        <span>Crop Profiles & Districts</span>
+        <span class="tab-count-badge" id="tabBadgeCrops">0</span>
+      </button>
+      <button class="tab-item" id="tabBtnCreditScore" onclick="switchTab('credit-score')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <span>Agri Credit Score</span>
+        <span class="tab-count-badge" id="tabBadgeCreditScore">0</span>
       </button>
     </div>
 
     <!-- TAB 1: COLD STORAGES -->
     <div class="main-card" id="tabContentStorages">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Cold Storage Facilities Master Data</div>
-          <div class="card-subtitle">Manage facility directory, states, capacities, and geolocations.</div>
+      <div class="card-header-block">
+        <div class="card-title-group">
+          <div class="card-heading">
+            <span>Cold Storage Directory</span>
+          </div>
+          <div class="card-subheading">Central registry of cold chain facilities, capacities, geolocations, and operational states.</div>
         </div>
         <button class="btn btn-primary" onclick="openStorageModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -294,33 +1319,91 @@
         </button>
       </div>
 
+      <!-- Search & Filters Toolbar -->
+      <div class="filter-toolbar">
+        <div class="filter-left-group">
+          <div class="search-input-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="storageSearchInput" placeholder="Search facilities, districts..." oninput="onStorageFilterChange()">
+          </div>
+          <select class="filter-select" id="storageStateFilter" onchange="onStorageFilterChange()">
+            <option value="all">All States</option>
+            <option value="rajasthan">Rajasthan</option>
+            <option value="tripura">Tripura</option>
+            <option value="meghalaya">Meghalaya</option>
+          </select>
+          <select class="filter-select" id="storageStatusFilter" onchange="onStorageFilterChange()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="resetStorageFilters()" title="Reset filters">
+            Reset
+          </button>
+        </div>
+        <div class="filter-count-badge" id="storageCountBadge">
+          Showing <strong>0</strong> of 0 facilities
+        </div>
+      </div>
+
+      <!-- Data Table -->
       <div class="table-container">
         <table class="md-table">
           <thead>
             <tr>
               <th style="width:6%;">ID</th>
-              <th style="width:24%;">Facility Name</th>
+              <th style="width:28%;">Facility Name</th>
               <th style="width:14%;">State</th>
               <th style="width:14%;">District</th>
-              <th class="col-num" style="width:12%;">Capacity (MT)</th>
-              <th class="col-center" style="width:12%;">GPS Coordinates</th>
+              <th class="col-num" style="width:13%;">Capacity (MT)</th>
+              <th class="col-center" style="width:12%;">GPS Coords</th>
               <th class="col-center" style="width:8%;">Status</th>
-              <th class="col-center" style="width:10%;">Actions</th>
+              <th class="col-center" style="width:8%;">Actions</th>
             </tr>
           </thead>
           <tbody id="storagesBody">
-            <tr><td colspan="8"><div class="empty-state">Loading cold storage facilities…</div></td></tr>
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+                  <div class="empty-state-title">Loading cold storage facilitiesâ€¦</div>
+                </div>
+              </td>
+            </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div class="table-pagination-bar" id="storagePaginationBar">
+        <div class="pagination-info" id="storagePaginationInfo">
+          Page 1 of 1
+        </div>
+        <div class="pagination-controls" id="storagePaginationControls">
+        </div>
       </div>
     </div>
 
     <!-- TAB 2: ROLE PERMISSIONS -->
     <div class="main-card" id="tabContentRoles" style="display:none;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Role Permissions Matrix</div>
-          <div class="card-subtitle">Define default page permissions and CRUD flags for each role in the system.</div>
+      <div class="card-header-block">
+        <div class="card-title-group">
+          <div class="card-heading">
+            <span>Role-Based Access Control (RBAC) Matrix</span>
+          </div>
+          <div class="card-subheading">Control module visibility and CRUD data modification privileges for each authenticated role.</div>
+        </div>
+      </div>
+
+      <div class="filter-toolbar">
+        <div class="filter-left-group">
+          <div class="search-input-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="roleSearchInput" placeholder="Filter roles..." oninput="renderRolePermissionsTable()">
+          </div>
+        </div>
+        <div class="filter-count-badge" id="rolesCountBadge">
+          <strong>7</strong> system roles configured
         </div>
       </div>
 
@@ -328,14 +1411,13 @@
         <table class="md-table">
           <thead id="rolesHead">
             <tr>
-              <th style="width:15%;">Role</th>
-              <th class="col-center" style="width:8%;">CRUD Access</th>
-              <!-- Dynamic page columns -->
+              <th style="width:16%;">Role</th>
+              <th class="col-center" style="width:9%;">CRUD Access</th>
               <th class="col-center" style="width:10%;">Actions</th>
             </tr>
           </thead>
           <tbody id="rolesBody">
-            <tr><td colspan="10"><div class="empty-state">Loading role permissions…</div></td></tr>
+            <tr><td colspan="10"><div class="empty-state"><div class="empty-state-title">Loading role permissions matrixâ€¦</div></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -343,10 +1425,24 @@
 
     <!-- TAB 3: YIELD DETECT CONFIG -->
     <div class="main-card" id="tabContentYield" style="display:none;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Yield Detect Configuration</div>
-          <div class="card-subtitle">Manage thresholds, defaults, and validation rules for yield predictions.</div>
+      <div class="card-header-block">
+        <div class="card-title-group">
+          <div class="card-heading">
+            <span>Yield Detect Engine Parameter Console</span>
+          </div>
+          <div class="card-subheading">Tune active model hyperparameters, yield anomaly thresholds, default parameters, and inference settings.</div>
+        </div>
+      </div>
+
+      <div class="filter-toolbar">
+        <div class="filter-left-group">
+          <div class="search-input-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="yieldSearchInput" placeholder="Search parameters by key or description..." oninput="renderYieldConfigTable()">
+          </div>
+        </div>
+        <div class="filter-count-badge" id="yieldCountBadge">
+          Parameters ready
         </div>
       </div>
 
@@ -354,116 +1450,243 @@
         <table class="md-table">
           <thead>
             <tr>
-              <th style="width:22%;">Key</th>
-              <th style="width:18%;">Value</th>
-              <th style="width:14%;">Category</th>
-              <th>Description</th>
-              <th style="width:16%;">Last Updated</th>
-              <th class="col-center" style="width:10%;">Actions</th>
+              <th style="width:22%;">Parameter Key</th>
+              <th style="width:20%;">Current Value</th>
+              <th style="width:12%;">Category</th>
+              <th>Description & Impact</th>
+              <th style="width:15%;">Last Synchronized</th>
+              <th class="col-center" style="width:10%;">Action</th>
             </tr>
           </thead>
           <tbody id="yieldConfigBody">
-            <tr><td colspan="6"><div class="empty-state">Loading yield configuration…</div></td></tr>
+            <tr><td colspan="6"><div class="empty-state"><div class="empty-state-title">Loading yield engine configurationsâ€¦</div></div></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- TAB 4: AUCTIONS -->
-    <div class="main-card" id="tabContentAuctions" style="display:none;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Mandi Auctions Master Data</div>
-          <div class="card-subtitle">Manage auction listings, prices, statuses, and quantities.</div>
+    <!-- TAB 4: CROP FEATURES & DISTRICTS -->
+    <div class="main-card" id="tabContentCropFeatures" style="display:none;">
+      <div class="card-header-block">
+        <div class="card-title-group">
+          <div class="card-heading">
+            <span>Crop Features & District Registry</span>
+          </div>
+          <div class="card-subheading">Manage agronomic profiles, water requirements, crop cycles, and district registries synchronized directly to state datasets.</div>
         </div>
-        <button class="btn btn-primary" onclick="openAuctionModal()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Auction
-        </button>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="state-pill-selector" id="statePillContainer">
+            <button class="state-pill-btn active" id="pillStateRajasthan" onclick="selectCropState('rajasthan')">Rajasthan</button>
+            <button class="state-pill-btn" id="pillStateTripura" onclick="selectCropState('tripura')">Tripura</button>
+            <button class="state-pill-btn" id="pillStateMeghalaya" onclick="selectCropState('meghalaya')">Meghalaya</button>
+          </div>
+          <select class="form-select" id="cropFeatureState" onchange="onCropFeatureStateChange()" style="display:none;">
+            <option value="rajasthan">Rajasthan</option>
+            <option value="tripura">Tripura</option>
+            <option value="meghalaya">Meghalaya</option>
+          </select>
+          <button class="btn btn-primary" onclick="openCropModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Crop
+          </button>
+          <button class="btn btn-secondary" onclick="openDistrictModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add District
+          </button>
+        </div>
       </div>
 
-      <div class="table-container">
-        <table class="md-table">
-          <thead>
-            <tr>
-              <th style="width:8%;">ID</th>
-              <th style="width:18%;">Auction Name</th>
-              <th style="width:10%;">Crop Type</th>
-              <th style="width:10%;">State</th>
-              <th style="width:10%;">District</th>
-              <th class="col-num" style="width:10%;">Base Price</th>
-              <th class="col-num" style="width:10%;">Target Qty</th>
-              <th class="col-center" style="width:8%;">Status</th>
-              <th class="col-center" style="width:8%;">Type</th>
-              <th class="col-center" style="width:8%;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="auctionsBody">
-            <tr><td colspan="10"><div class="empty-state">Loading auctions…</div></td></tr>
-          </tbody>
-        </table>
+      <div style="padding:20px 24px;">
+        <div class="crop-districts-grid">
+          
+          <!-- Crop Features Panel -->
+          <div class="main-card" style="border-radius:var(--radius-md);">
+            <div class="filter-toolbar" style="border-top:none;">
+              <div class="filter-left-group">
+                <div class="search-input-wrap">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" class="search-input" id="cropSearchInput" placeholder="Filter crops..." oninput="renderCropFeaturesTable(currentCropFeatures)">
+                </div>
+              </div>
+              <div class="filter-count-badge" id="cropCountBadge">
+                <strong>0</strong> crops registered
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table class="md-table">
+                <thead>
+                  <tr>
+                    <th style="width:26%;">Crop Name</th>
+                    <th style="width:24%;">Category</th>
+                    <th style="width:20%;">Water Need</th>
+                    <th class="col-num" style="width:16%;">Cycle Duration</th>
+                    <th class="col-center" style="width:14%;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cropFeaturesBody">
+                  <tr><td colspan="5"><div class="empty-state"><div class="empty-state-title">Select state to load cropsâ€¦</div></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- District Registry Panel -->
+          <div class="main-card" style="border-radius:var(--radius-md);">
+            <div class="filter-toolbar" style="border-top:none;">
+              <div class="filter-left-group">
+                <div class="search-input-wrap" style="min-width: 140px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" class="search-input" id="districtSearchInput" placeholder="Filter districts..." oninput="renderDistrictsTable(currentDistricts)">
+                </div>
+              </div>
+              <div class="filter-count-badge" id="districtCountBadge">
+                <strong>0</strong> districts
+              </div>
+            </div>
+
+            <div class="district-list" id="districtsListContainer">
+              <div class="empty-state">
+                <div class="empty-state-title">Loading district registryâ€¦</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Access Denied Message Container -->
-  <div class="md-container" id="deniedContainer" style="display:none;">
+
+    <!-- TAB 5: AGRI CREDIT SCORE ACCOUNTS -->
+    <div class="main-card" id="tabContentCreditScore" style="display:none;">
+      <div class="card-header-block">
+        <div class="card-title-group">
+          <div class="card-heading">
+            <span>Farmer Agri Credit Score Accounts</span>
+          </div>
+          <div class="card-subheading">View and manually edit individual farmer credit account records — land holding, past loan, crop yield, and repayment data that drive the credit score calculation.</div>
+        </div>
+      </div>
+
+      <div class="filter-toolbar">
+        <div class="filter-left-group">
+          <div class="search-input-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="creditScoreSearchInput" placeholder="Search by farmer ID, name, or email..." oninput="onCreditScoreFilterChange()">
+          </div>
+          <select class="filter-select" id="creditScoreStateFilter" onchange="onCreditScoreFilterChange()">
+            <option value="all">All States</option>
+            <option value="rajasthan">Rajasthan</option>
+            <option value="tripura">Tripura</option>
+            <option value="meghalaya">Meghalaya</option>
+          </select>
+          <select class="filter-select" id="creditScoreRepaymentFilter" onchange="onCreditScoreFilterChange()">
+            <option value="all">All Repayment</option>
+            <option value="Repaid on time">Repaid on time</option>
+            <option value="1 late payment">1 late payment</option>
+            <option value="2+ late payments">2+ late payments</option>
+            <option value="Defaulted">Defaulted</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="resetCreditScoreFilters()">Reset</button>
+        </div>
+        <div class="filter-count-badge" id="creditScoreCountBadge">
+          Showing <strong>0</strong> of 0 accounts
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="md-table">
+          <thead>
+            <tr>
+              <th style="width:7%;">Farmer ID</th>
+              <th style="width:16%;">Farmer</th>
+              <th style="width:14%;">State / District</th>
+              <th style="width:10%;">Land (Acres)</th>
+              <th style="width:10%;">Crop</th>
+              <th class="col-num" style="width:11%;">Past Loan (&#8377;)</th>
+              <th class="col-num" style="width:9%;">Yield (Qtl)</th>
+              <th style="width:11%;">Repayment</th>
+              <th class="col-center" style="width:10%;">Score</th>
+              <th class="col-center" style="width:7%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="creditScoreBody">
+            <tr><td colspan="10"><div class="empty-state"><div class="empty-state-title">Loading farmer credit accounts…</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-pagination-bar" id="creditScorePaginationBar">
+        <div class="pagination-info" id="creditScorePaginationInfo">Page 1 of 1</div>
+        <div class="pagination-controls" id="creditScorePaginationControls"></div>
+      </div>
+    </div>
+  <!-- ACCESS DENIED MESSAGE CONTAINER -->
+  <div class="md-container" id="deniedContainer" style="display:none; padding-top:40px;">
     <div class="denied-card">
-      <div style="font-size:36px;">🚫</div>
-      <h2 style="font-size:18px;font-weight:700;color:#991B1B;">Access Denied</h2>
-      <p style="font-size:13.5px;color:#6B7280;max-width:480px;">
-        This page requires administrative authorization (/master-data-config). Please log in with an admin account to configure core reference master data.
+      <div style="width:56px;height:56px;border-radius:50%;background:#FEE2E2;display:flex;align-items:center;justify-content:center;color:#DC2626;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      </div>
+      <h2 style="font-size:20px;font-weight:800;color:#991B1B;">Access Restricted</h2>
+      <p style="font-size:14px;color:#64748B;max-width:480px;line-height:1.5;">
+        This page requires administrative authorization (<code>/master-data-config</code>). Please log in with an authorized administrator account to manage reference datasets and system settings.
       </p>
     </div>
   </div>
 
-  <!-- Add / Edit Cold Storage Modal -->
+  <!-- MODAL: ADD / EDIT COLD STORAGE -->
   <div class="modal-overlay" id="storageModalOverlay" onclick="if(event.target===this) closeStorageModal()">
     <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-head-title" id="storageModalTitle">Add Cold Storage Facility</div>
+        <div class="modal-head-title-wrap">
+          <div class="modal-head-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+          </div>
+          <div class="modal-head-title" id="storageModalTitle">Add Cold Storage Facility</div>
+        </div>
         <button class="modal-close-btn" onclick="closeStorageModal()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Facility Name *</label>
-          <input class="form-input" id="modalStorageName" placeholder="e.g. Agartala Central Cold Store">
+          <label class="form-label">Facility Name <span class="req">*</span></label>
+          <input class="form-input" id="modalStorageName" placeholder="e.g. JAIPUR COLD STORAGE PVT LTD">
         </div>
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label">State *</label>
+            <label class="form-label">State <span class="req">*</span></label>
             <select class="form-select" id="modalStorageState">
+              <option value="rajasthan">Rajasthan</option>
               <option value="tripura">Tripura</option>
               <option value="meghalaya">Meghalaya</option>
-              <option value="rajasthan">Rajasthan</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">District *</label>
-            <input class="form-input" id="modalStorageDistrict" placeholder="e.g. West Tripura">
+            <label class="form-label">District <span class="req">*</span></label>
+            <input class="form-input" id="modalStorageDistrict" placeholder="e.g. Jaipur">
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label">Block (Optional)</label>
-            <input class="form-input" id="modalStorageBlock" placeholder="e.g. Dukli">
+            <label class="form-label">Block</label>
+            <input class="form-input" id="modalStorageBlock" placeholder="e.g. Amber">
           </div>
           <div class="form-group">
-            <label class="form-label">Village (Optional)</label>
-            <input class="form-input" id="modalStorageVillage" placeholder="e.g. Badharghat">
+            <label class="form-label">Village / Locality</label>
+            <input class="form-input" id="modalStorageVillage" placeholder="e.g. Industrial Area">
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label">Capacity (Metric Tonnes) *</label>
-            <input class="form-input" type="number" id="modalStorageCapacity" placeholder="e.g. 5000" min="0">
+            <label class="form-label">Capacity (Metric Tonnes) <span class="req">*</span></label>
+            <input class="form-input" type="number" id="modalStorageCapacity" placeholder="e.g. 3000" min="0" step="1">
           </div>
           <div class="form-group">
-            <label class="form-label">Status</label>
+            <label class="form-label">Operational Status <span class="req">*</span></label>
             <select class="form-select" id="modalStorageStatus">
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -474,11 +1697,11 @@
         <div class="form-grid-2">
           <div class="form-group">
             <label class="form-label">Latitude</label>
-            <input class="form-input" type="number" step="any" id="modalStorageLat" placeholder="e.g. 23.8315">
+            <input class="form-input" type="number" step="0.000001" id="modalStorageLat" placeholder="e.g. 26.9124">
           </div>
           <div class="form-group">
             <label class="form-label">Longitude</label>
-            <input class="form-input" type="number" step="any" id="modalStorageLon" placeholder="e.g. 91.2868">
+            <input class="form-input" type="number" step="0.000001" id="modalStorageLon" placeholder="e.g. 75.7873">
           </div>
         </div>
       </div>
@@ -489,107 +1712,237 @@
     </div>
   </div>
 
-  <!-- Add / Edit Auction Modal -->
-  <div class="modal-overlay" id="auctionModalOverlay" onclick="if(event.target===this) closeAuctionModal()">
+  <!-- MODAL: ADD / EDIT CROP -->
+  <div class="modal-overlay" id="cropModalOverlay" onclick="if(event.target===this) closeCropModal()">
     <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-head-title" id="auctionModalTitle">Add Auction</div>
-        <button class="modal-close-btn" onclick="closeAuctionModal()">&times;</button>
+        <div class="modal-head-title-wrap">
+          <div class="modal-head-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5"/></svg>
+          </div>
+          <div class="modal-head-title" id="cropModalTitle">Add Crop Profile</div>
+        </div>
+        <button class="modal-close-btn" onclick="closeCropModal()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Auction Name *</label>
-          <input class="form-input" id="modalAuctionName" placeholder="e.g. Kharif Paddy Procurement — Lot 12">
+          <label class="form-label">Crop Name <span class="req">*</span></label>
+          <input class="form-input" id="modalCropName" placeholder="e.g. Wheat">
         </div>
-
+        <div class="form-group">
+          <label class="form-label">Crop Category <span class="req">*</span></label>
+          <select class="form-select" id="modalCropCategory">
+            <option value="">-- Select Category --</option>
+            <option value="Cereals">Cereals</option>
+            <option value="Pulses">Pulses</option>
+            <option value="Oilseeds">Oilseeds</option>
+            <option value="Vegetables">Vegetables</option>
+            <option value="Fruits">Fruits</option>
+            <option value="Spices">Spices</option>
+            <option value="Fibres">Fibres</option>
+            <option value="Cash Crops">Cash Crops</option>
+            <option value="Plantation Crops">Plantation Crops</option>
+            <option value="Medicinal">Medicinal</option>
+            <option value="Forage">Forage</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label">Crop Type *</label>
-            <input class="form-input" id="modalAuctionCrop" placeholder="e.g. Paddy">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Status</label>
-            <select class="form-select" id="modalAuctionStatus">
-              <option value="scheduled">Scheduled</option>
-              <option value="active">Active</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">State</label>
-            <input class="form-input" id="modalAuctionState" placeholder="e.g. tripura">
-          </div>
-          <div class="form-group">
-            <label class="form-label">District</label>
-            <input class="form-input" id="modalAuctionDistrict" placeholder="e.g. West Tripura">
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Base Price (₹) *</label>
-            <input class="form-input" type="number" id="modalAuctionBasePrice" placeholder="e.g. 2200" min="0" step="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Target Quantity (MT) *</label>
-            <input class="form-input" type="number" id="modalAuctionTargetQty" placeholder="e.g. 10" min="0" step="0.1">
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Remaining Quantity (MT)</label>
-            <input class="form-input" type="number" id="modalAuctionRemainingQty" placeholder="e.g. 10" min="0" step="0.1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Counter Gap (₹)</label>
-            <input class="form-input" type="number" id="modalAuctionCounterGap" placeholder="e.g. 10" min="0" step="1">
-          </div>
-        </div>
-
-        <div class="form-grid-2">
-          <div class="form-group">
-            <label class="form-label">Auction Type</label>
-            <select class="form-select" id="modalAuctionType">
-              <option value="forward">Forward (Highest Price)</option>
-              <option value="reverse">Reverse (Lowest Price)</option>
+            <label class="form-label">Water Need Index <span class="req">*</span></label>
+            <select class="form-select" id="modalCropWaterNeed">
+              <option value="1">1 â€” Low Requirement (ðŸ’§)</option>
+              <option value="2">2 â€” Medium Requirement (ðŸ’§ðŸ’§)</option>
+              <option value="3">3 â€” High Requirement (ðŸ’§ðŸ’§ðŸ’§)</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Duration (minutes)</label>
-            <input class="form-input" type="number" id="modalAuctionDuration" placeholder="e.g. 60" min="1" step="1">
+            <label class="form-label">Duration (Days) <span class="req">*</span></label>
+            <input class="form-input" type="number" id="modalCropDuration" placeholder="e.g. 120" min="1" step="1">
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeAuctionModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveAuctionModal()">Save Auction</button>
+        <button class="btn btn-secondary" onclick="closeCropModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCropModal()">Save Crop</button>
       </div>
     </div>
   </div>
 
-  <script>
-    const SESSION_KEY = "cropai_session";
+  <!-- MODAL: ADD DISTRICT -->
+  <div class="modal-overlay" id="districtModalOverlay" onclick="if(event.target===this) closeDistrictModal()">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-head-title-wrap">
+          <div class="modal-head-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div class="modal-head-title" id="districtModalTitle">Add District to State</div>
+        </div>
+        <button class="modal-close-btn" onclick="closeDistrictModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">District Name <span class="req">*</span></label>
+          <input class="form-input" id="modalDistrictName" placeholder="e.g. Jaipur, Gomati, Ri-Bhoi">
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.4;">
+          The district will be enrolled for the active selected state and populated across state model datasets.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDistrictModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDistrictModal()">Add District</button>
+      </div>
+    </div>
+  </div>
 
+
+  <!-- MODAL: EDIT AGRI CREDIT SCORE ACCOUNT -->
+  <div class="modal-overlay" id="creditScoreModalOverlay" onclick="if(event.target===this) closeCreditScoreModal()">
+    <div class="modal-card" style="width:620px;">
+      <div class="modal-head">
+        <div class="modal-head-title-wrap">
+          <div class="modal-head-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <div>
+            <div class="modal-head-title">Edit Farmer Credit Account</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;" id="csModalFarmerBadge"></div>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeCreditScoreModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Read-only info strip -->
+        <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;">Farmer Name</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-main);margin-top:2px;" id="csModalFarmerName">—</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;">Email</div>
+            <div style="font-size:12.5px;color:var(--text-sub);margin-top:2px;word-break:break-all;" id="csModalEmail">—</div>
+          </div>
+        </div>
+
+        <!-- Score preview -->
+        <div style="background:var(--primary-light);border:1px solid #A7F3D0;border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.04em;">Live Score Preview</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Updates as you edit the fields below</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:var(--primary);line-height:1;" id="csPreviewScore">—</div>
+              <div style="font-size:10px;color:var(--text-muted);">out of 100</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <span id="csPreviewGrade" style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:#ECFDF5;color:#047857;">—</span>
+              <span id="csPreviewRisk" style="font-size:11px;color:var(--text-muted);">—</span>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;">Max Loan</div>
+              <div style="font-size:14px;font-weight:800;color:var(--primary);margin-top:2px;" id="csPreviewLoan">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editable fields -->
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">State <span class="req">*</span></label>
+            <select class="form-select" id="csModalState" onchange="updateCsPreview()">
+              <option value="Rajasthan">Rajasthan</option>
+              <option value="Tripura">Tripura</option>
+              <option value="Meghalaya">Meghalaya</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">District <span class="req">*</span></label>
+            <input class="form-input" id="csModalDistrict" placeholder="e.g. Ajmer">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Land Holding (Acres) <span class="req">*</span></label>
+            <input class="form-input" type="number" step="0.01" min="0.01" id="csModalLandAcres" placeholder="e.g. 4.13" oninput="updateCsPreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary Crop <span class="req">*</span></label>
+            <input class="form-input" id="csModalCrop" placeholder="e.g. Wheat">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Past Loan Amount (&#8377;) <span class="req">*</span></label>
+            <input class="form-input" type="number" step="1000" min="0" id="csModalLoanAmount" placeholder="e.g. 30000" oninput="updateCsPreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Past Yield (Quintals) <span class="req">*</span></label>
+            <input class="form-input" type="number" step="0.1" min="0" id="csModalYieldQtl" placeholder="e.g. 5.2" oninput="updateCsPreview()">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Repayment Status <span class="req">*</span></label>
+          <select class="form-select" id="csModalRepayment">
+            <option value="Repaid on time">Repaid on time</option>
+            <option value="1 late payment">1 late payment</option>
+            <option value="2+ late payments">2+ late payments</option>
+            <option value="Defaulted">Defaulted</option>
+          </select>
+        </div>
+
+        <!-- Score breakdown hint -->
+        <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Score Breakdown</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="text-align:center;">
+              <div style="font-size:18px;font-weight:800;color:var(--frost);" id="csBreakLand">—</div>
+              <div style="font-size:10.5px;color:var(--text-muted);">Land / 30</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:18px;font-weight:800;color:var(--amber);" id="csBreakLoan">—</div>
+              <div style="font-size:10.5px;color:var(--text-muted);">Loan History / 20</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:18px;font-weight:800;color:var(--accent);" id="csBreakYield">—</div>
+              <div style="font-size:10.5px;color:var(--text-muted);">Crop Yield / 50</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCreditScoreModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCreditScoreModal()">Save Account</button>
+      </div>
+    </div>
+  </div>
+  <!-- SCRIPTS -->
+  <script>
     function showToast(msg, isError = false) {
       const box = document.getElementById("toastBox");
       const toast = document.createElement("div");
       toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
       toast.innerHTML = isError
-        ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ${msg}`
-        : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
-      
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> <span>${msg}</span>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> <span>${msg}</span>`;
+
       box.appendChild(toast);
       setTimeout(() => {
-        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
         toast.style.opacity = '0';
-        toast.style.transform = 'translateX(40px)';
-        setTimeout(() => toast.remove(), 300);
+        toast.style.transform = 'translateX(50px)';
+        setTimeout(() => toast.remove(), 250);
       }, 3500);
     }
+
+    const SESSION_KEY = "cropai_session";
 
     function getSession() {
       try {
@@ -609,15 +1962,21 @@
       };
     }
 
+    let activeTab = 'storages';
     let currentStorages = [];
+    let filteredStorages = [];
+    let storagePage = 1;
+    const storagePageSize = 10;
+
     let currentPermissions = {};
     let allManagedPages = [];
     let editingStorageId = null;
     let currentYieldConfig = [];
-    let currentAuctions = [];
-    let editingAuctionId = null;
+    let currentCropFeatures = [];
+    let currentDistricts = [];
+    let editingCropName = null;
 
-    // ── INITIAL PERMISSION GATE ──
+    // â”€â”€ INITIAL PERMISSION GATE â”€â”€
     async function checkPermissionAndInit() {
       if (!session || !session.token) {
         showDenied();
@@ -632,13 +1991,25 @@
         const data = await res.json();
         const pages = (data.permissions && data.permissions.pages) || [];
         const role = String(data.role || session.role || '').toLowerCase().trim();
+        const userState = String(data.state || session.state || '').toLowerCase().trim();
 
         if (role === 'admin' || pages.includes('/master-data-config')) {
           document.getElementById('mainContainer').style.display = 'flex';
           loadColdStorages();
           loadRolePermissions();
           loadYieldConfig();
-          loadAuctions();
+          loadCreditScoreAccounts();
+
+          const allowedStates = ["rajasthan", "tripura", "meghalaya"];
+          const stateSelect = document.getElementById('cropFeatureState');
+          const userAllowedStates = userState ? allowedStates.filter(s => s === userState) : allowedStates;
+
+          if (userAllowedStates.length <= 1 && userAllowedStates[0]) {
+            selectCropState(userAllowedStates[0]);
+            document.getElementById('statePillContainer').style.display = 'none';
+          } else {
+            selectCropState('rajasthan');
+          }
         } else {
           showDenied();
         }
@@ -652,25 +2023,46 @@
       document.getElementById('deniedContainer').style.display = 'flex';
     }
 
-    // ── TAB SWITCHING ──
+    // â”€â”€ TAB SWITCHING â”€â”€
     function switchTab(tab) {
+      activeTab = tab;
       const isStorages = tab === 'storages';
       const isRoles = tab === 'roles';
       const isYield = tab === 'yield';
-      const isAuctions = tab === 'auctions';
+      const isCropFeatures = tab === 'crop-features';
+      const isCreditScore = tab === 'credit-score';
 
       document.getElementById('tabBtnStorages').classList.toggle('active', isStorages);
       document.getElementById('tabBtnRoles').classList.toggle('active', isRoles);
       document.getElementById('tabBtnYield').classList.toggle('active', isYield);
-      document.getElementById('tabBtnAuctions').classList.toggle('active', isAuctions);
+      document.getElementById('tabBtnCropFeatures').classList.toggle('active', isCropFeatures);
+      if (document.getElementById('tabBtnCreditScore')) document.getElementById('tabBtnCreditScore').classList.toggle('active', isCreditScore);
 
-      document.getElementById('tabContentStorages').style.display = isStorages ? 'block' : 'none';
-      document.getElementById('tabContentRoles').style.display = isRoles ? 'block' : 'none';
-      document.getElementById('tabContentYield').style.display = isYield ? 'block' : 'none';
-      document.getElementById('tabContentAuctions').style.display = isAuctions ? 'block' : 'none';
+      document.getElementById('tabContentStorages').style.display = isStorages ? 'flex' : 'none';
+      document.getElementById('tabContentRoles').style.display = isRoles ? 'flex' : 'none';
+      document.getElementById('tabContentYield').style.display = isYield ? 'flex' : 'none';
+      document.getElementById('tabContentCropFeatures').style.display = isCropFeatures ? 'flex' : 'none';
+      if (document.getElementById('tabContentCreditScore')) document.getElementById('tabContentCreditScore').style.display = isCreditScore ? 'flex' : 'none';
+
+      if (isCropFeatures) {
+        loadCropFeatures();
+        loadDistricts();
+      }
+      if (isCreditScore) {
+        loadCreditScoreAccounts();
+      }
     }
 
-    // ── COLD STORAGES TAB ──
+    function refreshCurrentTab() {
+      if (activeTab === 'storages') loadColdStorages();
+      else if (activeTab === 'roles') loadRolePermissions();
+      else if (activeTab === 'yield') loadYieldConfig();
+      else if (activeTab === 'crop-features') { loadCropFeatures(); loadDistricts(); }
+      else if (activeTab === 'credit-score') loadCreditScoreAccounts();
+      showToast("Data refreshed.");
+    }
+
+    // â”€â”€ COLD STORAGES TAB â”€â”€
     async function loadColdStorages() {
       try {
         const res = await fetch("/api/master-data/cold-storages", { headers: authHeaders() });
@@ -680,90 +2072,194 @@
 
         // Update KPIs
         document.getElementById('kpi-total-storages').textContent = currentStorages.length;
+        document.getElementById('tabBadgeStorages').textContent = currentStorages.length;
+        
+        // Count distinct states
+        const stateSet = new Set(currentStorages.map(s => (s.state || '').toLowerCase()).filter(Boolean));
+        document.getElementById('kpi-storages-sub').textContent = `${stateSet.size} active states registered`;
+
         const totalCap = currentStorages.reduce((sum, item) => sum + (Number(item.capacity_mt) || 0), 0);
         document.getElementById('kpi-total-capacity').textContent = totalCap.toLocaleString();
 
-        renderStoragesTable(currentStorages);
+        onStorageFilterChange();
       } catch (err) {
-        document.getElementById('storagesBody').innerHTML = `<tr><td colspan="8"><div class="empty-state" style="color:var(--danger)">Failed to load cold storages.</div></td></tr>`;
+        document.getElementById('storagesBody').innerHTML = `<tr><td colspan="8"><div class="empty-state" style="color:var(--danger)"><div class="empty-state-title">Failed to load cold storages.</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
       }
     }
 
-    function renderStoragesTable(items) {
+    function onStorageFilterChange() {
+      const q = (document.getElementById('storageSearchInput').value || '').trim().toLowerCase();
+      const state = document.getElementById('storageStateFilter').value;
+      const status = document.getElementById('storageStatusFilter').value;
+
+      filteredStorages = currentStorages.filter(item => {
+        if (state !== 'all' && (item.state || '').toLowerCase() !== state) return false;
+        if (status !== 'all' && (item.status || 'active').toLowerCase() !== status) return false;
+        if (q) {
+          const matchName = (item.name || '').toLowerCase().includes(q);
+          const matchDist = (item.district || '').toLowerCase().includes(q);
+          const matchId = String(item.id).includes(q);
+          if (!matchName && !matchDist && !matchId) return false;
+        }
+        return true;
+      });
+
+      storagePage = 1;
+      renderStoragesTable();
+    }
+
+    function resetStorageFilters() {
+      document.getElementById('storageSearchInput').value = '';
+      document.getElementById('storageStateFilter').value = 'all';
+      document.getElementById('storageStatusFilter').value = 'all';
+      onStorageFilterChange();
+    }
+
+    function renderStoragesTable() {
       const tbody = document.getElementById('storagesBody');
-      if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No cold storage records found.</div></td></tr>`;
+      const countBadge = document.getElementById('storageCountBadge');
+      const total = filteredStorages.length;
+      
+      countBadge.innerHTML = `Showing <strong>${total}</strong> of ${currentStorages.length} facilities`;
+
+      if (!total) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="empty-state-title">No matching cold storage facilities found</div><div>Try adjusting your filters or search keywords.</div></div></td></tr>`;
+        renderStoragePagination(0);
         return;
       }
 
-      tbody.innerHTML = items.map(s => {
-        const isActive = (s.status || 'active') === 'active';
-        const lat = s.latitude ? Number(s.latitude).toFixed(4) : null;
-        const lon = s.longitude ? Number(s.longitude).toFixed(4) : null;
-        const gps = (lat && lon) ? `${lat}, ${lon}` : `<span style="color:#9CA3AF;">—</span>`;
+      const totalPages = Math.ceil(total / storagePageSize);
+      if (storagePage > totalPages) storagePage = totalPages;
+
+      const startIdx = (storagePage - 1) * storagePageSize;
+      const pagedItems = filteredStorages.slice(startIdx, startIdx + storagePageSize);
+
+      tbody.innerHTML = pagedItems.map(s => {
+        const isActive = (s.status || 'active').toLowerCase() === 'active';
+        const lat = s.latitude !== null && s.latitude !== undefined ? Number(s.latitude).toFixed(4) : null;
+        const lon = s.longitude !== null && s.longitude !== undefined ? Number(s.longitude).toFixed(4) : null;
+        
+        let gpsHtml = `<span style="color:#94A3B8;">â€”</span>`;
+        if (lat && lon) {
+          const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
+          gpsHtml = `<a href="${mapUrl}" target="_blank" rel="noopener" class="gps-link" title="Open in Google Maps">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${lat}, ${lon}
+          </a>`;
+        }
+
         const cap = Number(s.capacity_mt) || 0;
-        const stateName = (s.state || '').charAt(0).toUpperCase() + (s.state || '').slice(1);
+        const stateRaw = s.state || '';
+        const stateName = stateRaw.charAt(0).toUpperCase() + stateRaw.slice(1);
+        const subLoc = [s.block, s.village].filter(Boolean).join(', ');
 
         return `
           <tr>
-            <td style="font-family:var(--font-mono);color:var(--text-muted);">#${s.id}</td>
-            <td><strong>${escapeHtml(s.name)}</strong></td>
-            <td>${stateName}</td>
-            <td>${escapeHtml(s.district || '')}</td>
+            <td><span style="font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text-muted);">#${s.id}</span></td>
+            <td>
+              <div class="facility-cell">
+                <div class="facility-avatar">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+                </div>
+                <div class="facility-details">
+                  <div class="facility-name">${escapeHtml(s.name)}</div>
+                  ${subLoc ? `<div class="facility-location-sub">${escapeHtml(subLoc)}</div>` : ''}
+                </div>
+              </div>
+            </td>
+            <td><span class="badge-state">${escapeHtml(stateName || 'â€”')}</span></td>
+            <td><strong style="color:var(--text-sub);">${escapeHtml(s.district || 'â€”')}</strong></td>
             <td class="col-num">${cap.toLocaleString()}</td>
-            <td class="col-center" style="font-family:var(--font-mono);font-size:12px;">${gps}</td>
+            <td class="col-center">${gpsHtml}</td>
             <td class="col-center">
-              <span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">${isActive ? 'Active' : 'Inactive'}</span>
+              <span class="badge badge-dot ${isActive ? 'badge-active' : 'badge-inactive'}">${isActive ? 'Active' : 'Inactive'}</span>
             </td>
             <td class="col-center">
               <div style="display:inline-flex;gap:6px;">
                 <button class="btn-icon" title="Edit facility" onclick="openStorageModal(${s.id})">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
                 </button>
                 <button class="btn-icon danger" title="Delete facility" onclick="deleteStorage(${s.id})">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 </button>
-    <!-- TAB 4: AUCTIONS -->
-    <div class="main-card" id="tabContentAuctions" style="display:none;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Mandi Auctions Master Data</div>
-          <div class="card-subtitle">Manage auction listings, prices, statuses, and quantities.</div>
-        </div>
-        <button class="btn btn-primary" onclick="openAuctionModal()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Auction
-        </button>
-      </div>
-
-      <div class="table-container">
-        <table class="md-table">
-          <thead>
-            <tr>
-              <th style="width:8%;">ID</th>
-              <th style="width:18%;">Auction Name</th>
-              <th style="width:10%;">Crop Type</th>
-              <th style="width:10%;">State</th>
-              <th style="width:10%;">District</th>
-              <th class="col-num" style="width:10%;">Base Price</th>
-              <th class="col-num" style="width:10%;">Target Qty</th>
-              <th class="col-center" style="width:8%;">Status</th>
-              <th class="col-center" style="width:8%;">Type</th>
-              <th class="col-center" style="width:8%;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="auctionsBody">
-            <tr><td colspan="10"><div class="empty-state">Loading auctions…</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
+
+      renderStoragePagination(totalPages);
+    }
+
+    function renderStoragePagination(totalPages) {
+      const info = document.getElementById('storagePaginationInfo');
+      const controls = document.getElementById('storagePaginationControls');
+
+      if (totalPages <= 1) {
+        info.textContent = `Showing 1â€“${filteredStorages.length} of ${filteredStorages.length}`;
+        controls.innerHTML = '';
+        return;
+      }
+
+      const start = (storagePage - 1) * storagePageSize + 1;
+      const end = Math.min(storagePage * storagePageSize, filteredStorages.length);
+      info.textContent = `Showing ${start}â€“${end} of ${filteredStorages.length}`;
+
+      let btns = `
+        <button class="page-btn" onclick="goToStoragePage(${storagePage - 1})" ${storagePage === 1 ? 'disabled' : ''} title="Previous page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+      `;
+
+      for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= storagePage - 1 && p <= storagePage + 1)) {
+          btns += `<button class="page-btn ${p === storagePage ? 'active' : ''}" onclick="goToStoragePage(${p})">${p}</button>`;
+        } else if (p === storagePage - 2 || p === storagePage + 2) {
+          btns += `<span style="padding:0 4px;color:var(--text-muted);">â€¦</span>`;
+        }
+      }
+
+      btns += `
+        <button class="page-btn" onclick="goToStoragePage(${storagePage + 1})" ${storagePage === totalPages ? 'disabled' : ''} title="Next page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      `;
+
+      controls.innerHTML = btns;
+    }
+
+    function goToStoragePage(p) {
+      storagePage = p;
+      renderStoragesTable();
+    }
+
+    function exportColdStoragesCsv() {
+      if (!currentStorages.length) {
+        showToast("No data available to export.", true);
+        return;
+      }
+      const headers = ["ID", "Name", "State", "District", "Block", "Village", "Capacity_MT", "Status", "Latitude", "Longitude"];
+      const rows = currentStorages.map(s => [
+        s.id,
+        `"${(s.name || '').replace(/"/g, '""')}"`,
+        `"${(s.state || '').replace(/"/g, '""')}"`,
+        `"${(s.district || '').replace(/"/g, '""')}"`,
+        `"${(s.block || '').replace(/"/g, '""')}"`,
+        `"${(s.village || '').replace(/"/g, '""')}"`,
+        s.capacity_mt || 0,
+        s.status || 'active',
+        s.latitude || '',
+        s.longitude || ''
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `cold_storages_master_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSV export generated successfully.");
     }
 
     function openStorageModal(id = null) {
@@ -787,7 +2283,7 @@
       } else {
         modalTitle.textContent = "Add Cold Storage Facility";
         document.getElementById('modalStorageName').value = '';
-        document.getElementById('modalStorageState').value = 'tripura';
+        document.getElementById('modalStorageState').value = 'rajasthan';
         document.getElementById('modalStorageDistrict').value = '';
         document.getElementById('modalStorageBlock').value = '';
         document.getElementById('modalStorageVillage').value = '';
@@ -846,7 +2342,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Save failed");
 
-        showToast(editingStorageId ? "Facility updated successfully." : "Facility created successfully.");
+        showToast(editingStorageId ? "Facility updated successfully." : "Facility registered successfully.");
         closeStorageModal();
         loadColdStorages();
       } catch (err) {
@@ -872,67 +2368,7 @@
       }
     }
 
-    // ── YIELD DETECT CONFIG TAB ──
-    async function loadYieldConfig() {
-      try {
-        const res = await fetch("/api/master-data/yield-config", { headers: authHeaders() });
-        if (!res.ok) throw new Error("Failed to load yield config");
-        const data = await res.json();
-        currentYieldConfig = data || [];
-        renderYieldConfigTable(currentYieldConfig);
-      } catch (err) {
-        document.getElementById('yieldConfigBody').innerHTML = `<tr><td colspan="6"><div class="empty-state" style="color:var(--danger)">Failed to load yield configuration.</div></td></tr>`;
-      }
-    }
-
-    function renderYieldConfigTable(items) {
-      const tbody = document.getElementById('yieldConfigBody');
-      if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No yield configuration found.</div></td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = items.map(cfg => `
-        <tr>
-          <td><strong style="font-family:var(--font-mono);font-size:12px;">${escapeHtml(cfg.key)}</strong></td>
-          <td><input class="form-input" id="yield-val-${escapeHtml(cfg.key)}" value="${escapeHtml(cfg.value)}" style="height:32px;font-size:12px;"></td>
-          <td><span class="badge badge-role">${escapeHtml(cfg.category)}</span></td>
-          <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(cfg.description || '')}</td>
-          <td style="font-size:12px;">${cfg.last_updated ? new Date(cfg.last_updated).toLocaleString() : '—'}</td>
-          <td class="col-center">
-            <button class="btn btn-secondary btn-sm" onclick="saveYieldConfig('${escapeHtml(cfg.key)}')">Save</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function saveYieldConfig(key) {
-      const valueInput = document.getElementById(`yield-val-${key}`);
-      if (!valueInput) return;
-      const value = valueInput.value;
-      const row = currentYieldConfig.find(c => c.key === key);
-
-      try {
-        const res = await fetch(`/api/master-data/yield-config/${encodeURIComponent(key)}`, {
-          method: "PUT",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            value,
-            category: row ? row.category : 'general',
-            description: row ? row.description : ''
-          })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Save failed");
-
-        showToast(`Yield config "${key}" updated.`);
-        loadYieldConfig();
-      } catch (err) {
-        showToast(err.message || "Failed to save yield config.", true);
-      }
-    }
-
-    // ── ROLE PERMISSIONS TAB ──
+    // â”€â”€ ROLE PERMISSIONS TAB â”€â”€
     async function loadRolePermissions() {
       try {
         const res = await fetch("/api/master-data/role-permissions", { headers: authHeaders() });
@@ -945,11 +2381,13 @@
         // Update KPIs
         const roleKeys = Object.keys(currentPermissions);
         document.getElementById('kpi-total-roles').textContent = roleKeys.length;
+        document.getElementById('tabBadgeRoles').textContent = roleKeys.length;
         document.getElementById('kpi-total-pages').textContent = allManagedPages.length;
+        document.getElementById('rolesCountBadge').innerHTML = `<strong>${roleKeys.length}</strong> system roles configured`;
 
         renderRolePermissionsTable();
       } catch (err) {
-        document.getElementById('rolesBody').innerHTML = `<tr><td colspan="10"><div class="empty-state" style="color:var(--danger)">Failed to load permissions.</div></td></tr>`;
+        document.getElementById('rolesBody').innerHTML = `<tr><td colspan="10"><div class="empty-state" style="color:var(--danger)"><div class="empty-state-title">Failed to load permissions.</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
       }
     }
 
@@ -961,20 +2399,25 @@
     function renderRolePermissionsTable() {
       const head = document.getElementById('rolesHead');
       const tbody = document.getElementById('rolesBody');
+      const filter = (document.getElementById('roleSearchInput')?.value || '').trim().toLowerCase();
 
-      // Build table header
+      // Table Header
       head.innerHTML = `
         <tr>
-          <th style="width:14%;">Role</th>
-          <th class="col-center" style="width:7%;">CRUD Flag</th>
-          ${allManagedPages.map(p => `<th class="col-center" title="${p}" style="font-size:10.5px;">${formatPageLabel(p)}</th>`).join('')}
-          <th class="col-center" style="width:8%;">Save</th>
+          <th style="width:16%;">Role</th>
+          <th class="col-center" style="width:9%;">CRUD Access</th>
+          ${allManagedPages.map(p => `<th class="matrix-page-head" title="${p}">${formatPageLabel(p)}</th>`).join('')}
+          <th class="col-center" style="width:9%;">Action</th>
         </tr>
       `;
 
-      const roles = Object.keys(currentPermissions).sort();
+      let roles = Object.keys(currentPermissions).sort();
+      if (filter) {
+        roles = roles.filter(r => r.toLowerCase().includes(filter));
+      }
+
       if (!roles.length) {
-        tbody.innerHTML = `<tr><td colspan="${allManagedPages.length + 3}"><div class="empty-state">No role permissions configured.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${allManagedPages.length + 3}"><div class="empty-state"><div class="empty-state-title">No matching role permissions configured</div></div></td></tr>`;
         return;
       }
 
@@ -984,7 +2427,7 @@
 
         const pageChecks = allManagedPages.map(p => `
           <td class="col-center">
-            <input type="checkbox" class="matrix-checkbox"
+            <input type="checkbox" class="matrix-custom-check"
               data-role="${role}"
               data-page="${p}"
               ${pagesList.includes(p) ? 'checked' : ''}>
@@ -993,15 +2436,24 @@
 
         return `
           <tr id="role-row-${role}">
-            <td><span class="badge badge-role">${role.replace('_', ' ')}</span></td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span class="badge badge-role">${role.replace(/_/g, ' ')}</span>
+                <div style="display:flex;gap:4px;">
+                  <button type="button" class="role-quick-btn" onclick="toggleAllRolePages('${role}', true)">All</button>
+                  <button type="button" class="role-quick-btn" onclick="toggleAllRolePages('${role}', false)">None</button>
+                </div>
+              </div>
+            </td>
             <td class="col-center">
-              <input type="checkbox" class="matrix-checkbox"
-                id="crud-check-${role}"
-                ${perm.crud ? 'checked' : ''}>
+              <label class="toggle-switch">
+                <input type="checkbox" id="crud-check-${role}" ${perm.crud ? 'checked' : ''}>
+                <span class="toggle-slider"></span>
+              </label>
             </td>
             ${pageChecks}
             <td class="col-center">
-              <button class="btn btn-secondary btn-sm" onclick="saveRoleRow('${role}')">
+              <button class="btn btn-secondary btn-sm" id="btn-save-role-${role}" onclick="saveRoleRow('${role}')">
                 Save
               </button>
             </td>
@@ -1010,9 +2462,19 @@
       }).join('');
     }
 
+    function toggleAllRolePages(role, selectAll) {
+      const row = document.getElementById(`role-row-${role}`);
+      if (!row) return;
+      const checkboxes = row.querySelectorAll(`input[type="checkbox"][data-role="${role}"]`);
+      checkboxes.forEach(cb => cb.checked = selectAll);
+    }
+
     async function saveRoleRow(role) {
       const row = document.getElementById(`role-row-${role}`);
       if (!row) return;
+
+      const btn = document.getElementById(`btn-save-role-${role}`);
+      if (btn) { btn.disabled = true; btn.textContent = 'Savingâ€¦'; }
 
       const checkedBoxes = row.querySelectorAll(`input[type="checkbox"][data-role="${role}"]:checked`);
       const selectedPages = Array.from(checkedBoxes).map(cb => cb.dataset.page);
@@ -1032,9 +2494,393 @@
         if (!res.ok) throw new Error(data.error || "Failed to update role permissions");
 
         currentPermissions[role] = { pages: data.pages, crud: data.crud };
-        showToast(`Permissions updated for ${role}.`);
+        showToast(`Permissions updated for role: ${role.replace(/_/g, ' ')}.`);
       } catch (err) {
         showToast(err.message || "Failed to save permissions.", true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+      }
+    }
+
+    // â”€â”€ YIELD DETECT CONFIG TAB â”€â”€
+    async function loadYieldConfig() {
+      try {
+        const res = await fetch("/api/master-data/yield-config", { headers: authHeaders() });
+        if (!res.ok) throw new Error("Failed to load yield config");
+        const data = await res.json();
+        currentYieldConfig = data || [];
+        document.getElementById('tabBadgeYield').textContent = currentYieldConfig.length;
+        document.getElementById('yieldCountBadge').innerHTML = `<strong>${currentYieldConfig.length}</strong> parameters loaded`;
+        renderYieldConfigTable();
+      } catch (err) {
+        document.getElementById('yieldConfigBody').innerHTML = `<tr><td colspan="6"><div class="empty-state" style="color:var(--danger)"><div class="empty-state-title">Failed to load yield engine configuration.</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
+      }
+    }
+
+    function renderYieldConfigTable() {
+      const tbody = document.getElementById('yieldConfigBody');
+      const filter = (document.getElementById('yieldSearchInput')?.value || '').trim().toLowerCase();
+
+      let items = currentYieldConfig;
+      if (filter) {
+        items = items.filter(c => (c.key || '').toLowerCase().includes(filter) || (c.description || '').toLowerCase().includes(filter) || (c.category || '').toLowerCase().includes(filter));
+      }
+
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-title">No matching yield parameters found</div></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(cfg => `
+        <tr>
+          <td><span class="param-key">${escapeHtml(cfg.key)}</span></td>
+          <td><input class="param-input" id="yield-val-${escapeHtml(cfg.key)}" value="${escapeHtml(cfg.value)}"></td>
+          <td><span class="badge-category cat-default">${escapeHtml(cfg.category || 'General')}</span></td>
+          <td style="font-size:12.5px;color:var(--text-sub);">${escapeHtml(cfg.description || 'System inference parameter.')}</td>
+          <td style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);">${cfg.last_updated ? new Date(cfg.last_updated).toLocaleString() : 'â€”'}</td>
+          <td class="col-center">
+            <button class="btn btn-secondary btn-sm" id="btn-save-yield-${escapeHtml(cfg.key)}" onclick="saveYieldConfig('${escapeHtml(cfg.key)}')">
+              Save
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function saveYieldConfig(key) {
+      const valueInput = document.getElementById(`yield-val-${key}`);
+      if (!valueInput) return;
+      const value = valueInput.value;
+      const row = currentYieldConfig.find(c => c.key === key);
+
+      const btn = document.getElementById(`btn-save-yield-${key}`);
+      if (btn) { btn.disabled = true; btn.textContent = 'Savingâ€¦'; }
+
+      try {
+        const res = await fetch(`/api/master-data/yield-config/${encodeURIComponent(key)}`, {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            value,
+            category: row ? row.category : 'general',
+            description: row ? row.description : ''
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Save failed");
+
+        showToast(`Parameter "${key}" updated.`);
+        loadYieldConfig();
+      } catch (err) {
+        showToast(err.message || "Failed to save yield config.", true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+      }
+    }
+
+    // â”€â”€ CROP FEATURES & DISTRICTS TAB â”€â”€
+    function selectCropState(st) {
+      document.getElementById('cropFeatureState').value = st;
+      document.getElementById('pillStateRajasthan').classList.toggle('active', st === 'rajasthan');
+      document.getElementById('pillStateTripura').classList.toggle('active', st === 'tripura');
+      document.getElementById('pillStateMeghalaya').classList.toggle('active', st === 'meghalaya');
+      onCropFeatureStateChange();
+    }
+
+    function onCropFeatureStateChange() {
+      currentCropFeatures = [];
+      currentDistricts = [];
+      editingCropName = null;
+      loadCropFeatures();
+      loadDistricts();
+    }
+
+    function getCategoryBadgeClass(cat) {
+      const c = (cat || '').toLowerCase();
+      if (c.includes('cereal')) return 'cat-cereal';
+      if (c.includes('pulse')) return 'cat-pulse';
+      if (c.includes('oilseed')) return 'cat-oilseed';
+      if (c.includes('vegetable')) return 'cat-vegetable';
+      if (c.includes('fruit')) return 'cat-fruit';
+      if (c.includes('spice')) return 'cat-spice';
+      if (c.includes('fiber') || c.includes('fibre')) return 'cat-fiber';
+      if (c.includes('cash')) return 'cat-cash';
+      return 'cat-default';
+    }
+
+    function renderWaterNeedHtml(val) {
+      const v = parseInt(val) || 2;
+      let drops = '';
+      let label = 'Medium';
+      if (v === 1) {
+        drops = '<span class="water-drop">ðŸ’§</span><span class="water-drop-dim">ðŸ’§ðŸ’§</span>';
+        label = 'Low';
+      } else if (v === 3) {
+        drops = '<span class="water-drop">ðŸ’§ðŸ’§ðŸ’§</span>';
+        label = 'High';
+      } else {
+        drops = '<span class="water-drop">ðŸ’§ðŸ’§</span><span class="water-drop-dim">ðŸ’§</span>';
+        label = 'Medium';
+      }
+      return `<div class="water-meter">${drops} <span>${label}</span></div>`;
+    }
+
+    async function loadCropFeatures() {
+      const state = document.getElementById('cropFeatureState').value;
+      try {
+        const res = await fetch(`/api/master-data/crop-features?state=${encodeURIComponent(state)}`, { headers: authHeaders() });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to load crop features");
+        }
+        const data = await res.json();
+        currentCropFeatures = data.crops || [];
+        document.getElementById('tabBadgeCrops').textContent = currentCropFeatures.length;
+        document.getElementById('cropCountBadge').innerHTML = `<strong>${currentCropFeatures.length}</strong> crops registered`;
+        renderCropFeaturesTable(currentCropFeatures);
+      } catch (err) {
+        document.getElementById('cropFeaturesBody').innerHTML = `<tr><td colspan="5"><div class="empty-state" style="color:var(--danger)"><div class="empty-state-title">Failed to load crop features</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
+      }
+    }
+
+    function renderCropFeaturesTable(items) {
+      const tbody = document.getElementById('cropFeaturesBody');
+      const filter = (document.getElementById('cropSearchInput')?.value || '').trim().toLowerCase();
+
+      let list = items;
+      if (filter) {
+        list = list.filter(c => (c.crop || '').toLowerCase().includes(filter) || (c.Crop_Category || '').toLowerCase().includes(filter));
+      }
+
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-title">No crop profiles registered for this state</div></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(c => `
+        <tr>
+          <td><strong style="color:var(--text-main);font-size:13.5px;">${escapeHtml(c.crop)}</strong></td>
+          <td><span class="badge-category ${getCategoryBadgeClass(c.Crop_Category)}">${escapeHtml(c.Crop_Category || 'â€”')}</span></td>
+          <td>${renderWaterNeedHtml(c.Crop_Water_Need)}</td>
+          <td class="col-num">${c.Crop_Duration_Days ? `${c.Crop_Duration_Days} days` : 'â€”'}</td>
+          <td class="col-center">
+            <div style="display:inline-flex;gap:6px;">
+              <button class="btn-icon" title="Edit crop" onclick="openCropModal('${escapeHtml(c.crop)}')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </button>
+              <button class="btn-icon danger" title="Delete crop" onclick="deleteCrop('${escapeHtml(c.crop)}')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openCropModal(cropName = null) {
+      editingCropName = cropName;
+      const modalTitle = document.getElementById('cropModalTitle');
+      const nameInput = document.getElementById('modalCropName');
+      const catSelect = document.getElementById('modalCropCategory');
+      const waterSelect = document.getElementById('modalCropWaterNeed');
+      const durInput = document.getElementById('modalCropDuration');
+
+      if (cropName) {
+        modalTitle.textContent = "Edit Crop Profile";
+        const item = currentCropFeatures.find(c => c.crop === cropName);
+        if (item) {
+          nameInput.value = item.crop || '';
+          nameInput.disabled = true;
+          catSelect.value = item.Crop_Category || '';
+          waterSelect.value = item.Crop_Water_Need ?? "2";
+          durInput.value = item.Crop_Duration_Days ?? '';
+        }
+      } else {
+        modalTitle.textContent = "Add Crop Profile";
+        nameInput.value = '';
+        nameInput.disabled = false;
+        catSelect.value = '';
+        waterSelect.value = "2";
+        durInput.value = '';
+      }
+
+      document.getElementById('cropModalOverlay').classList.add('show');
+    }
+
+    function closeCropModal() {
+      document.getElementById('cropModalOverlay').classList.remove('show');
+      editingCropName = null;
+    }
+
+    async function saveCropModal() {
+      const state = document.getElementById('cropFeatureState').value;
+      const cropName = document.getElementById('modalCropName').value.trim();
+      const category = document.getElementById('modalCropCategory').value;
+      const waterNeed = parseInt(document.getElementById('modalCropWaterNeed').value) || 2;
+      const duration = parseInt(document.getElementById('modalCropDuration').value) || 0;
+
+      if (!cropName) {
+        showToast("Crop name is required.", true);
+        return;
+      }
+      if (!category) {
+        showToast("Crop category is required.", true);
+        return;
+      }
+      if (duration <= 0) {
+        showToast("Crop duration must be a positive integer.", true);
+        return;
+      }
+
+      const payload = {
+        state,
+        crop: cropName,
+        Crop_Category: category,
+        Crop_Water_Need: waterNeed,
+        Crop_Duration_Days: duration,
+      };
+
+      try {
+        let res;
+        if (editingCropName) {
+          res = await fetch(`/api/master-data/crop-features/${encodeURIComponent(editingCropName)}`, {
+            method: "PATCH",
+            headers: authHeaders(),
+            body: JSON.stringify(payload)
+          });
+        } else {
+          res = await fetch("/api/master-data/crop-features", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Save failed");
+
+        showToast(editingCropName ? "Crop features updated." : "Crop registered successfully.");
+        closeCropModal();
+        loadCropFeatures();
+      } catch (err) {
+        showToast(err.message || "Failed to save crop.", true);
+      }
+    }
+
+    async function deleteCrop(cropName) {
+      if (!confirm(`Are you sure you want to delete crop "${cropName}"? This will remove all associated rows from state dataset and cannot be undone.`)) return;
+
+      const state = document.getElementById('cropFeatureState').value;
+      try {
+        const res = await fetch(`/api/master-data/crop-features/${encodeURIComponent(cropName)}`, {
+          method: "DELETE",
+          headers: authHeaders(),
+          body: JSON.stringify({ state })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Delete failed");
+
+        showToast(`Crop "${cropName}" deleted.`);
+        loadCropFeatures();
+      } catch (err) {
+        showToast(err.message || "Failed to delete crop.", true);
+      }
+    }
+
+    async function loadDistricts() {
+      const state = document.getElementById('cropFeatureState').value;
+      try {
+        const res = await fetch(`/api/master-data/districts?state=${encodeURIComponent(state)}`, { headers: authHeaders() });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to load districts");
+        }
+        const data = await res.json();
+        currentDistricts = data.districts || [];
+        document.getElementById('districtCountBadge').innerHTML = `<strong>${currentDistricts.length}</strong> districts`;
+        renderDistrictsTable(currentDistricts);
+      } catch (err) {
+        document.getElementById('districtsListContainer').innerHTML = `<div class="empty-state" style="color:var(--danger)"><div class="empty-state-title">Failed to load districts</div><div>${escapeHtml(err.message)}</div></div>`;
+      }
+    }
+
+    function renderDistrictsTable(items) {
+      const container = document.getElementById('districtsListContainer');
+      const filter = (document.getElementById('districtSearchInput')?.value || '').trim().toLowerCase();
+
+      let list = items;
+      if (filter) {
+        list = list.filter(d => d.toLowerCase().includes(filter));
+      }
+
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-title">No districts found for this state</div></div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(d => `
+        <div class="district-item">
+          <div class="district-name">${escapeHtml(d)}</div>
+          <button class="btn-icon danger" title="Delete district" onclick="deleteDistrict('${escapeHtml(d)}')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function openDistrictModal() {
+      document.getElementById('modalDistrictName').value = '';
+      document.getElementById('districtModalTitle').textContent = `Add District (${document.getElementById('cropFeatureState').value.toUpperCase()})`;
+      document.getElementById('districtModalOverlay').classList.add('show');
+    }
+
+    function closeDistrictModal() {
+      document.getElementById('districtModalOverlay').classList.remove('show');
+    }
+
+    async function saveDistrictModal() {
+      const state = document.getElementById('cropFeatureState').value;
+      const districtName = document.getElementById('modalDistrictName').value.trim();
+
+      if (!districtName) {
+        showToast("District name is required.", true);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/master-data/districts", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ state, district: districtName })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Save failed");
+
+        showToast(`District "${districtName}" enrolled.`);
+        closeDistrictModal();
+        loadDistricts();
+      } catch (err) {
+        showToast(err.message || "Failed to save district.", true);
+      }
+    }
+
+    async function deleteDistrict(districtName) {
+      if (!confirm(`Are you sure you want to remove district "${districtName}"? This will modify state datasets.`)) return;
+
+      const state = document.getElementById('cropFeatureState').value;
+      try {
+        const res = await fetch(`/api/master-data/districts/${encodeURIComponent(districtName)}`, {
+          method: "DELETE",
+          headers: authHeaders(),
+          body: JSON.stringify({ state })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Delete failed");
+
+        showToast(`District "${districtName}" removed.`);
+        loadDistricts();
+      } catch (err) {
+        showToast(err.message || "Failed to delete district.", true);
       }
     }
 
@@ -1045,193 +2891,293 @@
       }[m]));
     }
 
-    // ── AUCTIONS TAB ──
-    async function loadAuctions() {
+
+    // ── AGRI CREDIT SCORE TAB ──────────────────────────────────────────────────
+    let currentCreditScoreAccounts = [];
+    let filteredCreditScoreAccounts = [];
+    let creditScorePage = 1;
+    const creditScorePageSize = 10;
+    let editingCsFarmerId = null;
+
+    async function loadCreditScoreAccounts() {
       try {
-        const res = await fetch("/api/master-data/auctions", { headers: authHeaders() });
-        if (!res.ok) throw new Error("Failed to load auctions");
+        const res = await fetch("/api/credit-score/admin/farmers", { headers: authHeaders() });
+        if (!res.ok) {
+          const d = await res.json();
+          throw new Error(d.error || "Failed to load credit score accounts");
+        }
         const data = await res.json();
-        currentAuctions = data || [];
-        renderAuctionsTable(currentAuctions);
+        currentCreditScoreAccounts = data.farmers || [];
+        document.getElementById('tabBadgeCreditScore').textContent = currentCreditScoreAccounts.length;
+        onCreditScoreFilterChange();
       } catch (err) {
-        document.getElementById('auctionsBody').innerHTML = `<tr><td colspan="10"><div class="empty-state" style="color:var(--danger)">Failed to load auctions.</div></td></tr>`;
+        document.getElementById('creditScoreBody').innerHTML = `<tr><td colspan="10"><div class="empty-state" style="color:var(--danger)"><div class="empty-state-title">Failed to load credit accounts.</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
       }
     }
 
-    function renderAuctionsTable(items) {
-      const tbody = document.getElementById('auctionsBody');
-      if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">No auctions found.</div></td></tr>`;
+    function onCreditScoreFilterChange() {
+      const q = (document.getElementById('creditScoreSearchInput').value || '').trim().toLowerCase();
+      const state = document.getElementById('creditScoreStateFilter').value;
+      const repayment = document.getElementById('creditScoreRepaymentFilter').value;
+
+      filteredCreditScoreAccounts = currentCreditScoreAccounts.filter(f => {
+        if (state !== 'all' && (f.state || '').toLowerCase() !== state.toLowerCase()) return false;
+        if (repayment !== 'all' && f.repayment_status !== repayment) return false;
+        if (q) {
+          const matchId   = (f.farmer_id || '').toLowerCase().includes(q);
+          const matchName = (f.farmer_name || '').toLowerCase().includes(q);
+          const matchEmail= (f.email || '').toLowerCase().includes(q);
+          if (!matchId && !matchName && !matchEmail) return false;
+        }
+        return true;
+      });
+
+      creditScorePage = 1;
+      renderCreditScoreTable();
+    }
+
+    function resetCreditScoreFilters() {
+      document.getElementById('creditScoreSearchInput').value = '';
+      document.getElementById('creditScoreStateFilter').value = 'all';
+      document.getElementById('creditScoreRepaymentFilter').value = 'all';
+      onCreditScoreFilterChange();
+    }
+
+    function _csGradeColor(grade) {
+      if (grade === 'AAA' || grade === 'AA') return '#047857';
+      if (grade === 'A') return '#0284C7';
+      if (grade === 'BBB') return '#D97706';
+      return '#DC2626';
+    }
+
+    function _csScoreBg(score) {
+      if (score >= 80) return '#ECFDF5';
+      if (score >= 65) return '#E0F2FE';
+      if (score >= 50) return '#FEF3C7';
+      if (score >= 35) return '#FEF3C7';
+      return '#FEE2E2';
+    }
+
+    function _repaymentBadge(status) {
+      if (status === 'Repaid on time') return `<span class="badge badge-active badge-dot">${escapeHtml(status)}</span>`;
+      if (status === 'Defaulted') return `<span class="badge badge-inactive badge-dot">${escapeHtml(status)}</span>`;
+      return `<span class="badge" style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;">${escapeHtml(status || '—')}</span>`;
+    }
+
+    function renderCreditScoreTable() {
+      const tbody = document.getElementById('creditScoreBody');
+      const total = filteredCreditScoreAccounts.length;
+      document.getElementById('creditScoreCountBadge').innerHTML = `Showing <strong>${total}</strong> of ${currentCreditScoreAccounts.length} accounts`;
+
+      if (!total) {
+        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-state-title">No matching farmer accounts found</div><div>Try adjusting your filters or search keywords.</div></div></td></tr>`;
+        renderCreditScorePagination(0);
         return;
       }
 
-      tbody.innerHTML = items.map(a => {
-        const meta = a.metadata || {};
-        const state = meta.state || '—';
-        const district = meta.district || '—';
-        const isActive = a.status === 'active';
-        const isScheduled = a.status === 'scheduled';
-        const statusClass = isActive ? 'badge-active' : (isScheduled ? 'badge-role' : 'badge-inactive');
-        const typeLabel = a.auctionType === 'reverse' ? 'Reverse' : 'Forward';
-        const basePrice = Number(a.basePrice) || 0;
-        const targetQty = Number(a.targetQuantity) || 0;
+      const totalPages = Math.ceil(total / creditScorePageSize);
+      if (creditScorePage > totalPages) creditScorePage = totalPages;
+
+      const startIdx = (creditScorePage - 1) * creditScorePageSize;
+      const paged = filteredCreditScoreAccounts.slice(startIdx, startIdx + creditScorePageSize);
+
+      tbody.innerHTML = paged.map(f => {
+        const score = f.credit_score ?? '—';
+        const grade = f.rating_grade || '—';
+        const gradeColor = _csGradeColor(grade);
+        const scoreBg = typeof score === 'number' ? _csScoreBg(score) : '#F1F5F9';
+        const stateName = (f.state || '').charAt(0).toUpperCase() + (f.state || '').slice(1);
 
         return `
           <tr>
-            <td style="font-family:var(--font-mono);color:var(--text-muted);">#${a.id}</td>
-            <td><strong>${escapeHtml(a.itemLabel)}</strong></td>
-            <td>${escapeHtml(a.category || '—')}</td>
-            <td>${escapeHtml(state)}</td>
-            <td>${escapeHtml(district)}</td>
-            <td class="col-num">${basePrice.toLocaleString()}</td>
-            <td class="col-num">${targetQty.toLocaleString()}</td>
-            <td class="col-center">
-              <span class="badge ${statusClass}">${(a.status || '—').toUpperCase()}</span>
-            </td>
-            <td class="col-center">${typeLabel}</td>
-            <td class="col-center">
-              <div style="display:inline-flex;gap:6px;">
-                <button class="btn-icon" title="Edit auction" onclick="openAuctionModal('${a.id}')">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-                </button>
-                <button class="btn-icon danger" title="Delete auction" onclick="deleteAuction('${a.id}')">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                </button>
+            <td><span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--primary);">${escapeHtml(f.farmer_id)}</span></td>
+            <td>
+              <div class="facility-cell">
+                <div class="facility-avatar" style="background:#EDE9FE;color:#7C3AED;font-size:13px;font-weight:800;">
+                  ${escapeHtml((f.farmer_name || '?').charAt(0).toUpperCase())}
+                </div>
+                <div class="facility-details">
+                  <div class="facility-name">${escapeHtml(f.farmer_name || '—')}</div>
+                  <div class="facility-location-sub">${escapeHtml(f.email || '—')}</div>
+                </div>
               </div>
+            </td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <span class="badge-state">${escapeHtml(stateName || '—')}</span>
+                <span style="font-size:11.5px;color:var(--text-muted);">${escapeHtml(f.district || '—')}</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-mono);font-weight:600;color:var(--text-sub);">${Number(f.land_acres || 0).toFixed(2)}</td>
+            <td style="font-size:12.5px;color:var(--text-sub);">${escapeHtml(f.crop || '—')}</td>
+            <td class="col-num">&#8377;${Number(f.past_loan_amount || 0).toLocaleString()}</td>
+            <td class="col-num">${Number(f.past_yield_quintals || 0).toFixed(1)}</td>
+            <td>${_repaymentBadge(f.repayment_status)}</td>
+            <td class="col-center">
+              <div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:${scoreBg};border-radius:8px;padding:4px 10px;min-width:52px;">
+                <span style="font-size:15px;font-weight:800;color:${gradeColor};">${score}</span>
+                <span style="font-size:10px;font-weight:700;color:${gradeColor};">${grade}</span>
+              </div>
+            </td>
+            <td class="col-center">
+              <button class="btn-icon" title="Edit account" onclick="openCreditScoreModal('${escapeHtml(f.farmer_id)}')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </button>
             </td>
           </tr>
         `;
       }).join('');
+
+      renderCreditScorePagination(totalPages);
     }
 
-    function openAuctionModal(id = null) {
-      editingAuctionId = id;
-      const modalTitle = document.getElementById('auctionModalTitle');
-
-      if (id) {
-        modalTitle.textContent = "Edit Auction";
-        const item = currentAuctions.find(a => a.id === id);
-        if (item) {
-          document.getElementById('modalAuctionName').value = item.itemLabel || '';
-          document.getElementById('modalAuctionCrop').value = item.category || '';
-          document.getElementById('modalAuctionStatus').value = item.status || 'scheduled';
-          const meta = item.metadata || {};
-          document.getElementById('modalAuctionState').value = meta.state || '';
-          document.getElementById('modalAuctionDistrict').value = meta.district || '';
-          document.getElementById('modalAuctionBasePrice').value = item.basePrice || 0;
-          document.getElementById('modalAuctionTargetQty').value = item.targetQuantity || 0;
-          document.getElementById('modalAuctionRemainingQty').value = item.remainingQuantity || 0;
-          document.getElementById('modalAuctionCounterGap').value = item.counterGap || 0;
-          document.getElementById('modalAuctionType').value = item.auctionType || 'forward';
-          document.getElementById('modalAuctionDuration').value = item.durationMinutes || 60;
-        }
-      } else {
-        modalTitle.textContent = "Add Auction";
-        document.getElementById('modalAuctionName').value = '';
-        document.getElementById('modalAuctionCrop').value = '';
-        document.getElementById('modalAuctionStatus').value = 'scheduled';
-        document.getElementById('modalAuctionState').value = '';
-        document.getElementById('modalAuctionDistrict').value = '';
-        document.getElementById('modalAuctionBasePrice').value = '';
-        document.getElementById('modalAuctionTargetQty').value = '';
-        document.getElementById('modalAuctionRemainingQty').value = '';
-        document.getElementById('modalAuctionCounterGap').value = '';
-        document.getElementById('modalAuctionType').value = 'forward';
-        document.getElementById('modalAuctionDuration').value = '60';
-      }
-
-      document.getElementById('auctionModalOverlay').classList.add('show');
-    }
-
-    function closeAuctionModal() {
-      document.getElementById('auctionModalOverlay').classList.remove('show');
-      editingAuctionId = null;
-    }
-
-    async function saveAuctionModal() {
-      const itemLabel = document.getElementById('modalAuctionName').value.trim();
-      const category = document.getElementById('modalAuctionCrop').value.trim();
-      const status = document.getElementById('modalAuctionStatus').value;
-      const state = document.getElementById('modalAuctionState').value.trim();
-      const district = document.getElementById('modalAuctionDistrict').value.trim();
-      const basePrice = parseFloat(document.getElementById('modalAuctionBasePrice').value) || 0;
-      const targetQuantity = parseFloat(document.getElementById('modalAuctionTargetQty').value) || 0;
-      const remainingQuantity = parseFloat(document.getElementById('modalAuctionRemainingQty').value) || 0;
-      const counterGap = parseFloat(document.getElementById('modalAuctionCounterGap').value) || 0;
-      const auctionType = document.getElementById('modalAuctionType').value;
-      const durationMinutes = parseInt(document.getElementById('modalAuctionDuration').value) || 60;
-
-      const metadata = {};
-      if (state) metadata.state = state;
-      if (district) metadata.district = district;
-
-      if (!itemLabel || !category || !basePrice || !targetQuantity) {
-        showToast("Auction name, crop type, base price, and target quantity are required.", true);
+    function renderCreditScorePagination(totalPages) {
+      const info = document.getElementById('creditScorePaginationInfo');
+      const controls = document.getElementById('creditScorePaginationControls');
+      if (totalPages <= 1) {
+        info.textContent = `Showing 1–${filteredCreditScoreAccounts.length} of ${filteredCreditScoreAccounts.length}`;
+        controls.innerHTML = '';
         return;
       }
+      const start = (creditScorePage - 1) * creditScorePageSize + 1;
+      const end = Math.min(creditScorePage * creditScorePageSize, filteredCreditScoreAccounts.length);
+      info.textContent = `Showing ${start}–${end} of ${filteredCreditScoreAccounts.length}`;
+
+      let btns = `<button class="page-btn" onclick="goToCsPage(${creditScorePage - 1})" ${creditScorePage === 1 ? 'disabled' : ''}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>`;
+      for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= creditScorePage - 1 && p <= creditScorePage + 1)) {
+          btns += `<button class="page-btn ${p === creditScorePage ? 'active' : ''}" onclick="goToCsPage(${p})">${p}</button>`;
+        } else if (p === creditScorePage - 2 || p === creditScorePage + 2) {
+          btns += `<span style="padding:0 4px;color:var(--text-muted);">…</span>`;
+        }
+      }
+      btns += `<button class="page-btn" onclick="goToCsPage(${creditScorePage + 1})" ${creditScorePage === totalPages ? 'disabled' : ''}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>`;
+      controls.innerHTML = btns;
+    }
+
+    function goToCsPage(p) { creditScorePage = p; renderCreditScoreTable(); }
+
+    // ── Client-side score calculator (mirrors backend logic) ──
+    function _clientCalcScore(landAcres, pastLoan, pastYield) {
+      const land = Math.max(0.1, parseFloat(landAcres) || 1.0);
+      const loan = Math.max(0.0, parseFloat(pastLoan) || 0.0);
+      const yld  = Math.max(0.0, parseFloat(pastYield) || 0.0);
+
+      const landScore  = Math.min(land / 10.0, 1.0) * 30.0;
+      let loanScore = 0;
+      if (loan > 0) { loanScore = loan > (land * 50000) ? 10.0 : 20.0; }
+      const yieldScore = Math.min(yld / 50.0, 1.0) * 50.0;
+      const total = Math.max(0, Math.min(100, landScore + loanScore + yieldScore));
+
+      let grade, risk, multiplier;
+      if (total >= 80)      { grade = 'AAA'; risk = 'Very Low Risk';   multiplier = 1.5; }
+      else if (total >= 65) { grade = 'AA';  risk = 'Low Risk';        multiplier = 1.2; }
+      else if (total >= 50) { grade = 'A';   risk = 'Moderate Risk';   multiplier = 1.0; }
+      else if (total >= 35) { grade = 'BBB'; risk = 'Elevated Risk';   multiplier = 0.7; }
+      else                  { grade = 'C';   risk = 'High Risk';       multiplier = 0.4; }
+
+      let maxLoan = Math.round(((land * 50000 + yld * 5000) * multiplier) / 5000) * 5000;
+      maxLoan = Math.max(25000, Math.min(2000000, maxLoan));
+
+      return {
+        score: Math.round(total * 10) / 10,
+        grade, risk, maxLoan,
+        landScore: Math.round(landScore * 10) / 10,
+        loanScore: Math.round(loanScore * 10) / 10,
+        yieldScore: Math.round(yieldScore * 10) / 10,
+      };
+    }
+
+    function updateCsPreview() {
+      const land = document.getElementById('csModalLandAcres').value;
+      const loan = document.getElementById('csModalLoanAmount').value;
+      const yld  = document.getElementById('csModalYieldQtl').value;
+      const result = _clientCalcScore(land, loan, yld);
+
+      document.getElementById('csPreviewScore').textContent = result.score;
+      document.getElementById('csPreviewGrade').textContent = result.grade;
+      document.getElementById('csPreviewGrade').style.color = _csGradeColor(result.grade);
+      document.getElementById('csPreviewRisk').textContent  = result.risk;
+      document.getElementById('csPreviewLoan').textContent  = `\u20B9${result.maxLoan.toLocaleString()}`;
+      document.getElementById('csBreakLand').textContent  = result.landScore;
+      document.getElementById('csBreakLoan').textContent  = result.loanScore;
+      document.getElementById('csBreakYield').textContent = result.yieldScore;
+    }
+
+    function openCreditScoreModal(farmerId) {
+      editingCsFarmerId = farmerId;
+      const f = currentCreditScoreAccounts.find(a => a.farmer_id === farmerId);
+      if (!f) { showToast("Farmer record not found.", true); return; }
+
+      document.getElementById('csModalFarmerBadge').textContent = `ID: ${f.farmer_id}`;
+      document.getElementById('csModalFarmerName').textContent  = f.farmer_name || '—';
+      document.getElementById('csModalEmail').textContent       = f.email || '—';
+
+      const state = (f.state || 'Rajasthan');
+      const stateTitle = state.charAt(0).toUpperCase() + state.slice(1).toLowerCase();
+      document.getElementById('csModalState').value       = stateTitle;
+      document.getElementById('csModalDistrict').value   = f.district || '';
+      document.getElementById('csModalLandAcres').value  = f.land_acres || '';
+      document.getElementById('csModalCrop').value       = f.crop || '';
+      document.getElementById('csModalLoanAmount').value = f.past_loan_amount || '';
+      document.getElementById('csModalYieldQtl').value   = f.past_yield_quintals || '';
+      document.getElementById('csModalRepayment').value  = f.repayment_status || 'Repaid on time';
+
+      updateCsPreview();
+      document.getElementById('creditScoreModalOverlay').classList.add('show');
+    }
+
+    function closeCreditScoreModal() {
+      document.getElementById('creditScoreModalOverlay').classList.remove('show');
+      editingCsFarmerId = null;
+    }
+
+    async function saveCreditScoreModal() {
+      const landAcres        = parseFloat(document.getElementById('csModalLandAcres').value);
+      const pastLoanAmount   = parseFloat(document.getElementById('csModalLoanAmount').value);
+      const pastYieldQtl     = parseFloat(document.getElementById('csModalYieldQtl').value);
+      const state            = document.getElementById('csModalState').value.trim();
+      const district         = document.getElementById('csModalDistrict').value.trim();
+      const crop             = document.getElementById('csModalCrop').value.trim();
+      const repaymentStatus  = document.getElementById('csModalRepayment').value;
+
+      if (!state || !district)            { showToast("State and district are required.", true); return; }
+      if (!crop)                          { showToast("Primary crop is required.", true); return; }
+      if (isNaN(landAcres) || landAcres <= 0)         { showToast("Land acres must be greater than 0.", true); return; }
+      if (isNaN(pastLoanAmount) || pastLoanAmount < 0) { showToast("Past loan amount must be 0 or more.", true); return; }
+      if (isNaN(pastYieldQtl) || pastYieldQtl < 0)    { showToast("Past yield must be 0 or more.", true); return; }
 
       const payload = {
-        itemLabel,
-        category,
-        status,
-        metadata,
-        basePrice,
-        targetQuantity,
-        remainingQuantity,
-        counterGap,
-        auctionType,
-        durationMinutes,
+        state, district, crop,
+        land_acres: landAcres,
+        past_loan_amount: pastLoanAmount,
+        past_yield_quintals: pastYieldQtl,
+        repayment_status: repaymentStatus,
       };
 
       try {
-        let res;
-        if (editingAuctionId) {
-          res = await fetch(`/api/master-data/auctions/${editingAuctionId}`, {
-            method: "PATCH",
-            headers: authHeaders(),
-            body: JSON.stringify(payload)
-          });
-        } else {
-          res = await fetch("/api/master-data/auctions", {
-            method: "POST",
-            headers: authHeaders(),
-            body: JSON.stringify(payload)
-          });
-        }
-
+        const res = await fetch(`/api/credit-score/admin/farmers/${encodeURIComponent(editingCsFarmerId)}`, {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Save failed");
 
-        showToast(editingAuctionId ? "Auction updated successfully." : "Auction created successfully.");
-        closeAuctionModal();
-        loadAuctions();
+        showToast(`Account ${editingCsFarmerId} updated successfully.`);
+        closeCreditScoreModal();
+        loadCreditScoreAccounts();
       } catch (err) {
-        showToast(err.message || "Failed to save auction.", true);
+        showToast(err.message || "Failed to save account.", true);
       }
     }
-
-    async function deleteAuction(id) {
-      if (!confirm("Are you sure you want to delete this auction? This action cannot be undone.")) return;
-
-      try {
-        const res = await fetch(`/api/master-data/auctions/${id}`, {
-          method: "DELETE",
-          headers: authHeaders()
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Delete failed");
-
-        showToast("Auction removed.");
-        loadAuctions();
-      } catch (err) {
-        showToast(err.message || "Failed to delete auction.", true);
-      }
-    }
-
-    // Initialize
+    // Initialization
     window.addEventListener('DOMContentLoaded', checkPermissionAndInit);
   </script>
 </body>
 
 </html>
-

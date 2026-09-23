@@ -1287,49 +1287,155 @@ async function runPrediction() {
   const fert = parseFloat(document.getElementById('p-fert').value) || 120;
   const rain = parseFloat(document.getElementById('p-rain').value) || 220;
   const temp = parseFloat(document.getElementById('p-temp').value) || 25;
+  const raindays = parseFloat(document.getElementById('p-raindays').value) || 85;
+  const et0 = parseFloat(document.getElementById('p-et0').value) || 820;
+  const startYear = parseInt(document.getElementById('p-year').value) || new Date().getFullYear();
 
-  let pred = calcYield(crop, pest, rain, temp, fert, irr, soil);
-  pred = Math.max(0.2, Math.round(pred * 100) / 100);
+  const payload = {
+    crop,
+    district,
+    Season: season,
+    Pest_Disease_Incidence: pest,
+    Irrigation_Type: irr,
+    Soil_Type: soil,
+    Fertilizer_kg_per_ha: fert,
+    Area: 500,
+    weather_temp_mean: temp,
+    weather_rain_total: rain,
+    weather_rain_days: raindays,
+    weather_et0_total: et0,
+    start_year: startYear,
+  };
 
-  document.getElementById('resultValue').textContent = pred.toFixed(2);
-  const subEl = document.getElementById('resultUnitSub');
-  if (subEl) subEl.textContent = `${crop} • ${season}`;
+  try {
+    const resp = await fetch('/api/crop/predict-5-year', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-  const histAvg = crop_stats_local[crop] || (pred * 0.88);
-  const diffPct = ((pred - histAvg) / histAvg * 100).toFixed(1);
+    if (!resp.ok) throw new Error('Prediction failed');
 
-  const histEl = document.getElementById('resultHistAvg');
-  if (histEl) histEl.textContent = histAvg.toFixed(2);
+    const data = await resp.json();
+    const years = data.years || [];
 
-  const deltaEl = document.getElementById('resultDelta');
-  if (deltaEl) {
-    deltaEl.textContent = `${diffPct >= 0 ? '+' : ''}${diffPct}%`;
-    deltaEl.className = `sc-val ${diffPct >= 0 ? 'g' : 'r'}`;
-  }
+    if (years.length > 0) {
+      const first = years[0];
+      const last = years[years.length - 1];
 
-  const adviceEl = document.getElementById('adviceBox');
-  if (adviceEl) adviceEl.style.display = 'block';
-  document.getElementById('adviceText').innerHTML = `
-    <div style="margin-bottom:4px;font-weight:600;color:#1B4332;">
-      Projected Output: <span style="color:#10B981;">${pred.toFixed(2)} T/Ha</span> (${diffPct >= 0 ? '+' : ''}${diffPct}% vs district historical baseline)
-    </div>
-    <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.4;">
-      • <strong>Soil &amp; Irrigation:</strong> ${irr} irrigation in ${soil} soil maintains optimal moisture retention for ${crop}.<br>
-      • <strong>Nutrient Plan:</strong> Maintain recommended fertilizer application at ~${fert} kg/Ha.
-    </div>
-  `;
+      document.getElementById('resultValue').textContent = first.yield.toFixed(2);
+      const subEl = document.getElementById('resultUnitSub');
+      if (subEl) subEl.textContent = `${crop} • ${season} • ${first.year}`;
 
-  mkChart('compareChart', {
-    type: 'bar',
-    data: {
-      labels: ['Historical Benchmark', 'Predicted Output'],
-      datasets: [{ data: [histAvg, pred], backgroundColor: ['#94A3B8', '#10B981'], borderRadius: 4 }]
-    },
-    options: {
-      ...gOpts({ plugins: { legend: { display: false } } }),
-      scales: { x: baseScales.x, y: { ...baseScales.y, title: { display: true, text: 'Tonne / Ha' } } }
+      const histAvg = first.normal;
+      const diffPct = ((first.yield - histAvg) / histAvg * 100).toFixed(1);
+
+      const histEl = document.getElementById('resultHistAvg');
+      if (histEl) histEl.textContent = histAvg.toFixed(2);
+
+      const deltaEl = document.getElementById('resultDelta');
+      if (deltaEl) {
+        deltaEl.textContent = `${diffPct >= 0 ? '+' : ''}${diffPct}%`;
+        deltaEl.className = `sc-val ${diffPct >= 0 ? 'g' : 'r'}`;
+      }
+
+      const adviceEl = document.getElementById('adviceBox');
+      if (adviceEl) adviceEl.style.display = 'block';
+      document.getElementById('adviceText').innerHTML = `
+        <div style="margin-bottom:4px;font-weight:600;color:#1B4332;">
+          5-Year Projected Output: <span style="color:#10B981;">${first.yield.toFixed(2)} T/Ha</span> (${diffPct >= 0 ? '+' : ''}${diffPct}% vs district historical baseline)
+        </div>
+        <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.4;">
+          • <strong>Soil &amp; Irrigation:</strong> ${irr} irrigation in ${soil} soil maintains optimal moisture retention for ${crop}.<br>
+          • <strong>Nutrient Plan:</strong> Maintain recommended fertilizer application at ~${fert} kg/Ha.
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <div style="font-weight:600;font-size:11.5px;color:var(--text);margin-bottom:6px;">Year-wise Breakdown:</div>
+          ${years.map((y, idx) => `
+            <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;color:var(--text-secondary);">
+              <span>Year ${y.year}</span>
+              <span style="font-family:var(--font-mono);font-weight:600;color:var(--text);">${y.yield.toFixed(2)} T/Ha</span>
+              <span style="font-family:var(--font-mono);color:${y.anomaly >= 0 ? 'var(--success)' : 'var(--danger)'};">${y.anomaly >= 0 ? '+' : ''}${y.anomaly.toFixed(1)}%</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      mkChart('compareChart', {
+        type: 'bar',
+        data: {
+          labels: years.map(y => String(y.year)),
+          datasets: [
+            {
+              label: 'Predicted Yield (T/Ha)',
+              data: years.map(y => y.yield),
+              backgroundColor: '#10B981',
+              borderRadius: 6,
+              borderSkipped: false,
+            },
+            {
+              label: 'Historical Baseline (T/Ha)',
+              data: years.map(y => y.normal),
+              backgroundColor: '#94A3B8',
+              borderRadius: 6,
+              borderSkipped: false,
+            },
+          ],
+        },
+        options: {
+          ...gOpts({ plugins: { legend: { display: true, position: 'top' } } }),
+          scales: {
+            x: baseScales.x,
+            y: { ...baseScales.y, title: { display: true, text: 'Tonne / Ha' } },
+          },
+        },
+      });
     }
-  });
+  } catch (err) {
+    console.error('Prediction error:', err);
+    let pred = calcYield(crop, pest, rain, temp, fert, irr, soil);
+    pred = Math.max(0.2, Math.round(pred * 100) / 100);
+
+    document.getElementById('resultValue').textContent = pred.toFixed(2);
+    const subEl = document.getElementById('resultUnitSub');
+    if (subEl) subEl.textContent = `${crop} • ${season}`;
+
+    const histAvg = crop_stats_local[crop] || (pred * 0.88);
+    const diffPct = ((pred - histAvg) / histAvg * 100).toFixed(1);
+
+    const histEl = document.getElementById('resultHistAvg');
+    if (histEl) histEl.textContent = histAvg.toFixed(2);
+
+    const deltaEl = document.getElementById('resultDelta');
+    if (deltaEl) {
+      deltaEl.textContent = `${diffPct >= 0 ? '+' : ''}${diffPct}%`;
+      deltaEl.className = `sc-val ${diffPct >= 0 ? 'g' : 'r'}`;
+    }
+
+    const adviceEl = document.getElementById('adviceBox');
+    if (adviceEl) adviceEl.style.display = 'block';
+    document.getElementById('adviceText').innerHTML = `
+      <div style="margin-bottom:4px;font-weight:600;color:#1B4332;">
+        Projected Output: <span style="color:#10B981;">${pred.toFixed(2)} T/Ha</span> (${diffPct >= 0 ? '+' : ''}${diffPct}% vs district historical baseline)
+      </div>
+      <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.4;">
+        • <strong>Soil &amp; Irrigation:</strong> ${irr} irrigation in ${soil} soil maintains optimal moisture retention for ${crop}.<br>
+        • <strong>Nutrient Plan:</strong> Maintain recommended fertilizer application at ~${fert} kg/Ha.
+      </div>
+    `;
+
+    mkChart('compareChart', {
+      type: 'bar',
+      data: {
+        labels: ['Historical Benchmark', 'Predicted Output'],
+        datasets: [{ data: [histAvg, pred], backgroundColor: ['#94A3B8', '#10B981'], borderRadius: 4 }],
+      },
+      options: {
+        ...gOpts({ plugins: { legend: { display: false } } }),
+        scales: { x: baseScales.x, y: { ...baseScales.y, title: { display: true, text: 'Tonne / Ha' } } },
+      },
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════

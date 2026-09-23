@@ -796,7 +796,7 @@
     <div class="ph">
       <div>
         <div class="ph-title">Predict <span class="accent">Yield</span></div>
-        <div class="ph-sub">4-Step Guided Prediction Workflow backed by XGBoost ML Model (R²=0.988)</div>
+        <div class="ph-sub">5-Year Yield Forecast Workflow backed by XGBoost ML Model (R²=0.988)</div>
       </div>
       <div class="ph-right">
         <span class="badge badge-success" id="pred-backend-badge">Model Backend Active</span>
@@ -912,12 +912,12 @@
             <input class="pf-inp" type="number" id="p-temp" value="25" min="15" max="40" step="0.1">
           </div>
           <div class="pf-field">
-            <div class="pf-label">Target Harvest Year</div>
+            <div class="pf-label">5-Year Forecast Start Year</div>
             <input class="pf-inp" type="number" id="p-year" value="2026" min="2004" max="2030">
           </div>
         </div>
 
-        <button class="pred-btn" onclick="runPrediction()">✨ Run ML Yield Prediction</button>
+        <button class="pred-btn" onclick="runPrediction()">✨ Run 5-Year ML Yield Forecast</button>
       </div>
 
       <!-- Right: Executive Results Dashboard -->
@@ -964,7 +964,7 @@
         <div class="g2" style="margin-bottom:0;">
           <div class="cc">
             <div class="cc-head">
-              <div class="cc-title"><span class="cc-dot"></span>Predicted vs Benchmark</div>
+              <div class="cc-title"><span class="cc-dot"></span>5-Year Yield Forecast</div>
             </div>
             <canvas id="compareChart"></canvas>
           </div>

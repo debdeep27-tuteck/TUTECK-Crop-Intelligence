@@ -36,6 +36,7 @@ IMPORTANT — infra change required:
 import math
 import pickle
 import warnings
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -381,13 +382,45 @@ def gaussian(val, mean, std):
     return float(np.exp(-0.5 * ((val - mean) / std) ** 2))
 
 
+def get_annual_trend(crop, district):
+    """Get raw annual yield trend (absolute change per year) for a crop/district."""
+    if "District_Name" not in df_history.columns or "Crop" not in df_history.columns:
+        return 0.0
+
+    crop_norm = str(crop).strip()
+    district_norm = str(district).strip().lower()
+
+    hist = df_history[
+        (df_history["District_Name"].astype(str).str.strip().str.lower() == district_norm)
+        & (df_history["Crop"].astype(str).str.strip() == crop_norm)
+    ]
+
+    if "Year" in hist.columns:
+        hist = hist.sort_values("Year")
+    if len(hist) < 2 or YIELD_COL not in hist.columns:
+        return 0.0
+
+    years = hist["Year"].values
+    yields = hist[YIELD_COL].values
+
+    try:
+        trend = float(np.polyfit(years, yields, 1)[0])
+        return trend
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def get_lag_features(crop, district, mu, std):
     """Mirrors training's predict_with_live_weather() lag/roll/trend computation."""
     if "District_Name" not in df_history.columns or "Crop" not in df_history.columns:
         return 0.0, 0.0, 0.0
+
+    crop_norm = str(crop).strip()
+    district_norm = str(district).strip().lower()
+
     hist = df_history[
-        (df_history["District_Name"].astype(str).str.strip().str.lower() == str(district).strip().lower())
-        & (df_history["Crop"] == crop)
+        (df_history["District_Name"].astype(str).str.strip().str.lower() == district_norm)
+        & (df_history["Crop"].astype(str).str.strip() == crop_norm)
     ]
     if "Year" in hist.columns:
         hist = hist.sort_values("Year")
@@ -433,7 +466,7 @@ def get_climatology_weather(district, season):
     return out
 
 
-def predict_yield_for_crop(crop, district, user_inputs, season=None):
+def predict_yield_for_crop(crop, district, user_inputs, season=None, forecast_year=None):
     """Run XGBoost prediction for a specific crop. Returns (predicted_yield, source)."""
     if crop not in valid_crops:
         avg = PROFILES.get(crop, {}).get("avg_yield", 1.0)
@@ -478,6 +511,18 @@ def predict_yield_for_crop(crop, district, user_inputs, season=None):
 
     norm_pred  = model.predict(X_sc)[0]
     pred_yield = float(norm_pred * std + mu)
+
+    if forecast_year is not None:
+        try:
+            current_year = datetime.now().year
+            years_ahead = int(forecast_year) - current_year
+            if years_ahead > 0:
+                annual_trend = get_annual_trend(crop, district)
+                pred_yield = pred_yield + (annual_trend * years_ahead)
+                pred_yield = max(0.2, pred_yield)
+        except (TypeError, ValueError):
+            pass
+
     return pred_yield, "model"
 
 
@@ -604,6 +649,48 @@ def predict():
         "normal":  round(normal, 3),
         "anomaly": anomaly,
         "source":  source,
+    })
+
+
+@app.route("/api/crop/predict-5-year", methods=["POST"])
+@app.route("/predict-5-year", methods=["POST"])
+def predict_5_year():
+    """5-year yield prediction. Returns predictions for 5 consecutive years."""
+    data     = request.get_json()
+    crop     = data.get("crop", "")
+    district = data.get("district", "Dhalai")
+    season   = data.get("Season") or data.get("season")
+    start_year = data.get("start_year") or data.get("forecast_year")
+
+    if start_year is None:
+        start_year = datetime.now().year
+
+    try:
+        start_year = int(start_year)
+    except (TypeError, ValueError):
+        start_year = datetime.now().year
+
+    start_year = max(2000, min(start_year, 2100))
+    years = list(range(start_year, start_year + 5))
+
+    predictions = []
+    for year in years:
+        pred, source = predict_yield_for_crop(crop, district, data, season=season, forecast_year=year)
+        normal = crop_stats.loc[crop, "crop_mean"] if crop in valid_crops else pred
+        anomaly = round((pred - normal) / normal * 100, 1) if normal > 0 else 0.0
+        predictions.append({
+            "year":    year,
+            "yield":   round(pred, 3),
+            "normal":  round(normal, 3),
+            "anomaly": anomaly,
+            "source":  source,
+        })
+
+    return jsonify({
+        "crop":     crop,
+        "district": district,
+        "season":   season,
+        "years":    predictions,
     })
 
 
