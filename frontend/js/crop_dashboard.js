@@ -1294,6 +1294,7 @@ async function runPrediction() {
   const payload = {
     crop,
     district,
+    state: STATE,
     Season: season,
     Pest_Disease_Incidence: pest,
     Irrigation_Type: irr,
@@ -1308,9 +1309,9 @@ async function runPrediction() {
   };
 
   try {
-    const resp = await fetch('/api/crop/predict-5-year', {
+    const resp = await fetch(apiUrl('/predict-5-year'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: _authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
     });
 
@@ -1342,20 +1343,21 @@ async function runPrediction() {
       const adviceEl = document.getElementById('adviceBox');
       if (adviceEl) adviceEl.style.display = 'block';
       document.getElementById('adviceText').innerHTML = `
-        <div style="margin-bottom:4px;font-weight:600;color:#1B4332;">
+        <div class="forecast-summary">
+          <div class="forecast-summary-label">First year estimate</div>
           5-Year Projected Output: <span style="color:#10B981;">${first.yield.toFixed(2)} T/Ha</span> (${diffPct >= 0 ? '+' : ''}${diffPct}% vs district historical baseline)
         </div>
-        <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.4;">
+        <div class="forecast-guidance">
           • <strong>Soil &amp; Irrigation:</strong> ${irr} irrigation in ${soil} soil maintains optimal moisture retention for ${crop}.<br>
           • <strong>Nutrient Plan:</strong> Maintain recommended fertilizer application at ~${fert} kg/Ha.
         </div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-          <div style="font-weight:600;font-size:11.5px;color:var(--text);margin-bottom:6px;">Year-wise Breakdown:</div>
+        <div class="forecast-years">
+          <div class="forecast-years-title">Year-by-year forecast <span>Yield · T/Ha</span></div>
           ${years.map((y, idx) => `
-            <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;color:var(--text-secondary);">
-              <span>Year ${y.year}</span>
-              <span style="font-family:var(--font-mono);font-weight:600;color:var(--text);">${y.yield.toFixed(2)} T/Ha</span>
-              <span style="font-family:var(--font-mono);color:${y.anomaly >= 0 ? 'var(--success)' : 'var(--danger)'};">${y.anomaly >= 0 ? '+' : ''}${y.anomaly.toFixed(1)}%</span>
+            <div class="forecast-year-row">
+              <span class="forecast-year">${y.year}</span>
+              <strong>${y.yield.toFixed(2)}</strong>
+              <span class="forecast-anomaly ${y.anomaly >= 0 ? 'positive' : 'negative'}">${y.anomaly >= 0 ? '+' : ''}${y.anomaly.toFixed(1)}% vs avg</span>
             </div>
           `).join('')}
         </div>

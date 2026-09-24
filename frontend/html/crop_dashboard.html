@@ -923,7 +923,7 @@
       <!-- Right: Executive Results Dashboard -->
       <div class="cye-charts">
         <!-- 4 Metric Cards in 1 Row -->
-        <div class="stat-strip" style="grid-template-columns:repeat(4,1fr);margin-bottom:0;">
+        <div class="stat-strip pred-kpis">
           <div class="sc">
             <div class="sc-lbl">Predicted Yield</div>
             <div class="sc-val g" id="resultValue">1.00</div>
@@ -946,35 +946,32 @@
           </div>
         </div>
 
-        <!-- Prominent AI Recommendation Card -->
-        <div class="advice-box" id="adviceBox" style="margin-bottom:0;display:block;">
-          <h4>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path
-                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-            </svg>
-            AI Agricultural Decision Recommendation
-          </h4>
-          <div id="adviceText">Select farm scenario parameters and click <strong>Run ML Yield Prediction</strong> to
-            evaluate yield outlook and agronomic advisory.</div>
-        </div>
-
-        <!-- 2 Side-by-Side Charts -->
-        <div class="g2" style="margin-bottom:0;">
+        <div class="forecast-feature-row">
+          <!-- Recommendation and five-year forecast -->
+          <div class="advice-box" id="adviceBox" style="margin-bottom:0;display:block;">
+            <h4>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg>
+              AI Agricultural Decision Recommendation
+            </h4>
+            <div id="adviceText">Select farm scenario parameters and click <strong>Run ML Yield Prediction</strong> to
+              evaluate yield outlook and agronomic advisory.</div>
+          </div>
           <div class="cc">
             <div class="cc-head">
               <div class="cc-title"><span class="cc-dot"></span>5-Year Yield Forecast</div>
             </div>
             <canvas id="compareChart"></canvas>
           </div>
-          <div class="cc">
-            <div class="cc-head">
-              <div class="cc-title"><span class="cc-dot" style="background:var(--info);"></span>Historical Average Trend
-              </div>
-            </div>
-            <canvas id="histAvgChart"></canvas>
+        </div>
+        <div class="cc forecast-trend-card">
+          <div class="cc-head">
+            <div class="cc-title"><span class="cc-dot" style="background:var(--info);"></span>Historical Average Trend</div>
           </div>
+          <canvas id="histAvgChart"></canvas>
         </div>
       </div>
     </div>

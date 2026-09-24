@@ -395,13 +395,18 @@ def get_annual_trend(crop, district):
         & (df_history["Crop"].astype(str).str.strip() == crop_norm)
     ]
 
-    if "Year" in hist.columns:
-        hist = hist.sort_values("Year")
-    if len(hist) < 2 or YIELD_COL not in hist.columns:
+    if "Year" not in hist.columns or len(hist) < 2 or YIELD_COL not in hist.columns:
         return 0.0
 
-    years = hist["Year"].values
-    yields = hist[YIELD_COL].values
+    trend_data = hist[["Year", YIELD_COL]].copy()
+    trend_data["Year"] = pd.to_numeric(trend_data["Year"], errors="coerce")
+    trend_data[YIELD_COL] = pd.to_numeric(trend_data[YIELD_COL], errors="coerce")
+    trend_data = trend_data.dropna().sort_values("Year")
+    if len(trend_data) < 2:
+        return 0.0
+
+    years = trend_data["Year"].to_numpy(dtype=float)
+    yields = trend_data[YIELD_COL].to_numpy(dtype=float)
 
     try:
         trend = float(np.polyfit(years, yields, 1)[0])
@@ -511,17 +516,6 @@ def predict_yield_for_crop(crop, district, user_inputs, season=None, forecast_ye
 
     norm_pred  = model.predict(X_sc)[0]
     pred_yield = float(norm_pred * std + mu)
-
-    if forecast_year is not None:
-        try:
-            current_year = datetime.now().year
-            years_ahead = int(forecast_year) - current_year
-            if years_ahead > 0:
-                annual_trend = get_annual_trend(crop, district)
-                pred_yield = pred_yield + (annual_trend * years_ahead)
-                pred_yield = max(0.2, pred_yield)
-        except (TypeError, ValueError):
-            pass
 
     return pred_yield, "model"
 
@@ -674,8 +668,25 @@ def predict_5_year():
     years = list(range(start_year, start_year + 5))
 
     predictions = []
+    annual_trend = get_annual_trend(crop, district) if crop in valid_crops else 0.0
+    history = df_history
+    if crop in valid_crops and "District_Name" in history.columns and "Crop" in history.columns:
+        history = history[
+            (history["District_Name"].astype(str).str.strip().str.lower() == str(district).strip().lower())
+            & (history["Crop"].astype(str).str.strip() == str(crop).strip())
+        ]
+    history_year = datetime.now().year - 1
+    if "Year" in history.columns:
+        valid_history_years = pd.to_numeric(history["Year"], errors="coerce").dropna()
+        if not valid_history_years.empty:
+            # Training stores Year as an offset from 2004 (see the state
+            # training scripts), while the UI supplies calendar years.
+            history_year = int(valid_history_years.max()) + 2004
+
     for year in years:
-        pred, source = predict_yield_for_crop(crop, district, data, season=season, forecast_year=year)
+        pred, source = predict_yield_for_crop(crop, district, data, season=season)
+        years_ahead = max(0, year - history_year)
+        pred = max(0.2, pred + annual_trend * years_ahead)
         normal = crop_stats.loc[crop, "crop_mean"] if crop in valid_crops else pred
         anomaly = round((pred - normal) / normal * 100, 1) if normal > 0 else 0.0
         predictions.append({
