@@ -16,11 +16,16 @@ import os
 import re
 import sys
 import time
+import re
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 
 import openpyxl
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
@@ -76,6 +81,72 @@ _STATE_DIRS = {
     "rajasthan": _PROJECT_ROOT / "data_and_model_rajasthan",
     "meghalaya": _PROJECT_ROOT / "data_and_model_meghalaya",
 }
+
+_STATE_REGISTRY = _PROJECT_ROOT / "state_registry.json"
+_MODEL_REQUIRED_COLUMNS = [
+    "District_Name", "Crop", "Season", "Crop_Year", "Soil_Type",
+    "Irrigation_Type", "Area (Hectare)", "Fertilizer_kg_per_ha",
+    "Pest_Disease_Incidence", "Yield (Tonne or Bales/Hectare)",
+]
+_WEATHER_FEATURES = ["weather_temp_mean", "weather_rain_total", "weather_rain_days",
+                     "weather_et0_total", "weather_wind_mean", "weather_solarrad_total"]
+
+
+def _read_state_registry():
+    try:
+        data = json.loads(_STATE_REGISTRY.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _train_uploaded_state(frame, state_dir):
+    """Train an inference-compatible XGBoost artifact from supplied agronomic rows."""
+    from sklearn.model_selection import train_test_split
+
+    df = frame.copy()
+    for col in ("District_Name", "Crop", "Season", "Soil_Type", "Irrigation_Type"):
+        df[col] = df[col].astype(str).str.strip()
+    numeric = ["Area (Hectare)", "Fertilizer_kg_per_ha", "Pest_Disease_Incidence",
+               "Yield (Tonne or Bales/Hectare)"] + _WEATHER_FEATURES
+    for col in numeric:
+        if col not in df:
+            df[col] = np.nan
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df.dropna(subset=["District_Name", "Crop", "Season", "Crop_Year", "Yield (Tonne or Bales/Hectare)"])
+    df = df[df["Yield (Tonne or Bales/Hectare)"] >= 0].copy()
+    if len(df) < 20 or df["Crop"].nunique() < 1:
+        raise ValueError("At least 20 usable rows with crop yield values are required to train the model.")
+
+    target = "Yield (Tonne or Bales/Hectare)"
+    crop_stats = df.groupby("Crop")[target].agg(crop_mean="mean", crop_std="std")
+    crop_stats["crop_std"] = crop_stats["crop_std"].replace(0, np.nan).fillna(1.0)
+    normalized = (df[target] - df["Crop"].map(crop_stats["crop_mean"])) / df["Crop"].map(crop_stats["crop_std"])
+    features = df[["District_Name", "Crop", "Soil_Type", "Irrigation_Type",
+                   "Area (Hectare)", "Fertilizer_kg_per_ha", "Pest_Disease_Incidence"] + _WEATHER_FEATURES].copy()
+    features["Yield_Lag1"] = df.groupby(["District_Name", "Crop", "Season"])[target].shift(1)
+    features["Yield_Roll3"] = df.groupby(["District_Name", "Crop", "Season"])[target].transform(
+        lambda values: values.shift(1).rolling(3, min_periods=1).mean())
+    features["Yield_Trend"] = 0.0
+    for col in ["Area (Hectare)", "Fertilizer_kg_per_ha", "Pest_Disease_Incidence"] + _WEATHER_FEATURES + ["Yield_Lag1", "Yield_Roll3"]:
+        features[col] = features[col].fillna(features[col].median() if features[col].notna().any() else 0)
+    matrix = pd.get_dummies(features, columns=["District_Name", "Crop", "Soil_Type", "Irrigation_Type"], drop_first=True, dtype=float)
+    scaler = StandardScaler()
+    scaled = scaler.fit_transform(matrix)
+    model = xgb.XGBRegressor(n_estimators=250, max_depth=6, learning_rate=0.05,
+                             objective="reg:squarederror", random_state=42, n_jobs=2)
+    model.fit(scaled, normalized)
+    history = df.assign(Year=pd.to_numeric(df["Crop_Year"].astype(str).str.extract(r"(\d{4})")[0], errors="coerce") - 2004)
+    history = history.rename(columns={target: target})
+    state_dir.joinpath("model").mkdir(parents=True, exist_ok=True)
+    state_dir.joinpath("data").mkdir(parents=True, exist_ok=True)
+    artifact = {"model": model, "models": {"XGBoost": model}, "feat_cols": list(matrix.columns),
+                "scaler": scaler, "crop_stats": crop_stats, "df_history": history,
+                "model_metrics": {}}
+    import pickle
+    with (state_dir / "model" / "model_artefacts.pkl").open("wb") as f:
+        pickle.dump(artifact, f)
+    return len(df), int(df["Crop"].nunique()), list(df["District_Name"].drop_duplicates())
 
 XLSX_FILENAME = "merged_crop_enriched_features_del.xlsx"
 

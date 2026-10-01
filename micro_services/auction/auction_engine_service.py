@@ -41,7 +41,7 @@ import sys
 from functools import wraps
 from pathlib import Path
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
 # This file lives in micro_services/auction/, several directories away from
@@ -52,7 +52,7 @@ from flask_cors import CORS
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
 
 from generic_auction_engine import AuctionEngine
-from shared.db import PGConnection, connect as db_connect
+from shared.db import PGConnection, get_db, close_db
 
 # ── CONFIG ────────────────────────────────────────────────────────────────
 
@@ -63,24 +63,22 @@ app = Flask(__name__)
 CORS(app)
 
 
-# ── DB / ENGINE (one shared connection is fine for a single-process Flask
-#    dev server; swap for a pooled connection in production) ─────────────
-
-def get_conn() -> PGConnection:
-    return db_connect()
-
-
-_conn = None
-_engine = None
-
+# ── DB / ENGINE ─────────────────────────────────────────────────────────
+# Keep both the engine and its pooled connection request scoped. A process
+# global connection goes stale on managed Postgres hosts after idle periods
+# and also serializes concurrent requests through one psycopg connection.
 
 def get_engine() -> AuctionEngine:
-    global _conn, _engine
-    if _engine is None:
-        _conn = get_conn()
-        _engine = AuctionEngine(_conn)
-        _engine.init_db()
-    return _engine
+    engine = g.get("auction_engine")
+    if engine is None:
+        engine = AuctionEngine(get_db())
+        g.auction_engine = engine
+    return engine
+
+
+@app.teardown_appcontext
+def _close_db(_exc):
+    close_db(_exc)
 
 
 # ── AUTH ──────────────────────────────────────────────────────────────────
@@ -159,8 +157,11 @@ def list_auctions():
         filters.append("status = ?")
         params.append(request.args["status"])
     where = f"WHERE {' AND '.join(filters)}" if filters else ""
+    limit = min(max(request.args.get("limit", 50, type=int), 1), 100)
+    offset = max(request.args.get("offset", 0, type=int), 0)
     rows = conn.execute(
-        f"SELECT id FROM auctions {where} ORDER BY created_at DESC", params
+        f"SELECT id FROM auctions {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (*params, limit, offset),
     ).fetchall()
     auctions = [get_engine().get_auction(r["id"], include_bids=True) for r in rows]
     return jsonify({"auctions": auctions})
@@ -275,5 +276,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args()
-    get_engine()  # ensures DB/tables exist before serving
+    with app.app_context():
+        engine = AuctionEngine(get_db())
+        engine.init_db()  # initialize schema once, before serving requests
     app.run(host="0.0.0.0", port=args.port, debug=False)

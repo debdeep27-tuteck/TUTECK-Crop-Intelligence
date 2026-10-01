@@ -45,13 +45,19 @@ Env vars:
 from __future__ import annotations
 
 import os
+import json
+import sys
 import time
+from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
 
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+from shared.db import get_db, close_db
 
 app = Flask(__name__)
 CORS(app)
@@ -92,26 +98,58 @@ SUPPORTED_STATES = {
     "rajasthan": "Rajasthan",
 }
 
-# Simple in-memory cache. The government dataset only refreshes once a
-# day, so there's no reason to hit it on every search — this keeps
-# response times fast and stays well under data.gov.in's rate limits.
+# Persistent database cache for successful responses. The source refreshes
+# daily, so stored results also reduce repeat calls to data.gov.in.
 CACHE_TTL_SECONDS = 6 * 60 * 60  # 6 hours
-_cache: dict[str, tuple[float, object]] = {}
+PRICE_CACHE_TABLE = "mandi_price_cache"
 
 
-def cache_get(key: str):
-    entry = _cache.get(key)
-    if not entry:
+def cache_get(key: str, *, allow_stale: bool = False):
+    row = get_db().execute(
+        f"SELECT payload, fetched_at FROM {PRICE_CACHE_TABLE} WHERE cache_key = ?",
+        (key,),
+    ).fetchone()
+    if row is None:
         return None
-    ts, value = entry
-    if time.time() - ts > CACHE_TTL_SECONDS:
-        _cache.pop(key, None)
+    ts = int(row["fetched_at"])
+    age = time.time() - ts
+    if age > CACHE_TTL_SECONDS and not allow_stale:
         return None
-    return value
+    try:
+        value = json.loads(row["payload"])
+    except (TypeError, ValueError):
+        return None
+    return (ts, value) if allow_stale else value
 
 
 def cache_set(key: str, value: object) -> None:
-    _cache[key] = (time.time(), value)
+    db = get_db()
+    db.execute(
+        f"""INSERT INTO {PRICE_CACHE_TABLE} (cache_key, payload, fetched_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                payload = EXCLUDED.payload,
+                fetched_at = EXCLUDED.fetched_at""",
+        (key, json.dumps(value, ensure_ascii=False), int(time.time())),
+    )
+    db.commit()
+
+
+def init_db() -> None:
+    db = get_db()
+    db.execute(
+        f"""CREATE TABLE IF NOT EXISTS {PRICE_CACHE_TABLE} (
+            cache_key TEXT PRIMARY KEY,
+            payload TEXT NOT NULL,
+            fetched_at BIGINT NOT NULL
+        )"""
+    )
+    db.commit()
+
+
+@app.teardown_appcontext
+def _close_db(_exc):
+    close_db(_exc)
 
 
 # ── DATA.GOV.IN CLIENT ─────────────────────────────────────────────────
@@ -155,7 +193,7 @@ def fetch_records(
     )
     url = f"{DATA_GOV_BASE_URL}?{query_string}"
 
-    resp = requests.get(url, headers=REQUEST_HEADERS, timeout=20)
+    resp = requests.get(url, headers=REQUEST_HEADERS, timeout=(4, 12))
     resp.raise_for_status()
     return resp.json()
 
@@ -253,7 +291,24 @@ def get_prices():
             offset=offset,
         )
     except requests.RequestException as e:
-        return jsonify({"error": "Failed to reach data.gov.in", "details": str(e)}), 502
+        stale = cache_get(cache_key, allow_stale=True)
+        if stale is not None:
+            cached_at, payload = stale
+            response = dict(payload)
+            response["stale"] = True
+            response["cache_age_seconds"] = max(0, int(time.time() - cached_at))
+            response["warning"] = "Live mandi data is temporarily unavailable; showing the most recently fetched prices."
+            return jsonify(response)
+        return jsonify({
+            "error": "Live mandi prices are temporarily unavailable. Please try again shortly.",
+            # requests' exception includes the full URL, including api-key.
+            # Return only safe diagnostics to clients; never expose the key.
+            "details": (
+                f"data.gov.in returned HTTP {e.response.status_code}."
+                if isinstance(e, requests.HTTPError) and e.response is not None
+                else "Could not connect to data.gov.in or the request timed out."
+            ),
+        }), 502
 
     records = [normalize_record(r) for r in data.get("records", [])]
     payload = {
@@ -277,4 +332,6 @@ if __name__ == "__main__":
     print("=" * 55)
     print(f"  MANDI PRICES BACKEND — Running on http://0.0.0.0:{PORT}")
     print("=" * 55)
+    with app.app_context():
+        init_db()
     app.run(host="0.0.0.0", port=PORT, debug=False)

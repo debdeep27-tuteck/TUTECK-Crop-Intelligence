@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CropAI â€” Master Data Configuration</title>
+  <title>CropAI — Master Data Configuration</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -71,7 +71,7 @@
       gap: 20px;
     }
 
-    /* â”€â”€ PAGE HEADER â”€â”€ */
+    /* ── PAGE HEADER ── */
     .page-title-row {
       display: flex;
       align-items: center;
@@ -129,7 +129,7 @@
       gap: 10px;
     }
 
-    /* â”€â”€ KPI STATS ROW â”€â”€ */
+    /* ── KPI STATS ROW ── */
     .kpi-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -223,7 +223,31 @@
       text-overflow: ellipsis;
     }
 
-    /* â”€â”€ TABS NAVIGATION BAR â”€â”€ */
+    /* ── TABS NAVIGATION BAR ── */
+    .skeleton {
+      display: block;
+      overflow: hidden;
+      position: relative;
+      background: #E8EDF2;
+      border-radius: 6px;
+    }
+    .skeleton::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+      animation: skeleton-shimmer 1.35s infinite;
+    }
+    @keyframes skeleton-shimmer { to { transform: translateX(100%); } }
+    .skeleton-number { width: 64px; height: 28px; }
+    .skeleton-caption { width: 128px; height: 13px; margin-top: 5px; }
+    .skeleton-cell { width: 72%; height: 14px; margin: 6px 0; }
+    .skeleton-cell.short { width: 42%; }
+    .skeleton-cell.long { width: 88%; }
+    .tab-count-badge .skeleton { width: 18px; height: 12px; }
+    @media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
+
     .tabs-nav-container {
       background: #E8ECE9;
       padding: 5px;
@@ -297,7 +321,7 @@
       color: var(--primary);
     }
 
-    /* â”€â”€ SECTION MAIN CARD â”€â”€ */
+    /* ── SECTION MAIN CARD ── */
     .main-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -339,7 +363,7 @@
       color: var(--text-muted);
     }
 
-    /* â”€â”€ FILTER & SEARCH TOOLBAR â”€â”€ */
+    /* ── FILTER & SEARCH TOOLBAR ── */
     .filter-toolbar {
       padding: 14px 24px;
       background: #FAFCFB;
@@ -426,7 +450,7 @@
       font-weight: 700;
     }
 
-    /* â”€â”€ TABLES â”€â”€ */
+    /* ── TABLES ── */
     .table-container {
       width: 100%;
       overflow-x: auto;
@@ -526,7 +550,7 @@
       text-align: center;
     }
 
-    /* â”€â”€ BADGES & PILLS â”€â”€ */
+    /* ── BADGES & PILLS ── */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -630,8 +654,13 @@
       background: #E2E8F0;
       color: var(--primary);
     }
+    .gps-missing {
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-style: italic;
+    }
 
-    /* â”€â”€ BUTTONS â”€â”€ */
+    /* ── BUTTONS ── */
     .btn {
       padding: 8px 16px;
       border: 1px solid transparent;
@@ -715,7 +744,7 @@
       color: var(--danger);
     }
 
-    /* â”€â”€ PAGINATION BAR â”€â”€ */
+    /* ── PAGINATION BAR ── */
     .table-pagination-bar {
       display: flex;
       align-items: center;
@@ -772,7 +801,7 @@
       cursor: not-allowed;
     }
 
-    /* â”€â”€ PERMISSION MATRIX TAB â”€â”€ */
+    /* ── PERMISSION MATRIX TAB ── */
     .matrix-page-head {
       writing-mode: horizontal-tb;
       padding: 10px 8px !important;
@@ -857,55 +886,53 @@
       border-color: #CBD5E1;
     }
 
-    /* â”€â”€ CROP FEATURES 2-PANEL LAYOUT â”€â”€ */
+    /* ── CROP PROFILES AND DISTRICT REGISTRY ── */
     .crop-districts-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: stretch;
+      gap: 16px;
     }
 
-    @media (max-width: 992px) {
-      .crop-districts-grid { grid-template-columns: 1fr; }
-    }
+    .crop-districts-grid > .main-card { min-width: 0; }
+    .crop-features-panel,
+    .district-panel { overflow: hidden; }
+    .crop-features-table { min-width: 620px; }
+    .crop-panel-toolbar, .district-panel-toolbar { padding: 14px 20px; }
+    .crop-panel-toolbar,
+    .district-panel-toolbar { gap: 10px; flex-wrap: wrap; }
+    .crop-panel-toolbar .filter-left-group,
+    .district-panel-toolbar .filter-left-group { flex: 1 1 180px; min-width: 0; }
+    .crop-panel-toolbar .search-input-wrap { min-width: 180px; }
+    .district-panel-toolbar .search-input-wrap { min-width: 140px; }
+    .crop-panel-toolbar .filter-count-badge,
+    .district-panel-toolbar .filter-count-badge { white-space: nowrap; flex-shrink: 0; }
+    .crop-features-table-wrap { overflow-x: auto; }
+    .district-list { max-height: 420px; }
+    .district-item { min-width: 0; gap: 10px; }
+    .district-name { overflow-wrap: anywhere; }
 
-    .state-pill-selector {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #F1F5F9;
-      padding: 4px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-    }
+    #tabContentCropFeatures > .card-header-block { align-items: flex-start; }
+    #tabContentCropFeatures > .card-header-block > div:last-child { min-width: 0; }
 
-    .state-pill-btn {
-      padding: 6px 14px;
-      border: none;
-      background: transparent;
-      border-radius: 4px;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .state-pill-btn:hover {
-      color: var(--text-main);
-    }
-
-    .state-pill-btn.active {
-      background: #FFFFFF;
-      color: var(--primary);
-      box-shadow: var(--shadow-xs);
+    @media (max-width: 600px) {
+      #tabContentCropFeatures > .card-header-block { padding: 16px; }
+      #tabContentCropFeatures > .card-header-block > div:last-child { width: 100%; gap: 8px !important; }
+      #tabContentCropFeatures > .card-header-block .btn { flex: 1 1 auto; justify-content: center; }
+      #tabContentCropFeatures > div[style*="padding:20px 24px"] { padding: 12px !important; }
+      .crop-panel-toolbar, .district-panel-toolbar { padding: 12px; }
+      .crop-panel-toolbar .search-input-wrap,
+      .district-panel-toolbar .search-input-wrap { min-width: 0; max-width: none; }
+      .district-list { padding: 12px; }
     }
 
     .district-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+      align-content: start;
+      gap: 10px;
       padding: 16px 20px;
-      max-height: 480px;
+      max-height: 420px;
       overflow-y: auto;
     }
 
@@ -932,7 +959,7 @@
       color: var(--text-main);
     }
 
-    /* â”€â”€ PARAMETER CONSOLE (YIELD CONFIG) â”€â”€ */
+    /* ── PARAMETER CONSOLE (YIELD CONFIG) ── */
     .param-key {
       font-family: var(--font-mono);
       font-size: 12px;
@@ -964,7 +991,7 @@
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
 
-    /* â”€â”€ MODALS â”€â”€ */
+    /* ── MODALS ── */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -1117,7 +1144,7 @@
       gap: 12px;
     }
 
-    /* â”€â”€ TOAST NOTIFICATIONS â”€â”€ */
+    /* ── TOAST NOTIFICATIONS ── */
     .toast-box {
       position: fixed;
       top: 24px;
@@ -1183,7 +1210,7 @@
       color: var(--text-sub);
     }
 
-    /* â”€â”€ ACCESS DENIED CARD â”€â”€ */
+    /* ── ACCESS DENIED CARD ── */
     .denied-card {
       background: #FFFFFF;
       border: 1px solid #FECACA;
@@ -1224,65 +1251,9 @@
       </div>
     </div>
 
-    <!-- KPI Strip -->
-    <div class="kpi-row">
-      <!-- Cold Storages -->
-      <div class="kpi-card kpi-card--storages">
-        <div class="kpi-icon-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
-        </div>
-        <div class="kpi-content">
-          <div class="kpi-label">Cold Storages</div>
-          <div class="kpi-value" id="kpi-total-storages">â€”</div>
-          <div class="kpi-subtext" id="kpi-storages-sub">Loading facilitiesâ€¦</div>
-        </div>
-      </div>
-
-      <!-- Capacity -->
-      <div class="kpi-card kpi-card--capacity">
-        <div class="kpi-icon-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-        </div>
-        <div class="kpi-content">
-          <div class="kpi-label">Total Capacity</div>
-          <div class="kpi-value"><span id="kpi-total-capacity">â€”</span><span class="kpi-unit">MT</span></div>
-          <div class="kpi-subtext">Aggregate metric tonnage</div>
-        </div>
-      </div>
-
-      <!-- Roles -->
-      <div class="kpi-card kpi-card--roles">
-        <div class="kpi-icon-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="kpi-content">
-          <div class="kpi-label">Configured Roles</div>
-          <div class="kpi-value" id="kpi-total-roles">â€”</div>
-          <div class="kpi-subtext">RBAC matrix active</div>
-        </div>
-      </div>
-
-      <!-- Pages / Modules -->
-      <div class="kpi-card kpi-card--modules">
-        <div class="kpi-icon-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-        </div>
-        <div class="kpi-content">
-          <div class="kpi-label">Managed Modules</div>
-          <div class="kpi-value" id="kpi-total-pages">â€”</div>
-          <div class="kpi-subtext">Protected system routes</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Segmented Tab Navigation -->
     <div class="tabs-nav-container">
-      <button class="tab-item active" id="tabBtnStorages" onclick="switchTab('storages')">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
-        <span>Cold Storage Facilities</span>
-        <span class="tab-count-badge" id="tabBadgeStorages">0</span>
-      </button>
-      <button class="tab-item" id="tabBtnRoles" onclick="switchTab('roles')">
+      <button class="tab-item active" id="tabBtnRoles" onclick="switchTab('roles')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <span>Role Permissions</span>
         <span class="tab-count-badge" id="tabBadgeRoles">0</span>
@@ -1297,6 +1268,11 @@
         <span>Crop Profiles & Districts</span>
         <span class="tab-count-badge" id="tabBadgeCrops">0</span>
       </button>
+      <button class="tab-item" id="tabBtnStorages" onclick="switchTab('storages')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>
+        <span>Cold Storage Facilities</span>
+        <span class="tab-count-badge" id="tabBadgeStorages">0</span>
+      </button>
       <button class="tab-item" id="tabBtnCreditScore" onclick="switchTab('credit-score')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         <span>Agri Credit Score</span>
@@ -1305,7 +1281,7 @@
     </div>
 
     <!-- TAB 1: COLD STORAGES -->
-    <div class="main-card" id="tabContentStorages">
+    <div class="main-card" id="tabContentStorages" style="display:none;">
       <div class="card-header-block">
         <div class="card-title-group">
           <div class="card-heading">
@@ -1326,12 +1302,6 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="search-input" id="storageSearchInput" placeholder="Search facilities, districts..." oninput="onStorageFilterChange()">
           </div>
-          <select class="filter-select" id="storageStateFilter" onchange="onStorageFilterChange()">
-            <option value="all">All States</option>
-            <option value="rajasthan">Rajasthan</option>
-            <option value="tripura">Tripura</option>
-            <option value="meghalaya">Meghalaya</option>
-          </select>
           <select class="filter-select" id="storageStatusFilter" onchange="onStorageFilterChange()">
             <option value="all">All Statuses</option>
             <option value="active">Active Only</option>
@@ -1366,7 +1336,7 @@
               <td colspan="8">
                 <div class="empty-state">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
-                  <div class="empty-state-title">Loading cold storage facilitiesâ€¦</div>
+                  <div class="empty-state-title">Loading cold storage facilities…</div>
                 </div>
               </td>
             </tr>
@@ -1385,7 +1355,7 @@
     </div>
 
     <!-- TAB 2: ROLE PERMISSIONS -->
-    <div class="main-card" id="tabContentRoles" style="display:none;">
+    <div class="main-card" id="tabContentRoles">
       <div class="card-header-block">
         <div class="card-title-group">
           <div class="card-heading">
@@ -1417,7 +1387,7 @@
             </tr>
           </thead>
           <tbody id="rolesBody">
-            <tr><td colspan="10"><div class="empty-state"><div class="empty-state-title">Loading role permissions matrixâ€¦</div></div></td></tr>
+            <tr><td colspan="10"><div class="empty-state"><div class="empty-state-title">Loading role permissions matrix…</div></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1459,7 +1429,7 @@
             </tr>
           </thead>
           <tbody id="yieldConfigBody">
-            <tr><td colspan="6"><div class="empty-state"><div class="empty-state-title">Loading yield engine configurationsâ€¦</div></div></td></tr>
+            <tr><td colspan="6"><div class="empty-state"><div class="empty-state-title">Loading yield engine configurations…</div></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1475,11 +1445,6 @@
           <div class="card-subheading">Manage agronomic profiles, water requirements, crop cycles, and district registries synchronized directly to state datasets.</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <div class="state-pill-selector" id="statePillContainer">
-            <button class="state-pill-btn active" id="pillStateRajasthan" onclick="selectCropState('rajasthan')">Rajasthan</button>
-            <button class="state-pill-btn" id="pillStateTripura" onclick="selectCropState('tripura')">Tripura</button>
-            <button class="state-pill-btn" id="pillStateMeghalaya" onclick="selectCropState('meghalaya')">Meghalaya</button>
-          </div>
           <select class="form-select" id="cropFeatureState" onchange="onCropFeatureStateChange()" style="display:none;">
             <option value="rajasthan">Rajasthan</option>
             <option value="tripura">Tripura</option>
@@ -1500,8 +1465,8 @@
         <div class="crop-districts-grid">
           
           <!-- Crop Features Panel -->
-          <div class="main-card" style="border-radius:var(--radius-md);">
-            <div class="filter-toolbar" style="border-top:none;">
+          <div class="main-card crop-features-panel" style="border-radius:var(--radius-md);">
+            <div class="filter-toolbar crop-panel-toolbar" style="border-top:none;">
               <div class="filter-left-group">
                 <div class="search-input-wrap">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1513,8 +1478,8 @@
               </div>
             </div>
 
-            <div class="table-container">
-              <table class="md-table">
+            <div class="table-container crop-features-table-wrap">
+              <table class="md-table crop-features-table">
                 <thead>
                   <tr>
                     <th style="width:26%;">Crop Name</th>
@@ -1525,15 +1490,15 @@
                   </tr>
                 </thead>
                 <tbody id="cropFeaturesBody">
-                  <tr><td colspan="5"><div class="empty-state"><div class="empty-state-title">Select state to load cropsâ€¦</div></div></td></tr>
+                  <tr><td colspan="5"><div class="empty-state"><div class="empty-state-title">Select state to load crops…</div></div></td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
           <!-- District Registry Panel -->
-          <div class="main-card" style="border-radius:var(--radius-md);">
-            <div class="filter-toolbar" style="border-top:none;">
+          <div class="main-card district-panel" style="border-radius:var(--radius-md);">
+            <div class="filter-toolbar district-panel-toolbar" style="border-top:none;">
               <div class="filter-left-group">
                 <div class="search-input-wrap" style="min-width: 140px;">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1547,7 +1512,7 @@
 
             <div class="district-list" id="districtsListContainer">
               <div class="empty-state">
-                <div class="empty-state-title">Loading district registryâ€¦</div>
+                <div class="empty-state-title">Loading district registry…</div>
               </div>
             </div>
           </div>
@@ -1576,12 +1541,6 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="search-input" id="creditScoreSearchInput" placeholder="Search by farmer ID, name, or email..." oninput="onCreditScoreFilterChange()">
           </div>
-          <select class="filter-select" id="creditScoreStateFilter" onchange="onCreditScoreFilterChange()">
-            <option value="all">All States</option>
-            <option value="rajasthan">Rajasthan</option>
-            <option value="tripura">Tripura</option>
-            <option value="meghalaya">Meghalaya</option>
-          </select>
           <select class="filter-select" id="creditScoreRepaymentFilter" onchange="onCreditScoreFilterChange()">
             <option value="all">All Repayment</option>
             <option value="Repaid on time">Repaid on time</option>
@@ -1751,9 +1710,9 @@
           <div class="form-group">
             <label class="form-label">Water Need Index <span class="req">*</span></label>
             <select class="form-select" id="modalCropWaterNeed">
-              <option value="1">1 â€” Low Requirement (ðŸ’§)</option>
-              <option value="2">2 â€” Medium Requirement (ðŸ’§ðŸ’§)</option>
-              <option value="3">3 â€” High Requirement (ðŸ’§ðŸ’§ðŸ’§)</option>
+              <option value="1">1 — Low Requirement</option>
+              <option value="2">2 — Medium Requirement</option>
+              <option value="3">3 — High Requirement</option>
             </select>
           </div>
           <div class="form-group">
@@ -1955,6 +1914,33 @@
 
     const session = getSession();
 
+    function skeletonRows(columnCount, rowCount = 5) {
+      return Array.from({ length: rowCount }, (_, row) => `
+        <tr aria-hidden="true">${Array.from({ length: columnCount }, (_, col) => {
+          const width = (row + col) % 4 === 0 ? 'short' : ((row + col) % 3 === 0 ? 'long' : '');
+          return `<td><span class="skeleton skeleton-cell ${width}"></span></td>`;
+        }).join('')}</tr>
+      `).join('');
+    }
+
+    function showLoadingSkeletons() {
+      document.getElementById('storagesBody').innerHTML = skeletonRows(8, 6);
+      document.getElementById('rolesBody').innerHTML = skeletonRows(3, 5);
+      document.getElementById('yieldConfigBody').innerHTML = skeletonRows(6, 5);
+      document.getElementById('cropFeaturesBody').innerHTML = skeletonRows(5, 5);
+      document.getElementById('creditScoreBody').innerHTML = skeletonRows(10, 5);
+      document.getElementById('districtsListContainer').innerHTML = Array.from({ length: 6 }, (_, i) =>
+        `<div class="skeleton skeleton-cell ${i % 3 === 0 ? 'long' : ''}" style="height:34px;width:100%;margin:8px 0"></div>`
+      ).join('');
+      ['tabBadgeStorages', 'tabBadgeRoles', 'tabBadgeYield', 'tabBadgeCrops', 'tabBadgeCreditScore'].forEach(id => {
+        document.getElementById(id).innerHTML = '<span class="skeleton" aria-label="Loading"></span>';
+      });
+      document.getElementById('rolesCountBadge').innerHTML = '<span class="skeleton skeleton-caption" aria-label="Loading"></span>';
+      document.getElementById('yieldCountBadge').innerHTML = '<span class="skeleton skeleton-caption" aria-label="Loading"></span>';
+      document.getElementById('cropCountBadge').innerHTML = '<span class="skeleton skeleton-caption" aria-label="Loading"></span>';
+      document.getElementById('districtCountBadge').innerHTML = '<span class="skeleton skeleton-caption" aria-label="Loading"></span>';
+    }
+
     function authHeaders() {
       return {
         "Content-Type": "application/json",
@@ -1962,7 +1948,7 @@
       };
     }
 
-    let activeTab = 'storages';
+    let activeTab = 'roles';
     let currentStorages = [];
     let filteredStorages = [];
     let storagePage = 1;
@@ -1976,7 +1962,14 @@
     let currentDistricts = [];
     let editingCropName = null;
 
-    // â”€â”€ INITIAL PERMISSION GATE â”€â”€
+    function getTopBarState() {
+      const validStates = ['rajasthan', 'tripura', 'meghalaya'];
+      const requested = String(new URLSearchParams(window.location.search).get('state') || '').toLowerCase();
+      const saved = String(localStorage.getItem('cropai_state') || '').toLowerCase();
+      return validStates.includes(requested) ? requested : (validStates.includes(saved) ? saved : 'tripura');
+    }
+
+    // ── INITIAL PERMISSION GATE ──
     async function checkPermissionAndInit() {
       if (!session || !session.token) {
         showDenied();
@@ -2006,9 +1999,13 @@
 
           if (userAllowedStates.length <= 1 && userAllowedStates[0]) {
             selectCropState(userAllowedStates[0]);
-            document.getElementById('statePillContainer').style.display = 'none';
           } else {
-            selectCropState('rajasthan');
+            const requestedState = new URLSearchParams(window.location.search).get('state');
+            const savedState = localStorage.getItem('cropai_state');
+            const selectedState = [requestedState, savedState]
+              .map(s => String(s || '').toLowerCase())
+              .find(s => allowedStates.includes(s));
+            selectCropState(selectedState || 'tripura');
           }
         } else {
           showDenied();
@@ -2023,7 +2020,7 @@
       document.getElementById('deniedContainer').style.display = 'flex';
     }
 
-    // â”€â”€ TAB SWITCHING â”€â”€
+    // ── TAB SWITCHING ──
     function switchTab(tab) {
       activeTab = tab;
       const isStorages = tab === 'storages';
@@ -2062,7 +2059,7 @@
       showToast("Data refreshed.");
     }
 
-    // â”€â”€ COLD STORAGES TAB â”€â”€
+    // ── COLD STORAGES TAB ──
     async function loadColdStorages() {
       try {
         const res = await fetch("/api/master-data/cold-storages", { headers: authHeaders() });
@@ -2070,16 +2067,7 @@
         const data = await res.json();
         currentStorages = data || [];
 
-        // Update KPIs
-        document.getElementById('kpi-total-storages').textContent = currentStorages.length;
         document.getElementById('tabBadgeStorages').textContent = currentStorages.length;
-        
-        // Count distinct states
-        const stateSet = new Set(currentStorages.map(s => (s.state || '').toLowerCase()).filter(Boolean));
-        document.getElementById('kpi-storages-sub').textContent = `${stateSet.size} active states registered`;
-
-        const totalCap = currentStorages.reduce((sum, item) => sum + (Number(item.capacity_mt) || 0), 0);
-        document.getElementById('kpi-total-capacity').textContent = totalCap.toLocaleString();
 
         onStorageFilterChange();
       } catch (err) {
@@ -2089,11 +2077,11 @@
 
     function onStorageFilterChange() {
       const q = (document.getElementById('storageSearchInput').value || '').trim().toLowerCase();
-      const state = document.getElementById('storageStateFilter').value;
+      const state = getTopBarState();
       const status = document.getElementById('storageStatusFilter').value;
 
       filteredStorages = currentStorages.filter(item => {
-        if (state !== 'all' && (item.state || '').toLowerCase() !== state) return false;
+        if ((item.state || '').toLowerCase() !== state) return false;
         if (status !== 'all' && (item.status || 'active').toLowerCase() !== status) return false;
         if (q) {
           const matchName = (item.name || '').toLowerCase().includes(q);
@@ -2110,7 +2098,6 @@
 
     function resetStorageFilters() {
       document.getElementById('storageSearchInput').value = '';
-      document.getElementById('storageStateFilter').value = 'all';
       document.getElementById('storageStatusFilter').value = 'all';
       onStorageFilterChange();
     }
@@ -2136,11 +2123,16 @@
 
       tbody.innerHTML = pagedItems.map(s => {
         const isActive = (s.status || 'active').toLowerCase() === 'active';
-        const lat = s.latitude !== null && s.latitude !== undefined ? Number(s.latitude).toFixed(4) : null;
-        const lon = s.longitude !== null && s.longitude !== undefined ? Number(s.longitude).toFixed(4) : null;
+        const latValue = Number(s.latitude);
+        const lonValue = Number(s.longitude);
+        const hasGps = s.latitude !== null && s.latitude !== undefined && s.latitude !== ''
+          && s.longitude !== null && s.longitude !== undefined && s.longitude !== ''
+          && Number.isFinite(latValue) && Number.isFinite(lonValue);
+        const lat = hasGps ? latValue.toFixed(4) : null;
+        const lon = hasGps ? lonValue.toFixed(4) : null;
         
-        let gpsHtml = `<span style="color:#94A3B8;">â€”</span>`;
-        if (lat && lon) {
+        let gpsHtml = `<span class="gps-missing">Not provided</span>`;
+        if (hasGps) {
           const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
           gpsHtml = `<a href="${mapUrl}" target="_blank" rel="noopener" class="gps-link" title="Open in Google Maps">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2167,8 +2159,8 @@
                 </div>
               </div>
             </td>
-            <td><span class="badge-state">${escapeHtml(stateName || 'â€”')}</span></td>
-            <td><strong style="color:var(--text-sub);">${escapeHtml(s.district || 'â€”')}</strong></td>
+            <td><span class="badge-state">${escapeHtml(stateName || '—')}</span></td>
+            <td><strong style="color:var(--text-sub);">${escapeHtml(s.district || '—')}</strong></td>
             <td class="col-num">${cap.toLocaleString()}</td>
             <td class="col-center">${gpsHtml}</td>
             <td class="col-center">
@@ -2196,14 +2188,14 @@
       const controls = document.getElementById('storagePaginationControls');
 
       if (totalPages <= 1) {
-        info.textContent = `Showing 1â€“${filteredStorages.length} of ${filteredStorages.length}`;
+        info.textContent = `Showing 1–${filteredStorages.length} of ${filteredStorages.length}`;
         controls.innerHTML = '';
         return;
       }
 
       const start = (storagePage - 1) * storagePageSize + 1;
       const end = Math.min(storagePage * storagePageSize, filteredStorages.length);
-      info.textContent = `Showing ${start}â€“${end} of ${filteredStorages.length}`;
+      info.textContent = `Showing ${start}–${end} of ${filteredStorages.length}`;
 
       let btns = `
         <button class="page-btn" onclick="goToStoragePage(${storagePage - 1})" ${storagePage === 1 ? 'disabled' : ''} title="Previous page">
@@ -2215,7 +2207,7 @@
         if (p === 1 || p === totalPages || (p >= storagePage - 1 && p <= storagePage + 1)) {
           btns += `<button class="page-btn ${p === storagePage ? 'active' : ''}" onclick="goToStoragePage(${p})">${p}</button>`;
         } else if (p === storagePage - 2 || p === storagePage + 2) {
-          btns += `<span style="padding:0 4px;color:var(--text-muted);">â€¦</span>`;
+          btns += `<span style="padding:0 4px;color:var(--text-muted);">…</span>`;
         }
       }
 
@@ -2368,21 +2360,21 @@
       }
     }
 
-    // â”€â”€ ROLE PERMISSIONS TAB â”€â”€
+    // ── ROLE PERMISSIONS TAB ──
     async function loadRolePermissions() {
       try {
-        const res = await fetch("/api/master-data/role-permissions", { headers: authHeaders() });
+        const res = await fetch("/api/master-data/role-permissions", {
+          headers: authHeaders(),
+          cache: "no-store"
+        });
         if (!res.ok) throw new Error("Failed to load role permissions");
         const data = await res.json();
 
         currentPermissions = data.permissions || {};
         allManagedPages = data.all_pages || [];
 
-        // Update KPIs
         const roleKeys = Object.keys(currentPermissions);
-        document.getElementById('kpi-total-roles').textContent = roleKeys.length;
         document.getElementById('tabBadgeRoles').textContent = roleKeys.length;
-        document.getElementById('kpi-total-pages').textContent = allManagedPages.length;
         document.getElementById('rolesCountBadge').innerHTML = `<strong>${roleKeys.length}</strong> system roles configured`;
 
         renderRolePermissionsTable();
@@ -2394,6 +2386,11 @@
     function formatPageLabel(path) {
       const clean = path.replace('/', '').replace(/-/g, ' ');
       return clean.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function isCrudEnabled(value) {
+      return value === true || value === 1 || value === "1" ||
+        (typeof value === "string" && value.trim().toLowerCase() === "true");
     }
 
     function renderRolePermissionsTable() {
@@ -2447,7 +2444,7 @@
             </td>
             <td class="col-center">
               <label class="toggle-switch">
-                <input type="checkbox" id="crud-check-${role}" ${perm.crud ? 'checked' : ''}>
+                <input type="checkbox" id="crud-check-${role}" aria-label="CRUD access for ${role.replace(/_/g, ' ')}" onchange="saveRoleRow('${role}')" ${isCrudEnabled(perm.crud) ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
               </label>
             </td>
@@ -2474,7 +2471,7 @@
       if (!row) return;
 
       const btn = document.getElementById(`btn-save-role-${role}`);
-      if (btn) { btn.disabled = true; btn.textContent = 'Savingâ€¦'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
       const checkedBoxes = row.querySelectorAll(`input[type="checkbox"][data-role="${role}"]:checked`);
       const selectedPages = Array.from(checkedBoxes).map(cb => cb.dataset.page);
@@ -2502,7 +2499,7 @@
       }
     }
 
-    // â”€â”€ YIELD DETECT CONFIG TAB â”€â”€
+    // ── YIELD DETECT CONFIG TAB ──
     async function loadYieldConfig() {
       try {
         const res = await fetch("/api/master-data/yield-config", { headers: authHeaders() });
@@ -2537,7 +2534,7 @@
           <td><input class="param-input" id="yield-val-${escapeHtml(cfg.key)}" value="${escapeHtml(cfg.value)}"></td>
           <td><span class="badge-category cat-default">${escapeHtml(cfg.category || 'General')}</span></td>
           <td style="font-size:12.5px;color:var(--text-sub);">${escapeHtml(cfg.description || 'System inference parameter.')}</td>
-          <td style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);">${cfg.last_updated ? new Date(cfg.last_updated).toLocaleString() : 'â€”'}</td>
+          <td style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);">${cfg.last_updated ? new Date(cfg.last_updated).toLocaleString() : '—'}</td>
           <td class="col-center">
             <button class="btn btn-secondary btn-sm" id="btn-save-yield-${escapeHtml(cfg.key)}" onclick="saveYieldConfig('${escapeHtml(cfg.key)}')">
               Save
@@ -2554,7 +2551,7 @@
       const row = currentYieldConfig.find(c => c.key === key);
 
       const btn = document.getElementById(`btn-save-yield-${key}`);
-      if (btn) { btn.disabled = true; btn.textContent = 'Savingâ€¦'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
       try {
         const res = await fetch(`/api/master-data/yield-config/${encodeURIComponent(key)}`, {
@@ -2578,12 +2575,9 @@
       }
     }
 
-    // â”€â”€ CROP FEATURES & DISTRICTS TAB â”€â”€
+    // ── CROP FEATURES & DISTRICTS TAB ──
     function selectCropState(st) {
       document.getElementById('cropFeatureState').value = st;
-      document.getElementById('pillStateRajasthan').classList.toggle('active', st === 'rajasthan');
-      document.getElementById('pillStateTripura').classList.toggle('active', st === 'tripura');
-      document.getElementById('pillStateMeghalaya').classList.toggle('active', st === 'meghalaya');
       onCropFeatureStateChange();
     }
 
@@ -2610,19 +2604,13 @@
 
     function renderWaterNeedHtml(val) {
       const v = parseInt(val) || 2;
-      let drops = '';
       let label = 'Medium';
       if (v === 1) {
-        drops = '<span class="water-drop">ðŸ’§</span><span class="water-drop-dim">ðŸ’§ðŸ’§</span>';
         label = 'Low';
       } else if (v === 3) {
-        drops = '<span class="water-drop">ðŸ’§ðŸ’§ðŸ’§</span>';
         label = 'High';
-      } else {
-        drops = '<span class="water-drop">ðŸ’§ðŸ’§</span><span class="water-drop-dim">ðŸ’§</span>';
-        label = 'Medium';
       }
-      return `<div class="water-meter">${drops} <span>${label}</span></div>`;
+      return `<div class="water-meter"><span>${label}</span></div>`;
     }
 
     async function loadCropFeatures() {
@@ -2660,9 +2648,9 @@
       tbody.innerHTML = list.map(c => `
         <tr>
           <td><strong style="color:var(--text-main);font-size:13.5px;">${escapeHtml(c.crop)}</strong></td>
-          <td><span class="badge-category ${getCategoryBadgeClass(c.Crop_Category)}">${escapeHtml(c.Crop_Category || 'â€”')}</span></td>
+          <td><span class="badge-category ${getCategoryBadgeClass(c.Crop_Category)}">${escapeHtml(c.Crop_Category || '—')}</span></td>
           <td>${renderWaterNeedHtml(c.Crop_Water_Need)}</td>
-          <td class="col-num">${c.Crop_Duration_Days ? `${c.Crop_Duration_Days} days` : 'â€”'}</td>
+          <td class="col-num">${c.Crop_Duration_Days ? `${c.Crop_Duration_Days} days` : '—'}</td>
           <td class="col-center">
             <div style="display:inline-flex;gap:6px;">
               <button class="btn-icon" title="Edit crop" onclick="openCropModal('${escapeHtml(c.crop)}')">
@@ -2917,11 +2905,11 @@
 
     function onCreditScoreFilterChange() {
       const q = (document.getElementById('creditScoreSearchInput').value || '').trim().toLowerCase();
-      const state = document.getElementById('creditScoreStateFilter').value;
+      const state = getTopBarState();
       const repayment = document.getElementById('creditScoreRepaymentFilter').value;
 
       filteredCreditScoreAccounts = currentCreditScoreAccounts.filter(f => {
-        if (state !== 'all' && (f.state || '').toLowerCase() !== state.toLowerCase()) return false;
+        if ((f.state || '').toLowerCase() !== state) return false;
         if (repayment !== 'all' && f.repayment_status !== repayment) return false;
         if (q) {
           const matchId   = (f.farmer_id || '').toLowerCase().includes(q);
@@ -2938,7 +2926,6 @@
 
     function resetCreditScoreFilters() {
       document.getElementById('creditScoreSearchInput').value = '';
-      document.getElementById('creditScoreStateFilter').value = 'all';
       document.getElementById('creditScoreRepaymentFilter').value = 'all';
       onCreditScoreFilterChange();
     }
@@ -3176,7 +3163,10 @@
       }
     }
     // Initialization
-    window.addEventListener('DOMContentLoaded', checkPermissionAndInit);
+    window.addEventListener('DOMContentLoaded', () => {
+      showLoadingSkeletons();
+      checkPermissionAndInit();
+    });
   </script>
 </body>
 

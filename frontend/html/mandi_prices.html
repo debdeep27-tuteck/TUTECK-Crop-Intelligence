@@ -92,6 +92,47 @@
 
   .status { padding: 14px; font-size: 14px; color: #555; }
   .status.error { color: #b00020; }
+  .status.error-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 18px 0;
+    padding: 18px 20px;
+    color: #78350f;
+    background: #fffaf0;
+    border: 1px solid #f5d7a1;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(77, 51, 10, .05);
+  }
+  .error-card-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    height: 38px;
+    color: #b45309;
+    background: #ffedc2;
+    border-radius: 50%;
+  }
+  .error-card-copy { flex: 1; min-width: 0; }
+  .error-card-title { margin: 1px 0 4px; color: #713f12; font-size: 15px; font-weight: 700; }
+  .error-card-message { color: #815d32; font-size: 13px; line-height: 1.55; }
+  .retry-btn {
+    flex: 0 0 auto;
+    padding: 8px 13px;
+    color: #fff;
+    background: #26734d;
+    border: 0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .retry-btn:hover { background: #1d5f3e; }
+  .retry-btn:disabled { opacity: .6; cursor: wait; }
+  @media (max-width: 600px) {
+    .status.error-card { flex-wrap: wrap; }
+    .retry-btn { margin-left: 52px; }
+  }
 
   .table-wrap {
     background: white;
@@ -211,7 +252,7 @@
   <span id="updatedText"></span>
 </div>
 
-<div class="status" id="status">Select a state, then click "Get Prices."</div>
+<div class="status" id="status" aria-live="polite">Select a state, then click "Get Prices."</div>
 
 <div class="table-wrap" id="tableWrap">
   <table>
@@ -284,9 +325,31 @@ async function fetchJSON(url) {
   const res = await fetch(url);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || `Request failed (${res.status})`);
+    const error = new Error(data.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
   }
   return data;
+}
+
+function showPriceError(status) {
+  const message = status === 503
+    ? "The live mandi price service is temporarily unavailable. If saved prices are available, the service will show them automatically. Please try again shortly."
+    : "We couldn't load mandi prices right now. Please try again in a moment.";
+  statusEl.className = "status error-card";
+  statusEl.innerHTML = `
+    <div class="error-card-icon" aria-hidden="true">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle><path d="M12 8v4m0 4h.01"></path>
+      </svg>
+    </div>
+    <div class="error-card-copy">
+      <div class="error-card-title">Prices are temporarily unavailable</div>
+      <div class="error-card-message">${message}</div>
+    </div>
+    <button class="retry-btn" id="retryPrices" type="button">Try again</button>
+  `;
+  statusEl.style.display = "flex";
 }
 
 // ── Sync state from the top-bar (index.html) ──────────────────────────────
@@ -374,10 +437,11 @@ async function loadPrices() {
 
     renderPage();
 
-    statusEl.style.display = "none";
+    if (data.stale) setStatus(data.warning || "Showing cached prices; live data is temporarily unavailable.");
+    else statusEl.style.display = "none";
     tableWrap.style.display = "block";
   } catch (err) {
-    setStatus("Could not fetch prices. " + err.message, true);
+    showPriceError(err.status);
   } finally {
     searchBtn.disabled = false;
   }
@@ -474,6 +538,9 @@ function escapeHtml(str) {
 
 // State is locked to top-bar — no change listener needed on stateSelect.
 searchBtn.addEventListener("click", loadPrices);
+statusEl.addEventListener("click", event => {
+  if (event.target.closest("#retryPrices")) loadPrices();
+});
 
 initStates();
 </script>
